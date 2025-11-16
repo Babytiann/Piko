@@ -4,6 +4,7 @@
 node_modules/
 .yarn/
 .vscode/
+.tamagui/
 
 # Expo
 .expo/
