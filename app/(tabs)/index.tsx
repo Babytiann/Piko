@@ -6,6 +6,7 @@ import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Link } from 'expo-router';
+import { Button } from 'tamagui';
 import { verifyInstallation } from 'nativewind';
 
 export default function HomeScreen() {
@@ -76,6 +77,7 @@ export default function HomeScreen() {
           <ThemedText type="defaultSemiBold">app-example</ThemedText>.
         </ThemedText>
       </ThemedView>
+      <Button onPress={() => alert('Hello from Tamagui Button!')} color="blue">Tamagui Button</Button>
     </ParallaxScrollView>
   );
 }
