@@ -2,9 +2,15 @@
 
 # dependencies
 node_modules/
+.yarn/
+.vscode/
 
 # Expo
 .expo/
+.expo-shared/
+.expo-packager-cache/
+.expo/.expo-dev-client-cache/
+.expo/.cache/
 dist/
 web-build/
 expo-env.d.ts
@@ -20,23 +26,47 @@ expo-env.d.ts
 
 # Metro
 .metro-health-check*
+.metro-cache/
 
 # debug
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+*.lock
+*.log
+logs/
 
 # macOS
 .DS_Store
 *.pem
+Thumbs.db
 
 # local env files
 .env*.local
+.env
 
 # typescript
 *.tsbuildinfo
 
 app-example
+
+# Yarn Berry & PnP
+.pnp.*
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# IDEs
+.idea/
+.vs/
+*.code-workspace
+*.iml
+
+# coverage & reports
+coverage/
+.nyc_output/
+reports/
 
 # generated native folders
 /ios
