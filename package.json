@@ -4,12 +4,11 @@
   "private": true,
   "packageManager": "pnpm@9.15.0",
   "scripts": {
-    "dev": "pnpm -r --parallel run dev",
-    "dev:backend": "pnpm --filter backend dev",
-    "dev:frontend": "pnpm --filter piko dev",
-    "build": "pnpm run build:backend",
-    "build:backend": "pnpm --filter backend build",
-    "lint": "pnpm -r run lint"
+    "start": "concurrently \"pnpm --filter backend dev\" \"cd frontend && expo run:ios\"",
+    "build": "pnpm --filter backend build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
   },
   "engines": {
     "node": ">=18"
