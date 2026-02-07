@@ -1,49 +1,32 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
-import { TamaguiProvider, createTamagui } from "@tamagui/core";
-import { defaultConfig } from "@tamagui/config/v5";
+import { useColorScheme } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
 import '../global.css';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
-
-const config = createTamagui(defaultConfig);
-
-type Conf = typeof config;
-declare module "@tamagui/core" {
-  interface TamaguiCustomConfig extends Conf {}
-}
-
-// 原生导航栏（Header）的全局样式，对所有 Stack 页面生效
-const screenOptions = {
-  headerStyle: {
-    backgroundColor: '#0a7ea4',
-  },
-  headerTintColor: '#fff',
-  headerTitleStyle: {
-    fontWeight: '600' as const,
-    fontSize: 17,
-  },
-  // 其他常用：headerShadowVisible, headerBackTitleVisible, headerLargeTitle...
-};
+import { TamaguiProvider } from 'tamagui';
+import { config } from '../tamagui.config';
 
 export default function RootLayout() {
+  const scheme = useColorScheme();
+
   return (
-    <TamaguiProvider config={config} defaultTheme='light'>
-      <Stack screenOptions={screenOptions}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="modal"
-          options={{
-            presentation: 'modal',
-            title: 'Modal',
-            // 单页可覆盖全局：headerStyle: { backgroundColor: '#333' }
-          }}
-        />
-      </Stack>
-      <StatusBar style="auto" />
-    </TamaguiProvider>
+    <SafeAreaProvider>
+      <TamaguiProvider config={config} defaultTheme={scheme === 'dark' ? 'dark' : 'light'}>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen
+            name="modal"
+            options={{
+              presentation: 'modal',
+              headerShown: true,
+              title: 'Modal',
+            }}
+          />
+        </Stack>
+        <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+      </TamaguiProvider>
+    </SafeAreaProvider>
   );
 }
