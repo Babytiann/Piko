@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import '../global.css';
 import { TamaguiProvider } from 'tamagui';
+import { PortalProvider } from '@tamagui/portal';
 import { config } from '../tamagui.config';
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
 
@@ -44,29 +45,31 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <TamaguiProvider config={config} defaultTheme={scheme === 'dark' ? 'dark' : 'light'}>
-        <AuthProvider>
-          <AuthGate>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="login" />
-              <Stack.Screen
-                name="chat/[id]"
-                options={{
-                  headerShown: true,
-                  title: 'Chat',
-                }}
-              />
-              <Stack.Screen
-                name="modal"
-                options={{
-                  presentation: 'modal',
-                  headerShown: true,
-                  title: 'Modal',
-                }}
-              />
-            </Stack>
-          </AuthGate>
-        </AuthProvider>
+        <PortalProvider shouldAddRootHost>
+          <AuthProvider>
+            <AuthGate>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="login" />
+                <Stack.Screen
+                  name="chat/[id]"
+                  options={{
+                    headerShown: true,
+                    title: 'Chat',
+                  }}
+                />
+                <Stack.Screen
+                  name="modal"
+                  options={{
+                    presentation: 'modal',
+                    headerShown: true,
+                    title: 'Modal',
+                  }}
+                />
+              </Stack>
+            </AuthGate>
+          </AuthProvider>
+        </PortalProvider>
         <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       </TamaguiProvider>
     </SafeAreaProvider>

@@ -2,22 +2,25 @@ import { NextResponse } from "next/server";
 import {
   createAuthenticatedClient,
   disconnectClient,
+  resolveInputPeer,
 } from "@/lib/telegram";
 
 /**
  * POST /piko/telegram/send-message/v1
  * Send a text message to a specific chat.
  *
- * Body: { session: string, chatId: string, message: string, replyToMsgId?: number }
+ * Body: { session: string, chatId: string, chatType: string, accessHash: string, message: string, replyToMsgId?: number }
  * Returns: { success: true, messageId: number, date: number }
  */
 export async function POST(request: Request) {
   let client;
   try {
-    const { session, chatId, message, replyToMsgId } =
+    const { session, chatId, chatType, accessHash, message, replyToMsgId } =
       (await request.json()) as {
         session: string;
         chatId: string;
+        chatType: string;
+        accessHash: string;
         message: string;
         replyToMsgId?: number;
       };
@@ -31,9 +34,10 @@ export async function POST(request: Request) {
 
     client = await createAuthenticatedClient(session);
 
-    const entity = await client.getEntity(chatId);
+    // Build the InputPeer directly instead of relying on entity cache
+    const peer = resolveInputPeer(chatId, chatType, accessHash);
 
-    const result = await client.sendMessage(entity, {
+    const result = await client.sendMessage(peer, {
       message,
       replyTo: replyToMsgId,
     });

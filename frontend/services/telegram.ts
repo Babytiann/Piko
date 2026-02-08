@@ -67,6 +67,7 @@ export interface Dialog {
   title: string;
   type: "user" | "group" | "channel";
   username: string;
+  accessHash: string;
   unreadCount: number;
   lastMessage: string;
   lastMessageDate: number | null;
@@ -159,12 +160,16 @@ export function getDialogs(
 export function getMessages(
   session: string,
   chatId: string,
+  chatType: string,
+  accessHash: string,
   limit = 30,
   offsetId?: number
 ): Promise<GetMessagesResponse> {
   return post<GetMessagesResponse>("get-messages/v1", {
     session,
     chatId,
+    chatType,
+    accessHash,
     limit,
     offsetId,
   });
@@ -173,12 +178,16 @@ export function getMessages(
 export function sendMessage(
   session: string,
   chatId: string,
+  chatType: string,
+  accessHash: string,
   message: string,
   replyToMsgId?: number
 ): Promise<SendMessageResponse> {
   return post<SendMessageResponse>("send-message/v1", {
     session,
     chatId,
+    chatType,
+    accessHash,
     message,
     replyToMsgId,
   });

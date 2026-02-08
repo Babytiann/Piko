@@ -152,7 +152,12 @@ export default function HomeScreen() {
   const handleDialogPress = (dialog: Dialog) => {
     router.push({
       pathname: "/chat/[id]",
-      params: { id: dialog.id, title: dialog.title },
+      params: {
+        id: dialog.id,
+        title: dialog.title,
+        chatType: dialog.type,
+        accessHash: dialog.accessHash,
+      },
     });
   };
 

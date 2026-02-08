@@ -1,4 +1,4 @@
-import { TelegramClient } from "telegram";
+import { TelegramClient, Api } from "telegram";
 import { StringSession } from "telegram/sessions";
 
 const API_ID = Number(process.env.TELEGRAM_API_ID);
@@ -79,6 +79,29 @@ export async function createAuthenticatedClient(
   const client = createClient(sessionString);
   await client.connect();
   return client;
+}
+
+/**
+ * Resolve a chat ID + type + accessHash into an InputPeer object.
+ * This avoids the entity cache lookup issue with fresh clients.
+ */
+export function resolveInputPeer(
+  chatId: string,
+  chatType: string,
+  accessHash: string
+): Api.TypeInputPeer {
+  const id = BigInt(chatId);
+  const hash = BigInt(accessHash || "0");
+
+  switch (chatType) {
+    case "user":
+      return new Api.InputPeerUser({ userId: id, accessHash: hash });
+    case "channel":
+      return new Api.InputPeerChannel({ channelId: id, accessHash: hash });
+    case "group":
+    default:
+      return new Api.InputPeerChat({ chatId: id });
+  }
 }
 
 /**

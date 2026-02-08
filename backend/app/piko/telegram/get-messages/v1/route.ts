@@ -3,22 +3,25 @@ import { Api } from "telegram";
 import {
   createAuthenticatedClient,
   disconnectClient,
+  resolveInputPeer,
 } from "@/lib/telegram";
 
 /**
  * POST /piko/telegram/get-messages/v1
  * Get messages from a specific chat.
  *
- * Body: { session: string, chatId: string, limit?: number, offsetId?: number }
+ * Body: { session: string, chatId: string, chatType: string, accessHash: string, limit?: number, offsetId?: number }
  * Returns: { success: true, messages: Array<Message> }
  */
 export async function POST(request: Request) {
   let client;
   try {
-    const { session, chatId, limit = 30, offsetId } =
+    const { session, chatId, chatType, accessHash, limit = 30, offsetId } =
       (await request.json()) as {
         session: string;
         chatId: string;
+        chatType: string;
+        accessHash: string;
         limit?: number;
         offsetId?: number;
       };
@@ -32,10 +35,10 @@ export async function POST(request: Request) {
 
     client = await createAuthenticatedClient(session);
 
-    // Resolve the entity from the chatId
-    const entity = await client.getEntity(chatId);
+    // Build the InputPeer directly instead of relying on entity cache
+    const peer = resolveInputPeer(chatId, chatType, accessHash);
 
-    const messages = await client.getMessages(entity, {
+    const messages = await client.getMessages(peer, {
       limit,
       offsetId,
     });

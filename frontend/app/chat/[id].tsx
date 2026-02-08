@@ -75,7 +75,12 @@ function MessageBubble({ message }: { message: Message }) {
 
 export default function ChatScreen() {
   const insets = useSafeAreaInsets();
-  const { id, title } = useLocalSearchParams<{ id: string; title?: string }>();
+  const { id, title, chatType, accessHash } = useLocalSearchParams<{
+    id: string;
+    title?: string;
+    chatType?: string;
+    accessHash?: string;
+  }>();
   const navigation = useNavigation();
   const { session } = useAuth();
   const flatListRef = useRef<FlatList>(null);
@@ -98,7 +103,7 @@ export default function ChatScreen() {
     if (!session || !id) return;
     try {
       setError("");
-      const result = await telegramApi.getMessages(session, id, 50);
+      const result = await telegramApi.getMessages(session, id, chatType ?? "user", accessHash ?? "", 50);
       if (result.success) {
         // Messages come newest-first from the API, reverse for display
         setMessages(result.messages.reverse());
@@ -123,7 +128,7 @@ export default function ChatScreen() {
     setSending(true);
     setInputText("");
     try {
-      const result = await telegramApi.sendMessage(session, id, text);
+      const result = await telegramApi.sendMessage(session, id, chatType ?? "user", accessHash ?? "", text);
       if (result.success) {
         // Add the sent message to the list optimistically
         const newMsg: Message = {

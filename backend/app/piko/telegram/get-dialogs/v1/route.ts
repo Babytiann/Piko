@@ -41,12 +41,15 @@ export async function POST(request: Request) {
       let type: "user" | "group" | "channel" = "user";
       let username = "";
 
+      let accessHash = "";
+
       if (entity instanceof Api.User) {
         title =
           [entity.firstName, entity.lastName].filter(Boolean).join(" ") ||
           "Unknown";
         username = entity.username ?? "";
         type = "user";
+        accessHash = entity.accessHash?.toString() ?? "";
       } else if (entity instanceof Api.Chat) {
         title = entity.title;
         type = "group";
@@ -54,6 +57,7 @@ export async function POST(request: Request) {
         title = entity.title;
         username = entity.username ?? "";
         type = entity.megagroup ? "group" : "channel";
+        accessHash = entity.accessHash?.toString() ?? "";
       }
 
       // Extract last message info
@@ -70,6 +74,7 @@ export async function POST(request: Request) {
         title,
         type,
         username,
+        accessHash,
         unreadCount: dialog.unreadCount,
         lastMessage,
         lastMessageDate,
