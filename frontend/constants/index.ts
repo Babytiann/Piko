@@ -1,3 +1,5 @@
-export const TAB_BAR_HEIGHT = 56;
+export const TAB_BAR_HEIGHT = 80;
 export const TAB_BAR_HORIZONTAL_MARGIN = 24;
-export const TAB_BAR_BOTTOM_GAP = 16;
+
+export const INDICATOR_MARGIN_H = 8;
+export const INDICATOR_MARGIN_V = 10;

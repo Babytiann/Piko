@@ -12,7 +12,7 @@ export default function HomeScreen() {
       <Text fontSize="$8" fontWeight="700" color="$color" letterSpacing={-0.5}>
         Hello user
       </Text>
-      <Text fontSize="$3" color="$purple2" mt="$2">
+      <Text fontSize="$3" color="$gray11" mt="$2">
         欢迎使用，从这里开始你的体验。
       </Text>
     </YStack>
