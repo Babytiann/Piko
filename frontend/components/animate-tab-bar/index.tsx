@@ -2,8 +2,9 @@ import * as Haptics from 'expo-haptics';
 import React, { useEffect, useRef, useState } from 'react';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Animated, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Platform, StyleSheet, View } from 'react-native';
 
+import TabButton from './animate-tab-button';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { INDICATOR_MARGIN_H, INDICATOR_MARGIN_V, TAB_BAR_HEIGHT } from '@/constants';
@@ -16,6 +17,7 @@ export default function AnimatedTabBar({ state, descriptors, navigation }: Botto
   
     const [barWidth, setBarWidth] = useState(0);
     const translateX = useRef(new Animated.Value(0)).current;
+    const indicatorScale = useRef(new Animated.Value(1)).current;
     const prevBarWidth = useRef(0);
     
     const tabCount = state.routes.length;
@@ -28,15 +30,34 @@ export default function AnimatedTabBar({ state, descriptors, navigation }: Botto
       const isInitial = prevBarWidth.current === 0;
       prevBarWidth.current = barWidth;
   
+      const SPRING_DURATION = 300;
+      const HALF = SPRING_DURATION / 2;
+
       isInitial
         ? translateX.setValue(targetX)
-        : Animated.spring(translateX, {
-            toValue: targetX,
-            damping: 17,
-            stiffness: 220,
-            mass: 0.8,
-            useNativeDriver: true,
-          }).start();
+        : Animated.parallel([
+            Animated.spring(translateX, {
+              toValue: targetX,
+              damping: 20,
+              stiffness: 220,
+              mass: 0.8,
+              useNativeDriver: true,
+            }),
+            Animated.sequence([
+              Animated.timing(indicatorScale, {
+                toValue: 1.15,
+                duration: HALF,
+                easing: Easing.out(Easing.ease),
+                useNativeDriver: true,
+              }),
+              Animated.timing(indicatorScale, {
+                toValue: 1,
+                duration: HALF,
+                easing: Easing.inOut(Easing.ease),
+                useNativeDriver: true,
+              }),
+            ]),
+          ]).start();
     }, [state.index, barWidth]);
     const indicatorWidth = tabWidth - INDICATOR_MARGIN_H * 2;
   
@@ -59,7 +80,7 @@ export default function AnimatedTabBar({ state, descriptors, navigation }: Botto
               styles.indicator,
               {
                 width: indicatorWidth,
-                transform: [{ translateX }],
+                transform: [{ translateX }, { scale: indicatorScale }],
                 backgroundColor: isDark
                   ? 'rgba(255,255,255,0.08)'
                   : 'rgba(0,0,0,0.05)',
@@ -92,18 +113,14 @@ export default function AnimatedTabBar({ state, descriptors, navigation }: Botto
           };
   
           return (
-            <Pressable
+            <TabButton
               key={route.key}
+              route={route}
+              isFocused={isFocused}
+              options={options}
+              color={color}
               onPress={onPress}
-              style={styles.tabButton}
-              accessibilityRole="button"
-              accessibilityState={{ selected: isFocused }}
-            >
-              {options.tabBarIcon?.({ focused: isFocused, color, size: 24 })}
-              <Text style={[styles.tabLabel, { color }]}>
-                {options.title ?? route.name}
-              </Text>
-            </Pressable>
+            />
           );
         })}
       </View>
@@ -142,16 +159,5 @@ export default function AnimatedTabBar({ state, descriptors, navigation }: Botto
         },
         android: { elevation: 6 },
       }),
-    },
-    tabButton: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      height: '100%',
-    },
-    tabLabel: {
-      fontSize: 12,
-      fontWeight: '500',
-      marginTop: 2,
     },
   });

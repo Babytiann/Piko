@@ -29,6 +29,15 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="profile/index"
+        options={{
+          title: '个人中心',
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={24} name="person.fill" color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
