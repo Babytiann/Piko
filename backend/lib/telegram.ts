@@ -1,12 +1,12 @@
-import { TelegramClient, Api } from "telegram";
-import { StringSession } from "telegram/sessions";
+import { TelegramClient, Api } from 'telegram';
+import { StringSession } from 'telegram/sessions';
 
 const API_ID = Number(process.env.TELEGRAM_API_ID);
 const API_HASH = process.env.TELEGRAM_API_HASH!;
 
 if (!API_ID || !API_HASH) {
   console.warn(
-    "TELEGRAM_API_ID and TELEGRAM_API_HASH must be set in .env.local"
+    'TELEGRAM_API_ID and TELEGRAM_API_HASH must be set in .env.local',
   );
 }
 
@@ -14,13 +14,26 @@ if (!API_ID || !API_HASH) {
  * In-memory store for active TelegramClient instances keyed by phone number.
  * Used during the login flow (send-code -> sign-in) where we need to reuse
  * the same client across multiple requests.
+ *
+ * Attached to globalThis so it survives Next.js dev-mode hot reloads —
+ * otherwise the Map is reset when the module is re-evaluated, causing
+ * sign-in to create a new client instead of reusing the one from send-code.
  */
-const pendingClients = new Map<string, TelegramClient>();
+const globalForTelegram = globalThis as unknown as {
+  __pendingTelegramClients?: Map<string, TelegramClient>;
+};
+if (!globalForTelegram.__pendingTelegramClients) {
+  globalForTelegram.__pendingTelegramClients = new Map<
+    string,
+    TelegramClient
+  >();
+}
+const pendingClients = globalForTelegram.__pendingTelegramClients;
 
 /**
  * Create a new TelegramClient with an optional existing session string.
  */
-export function createClient(sessionString = ""): TelegramClient {
+export function createClient(sessionString = ''): TelegramClient {
   const session = new StringSession(sessionString);
   return new TelegramClient(session, API_ID, API_HASH, {
     connectionRetries: 3,
@@ -28,12 +41,41 @@ export function createClient(sessionString = ""): TelegramClient {
 }
 
 /**
+ * Get an existing pending client for a phone number (used by sign-in to
+ * reuse the same client that sent the code).
+ */
+export function getPendingClient(
+  phoneNumber: string,
+): TelegramClient | undefined {
+  return pendingClients.get(phoneNumber);
+}
+
+/**
+ * Create a fresh pending client for a phone number (used by send-code).
+ * Always destroys any existing client first to avoid stale session/connection issues.
+ */
+export async function createFreshPendingClient(
+  phoneNumber: string,
+): Promise<TelegramClient> {
+  // Clean up any existing client for this phone number
+  const existing = pendingClients.get(phoneNumber);
+  if (existing) {
+    pendingClients.delete(phoneNumber);
+    await disconnectClient(existing);
+  }
+
+  const client = createClient();
+  await client.connect();
+  pendingClients.set(phoneNumber, client);
+  return client;
+}
+
+/**
  * Get or create a pending client for a phone number (used during login flow).
- * The client is stored so that the same connection + auth state is reused
- * between sendCode and signIn calls.
+ * Reuses existing client if available (for sign-in after send-code).
  */
 export async function getOrCreatePendingClient(
-  phoneNumber: string
+  phoneNumber: string,
 ): Promise<TelegramClient> {
   let client = pendingClients.get(phoneNumber);
   if (client) {
@@ -65,7 +107,7 @@ export function removePendingClient(phoneNumber: string): void {
  */
 export function getPendingClientSession(phoneNumber: string): string {
   const client = pendingClients.get(phoneNumber);
-  if (!client) return "";
+  if (!client) return '';
   return (client.session as StringSession).save();
 }
 
@@ -74,7 +116,7 @@ export function getPendingClientSession(phoneNumber: string): string {
  * Used for all post-login API calls (getDialogs, getMessages, etc.)
  */
 export async function createAuthenticatedClient(
-  sessionString: string
+  sessionString: string,
 ): Promise<TelegramClient> {
   const client = createClient(sessionString);
   await client.connect();
@@ -88,17 +130,17 @@ export async function createAuthenticatedClient(
 export function resolveInputPeer(
   chatId: string,
   chatType: string,
-  accessHash: string
+  accessHash: string,
 ): Api.TypeInputPeer {
   const id = BigInt(chatId);
-  const hash = BigInt(accessHash || "0");
+  const hash = BigInt(accessHash || '0');
 
   switch (chatType) {
-    case "user":
+    case 'user':
       return new Api.InputPeerUser({ userId: id, accessHash: hash });
-    case "channel":
+    case 'channel':
       return new Api.InputPeerChannel({ channelId: id, accessHash: hash });
-    case "group":
+    case 'group':
     default:
       return new Api.InputPeerChat({ chatId: id });
   }
@@ -107,9 +149,7 @@ export function resolveInputPeer(
 /**
  * Safely disconnect a client, swallowing errors.
  */
-export async function disconnectClient(
-  client: TelegramClient
-): Promise<void> {
+export async function disconnectClient(client: TelegramClient): Promise<void> {
   try {
     await client.disconnect();
   } catch {

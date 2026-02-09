@@ -3,7 +3,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, Spacer } from 'tamagui';
 import { useAuth } from '@/hooks/useAuth';
-import { useProfilePage } from '@/hooks/useProfilePage';
+import { usePageData } from '@/hooks/usePageData';
+import { fetchProfilePage } from '@/services/profile';
+import type { ProfilePageData } from '@/types/profile';
 import PageLoading from '@/components/shared/page-loading';
 import PageError from '@/components/shared/page-error';
 import TelegramSection from '@/components/profile/telegram-section';
@@ -14,7 +16,10 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { session, logout } = useAuth();
-  const { data, loading, error, refresh } = useProfilePage(session);
+  const { data, loading, error, refresh } = usePageData<ProfilePageData>(
+    () => fetchProfilePage(session ?? undefined),
+    [session],
+  );
 
   const handleBind = () => router.push('/telegram_login');
 

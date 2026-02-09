@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-import { Api } from "telegram";
-import { getOrCreatePendingClient } from "@/lib/telegram";
+import { NextResponse } from 'next/server';
+import { Api } from 'telegram';
+import { createFreshPendingClient } from '@/lib/telegram';
 
 /**
  * POST /piko/telegram/send-code/v1
@@ -17,37 +17,38 @@ export async function POST(request: Request) {
 
     if (!phoneNumber) {
       return NextResponse.json(
-        { success: false, error: "phoneNumber is required" },
-        { status: 400 }
+        { success: false, error: 'phoneNumber is required' },
+        { status: 400 },
       );
     }
 
-    const client = await getOrCreatePendingClient(phoneNumber);
+    // Always create a fresh client to avoid stale session/connection issues
+    const client = await createFreshPendingClient(phoneNumber);
 
     const result = await client.sendCode(
       {
         apiId: Number(process.env.TELEGRAM_API_ID),
         apiHash: process.env.TELEGRAM_API_HASH!,
       },
-      phoneNumber
+      phoneNumber,
     );
 
     // Determine code type name for the frontend
-    let codeType = "unknown";
+    let codeType = 'unknown';
     if (result.type instanceof Api.auth.SentCodeTypeApp) {
-      codeType = "app";
+      codeType = 'app';
     } else if (result.type instanceof Api.auth.SentCodeTypeSms) {
-      codeType = "sms";
+      codeType = 'sms';
     } else if (result.type instanceof Api.auth.SentCodeTypeCall) {
-      codeType = "call";
+      codeType = 'call';
     } else if (result.type instanceof Api.auth.SentCodeTypeFlashCall) {
-      codeType = "flashCall";
+      codeType = 'flashCall';
     } else if (result.type instanceof Api.auth.SentCodeTypeMissedCall) {
-      codeType = "missedCall";
+      codeType = 'missedCall';
     } else if (result.type instanceof Api.auth.SentCodeTypeFragmentSms) {
-      codeType = "fragmentSms";
+      codeType = 'fragmentSms';
     } else if (result.type instanceof Api.auth.SentCodeTypeEmailCode) {
-      codeType = "emailCode";
+      codeType = 'emailCode';
     }
 
     return NextResponse.json({
@@ -58,11 +59,11 @@ export async function POST(request: Request) {
     });
   } catch (error: unknown) {
     const message =
-      error instanceof Error ? error.message : "Failed to send code";
-    console.error("send-code error:", error);
+      error instanceof Error ? error.message : 'Failed to send code';
+    console.error('send-code error:', error);
     return NextResponse.json(
       { success: false, error: message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

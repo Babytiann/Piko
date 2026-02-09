@@ -3,8 +3,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, Spacer } from 'tamagui';
 import { useAuth } from '@/hooks/useAuth';
-import { useChatListPage } from '@/hooks/useChatListPage';
-import type { DialogItem } from '@/types/chat';
+import { usePageData } from '@/hooks/usePageData';
+import { fetchChatListPage } from '@/services/chat';
+import type { ChatListPageData, DialogItem } from '@/types/chat';
 import PageLoading from '@/components/shared/page-loading';
 import PageError from '@/components/shared/page-error';
 import DialogList from '@/components/chat/dialog-list';
@@ -16,7 +17,10 @@ export default function MessagesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { session } = useAuth();
-  const { data, loading, error, refresh } = useChatListPage(session);
+  const { data, loading, error, refresh } = usePageData<ChatListPageData>(
+    () => fetchChatListPage(session ?? undefined),
+    [session],
+  );
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {

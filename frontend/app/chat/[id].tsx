@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -9,11 +9,11 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { YStack, Text } from 'tamagui';
-import { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useChatDetailPage } from '@/hooks/useChatDetailPage';
+import { usePageData } from '@/hooks/usePageData';
+import { fetchChatDetailPage } from '@/services/chat';
+import type { ChatDetailPageData, MessageItem } from '@/types/chat';
 import * as telegramApi from '@/services/telegram';
-import type { MessageItem } from '@/types/chat';
 import PageLoading from '@/components/shared/page-loading';
 import PageError from '@/components/shared/page-error';
 import MessageBubble from '@/components/chat/message-bubble';
@@ -31,12 +31,16 @@ export default function ChatScreen() {
   const { session } = useAuth();
   const flatListRef = useRef<FlatList>(null);
 
-  const { data, loading, error, refresh } = useChatDetailPage(
-    session,
-    id ?? '',
-    chatType ?? 'user',
-    accessHash ?? '',
-    title ?? 'Chat',
+  const { data, loading, error, refresh } = usePageData<ChatDetailPageData>(
+    () =>
+      fetchChatDetailPage(
+        session ?? '',
+        id ?? '',
+        chatType ?? 'user',
+        accessHash ?? '',
+        title ?? 'Chat',
+      ),
+    [session, id, chatType, accessHash, title],
   );
 
   useEffect(() => {
