@@ -2,13 +2,8 @@ import { Platform } from "react-native";
 
 /**
  * Base URL for the Piko backend API.
- * On Android emulator, localhost is 10.0.2.2.
- * On iOS simulator and web, localhost works directly.
  */
-const API_BASE =
-  Platform.OS === "android"
-    ? "http://10.0.2.2:3000/piko/telegram"
-    : "http://localhost:3000/piko/telegram";
+const API_BASE = "http://192.168.6.184:3000/piko/telegram";
 
 async function post<T>(endpoint: string, body: Record<string, unknown>): Promise<T> {
   const response = await fetch(`${API_BASE}/${endpoint}`, {
