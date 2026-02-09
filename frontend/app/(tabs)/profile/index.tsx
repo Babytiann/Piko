@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { YStack, XStack, Text, Spacer } from "tamagui";
 import { useAuth } from "@/hooks/use-auth";
+import Telegram from "@/components/profile/telegram";
 
 const TAB_BAR_OFFSET = 56 + 16 + 16;
 
@@ -121,20 +122,7 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             </>
           ) : (
-            <>
-              <Text fontSize="$2" color="$gray11">
-                绑定 Telegram 账号后，可以查看和管理你的 Telegram 消息。
-              </Text>
-              <TouchableOpacity
-                style={styles.bindButton}
-                onPress={handleBindTelegram}
-                activeOpacity={0.8}
-              >
-                <Text color="white" fontWeight="600" fontSize="$3">
-                  绑定 Telegram 账号
-                </Text>
-              </TouchableOpacity>
-            </>
+            <Telegram handleBindTelegram={handleBindTelegram} />
           )}
         </YStack>
       </YStack>
@@ -147,13 +135,6 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  bindButton: {
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: "#007AFF",
     justifyContent: "center",
     alignItems: "center",
   },
