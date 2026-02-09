@@ -1,0 +1,66 @@
+import { useState } from 'react';
+import { Image, StyleSheet, View } from 'react-native';
+import { Text } from 'tamagui';
+import { API_HOST } from '@/services/api-client';
+
+/** Resolve relative server paths (e.g. "/piko/...") to absolute URLs. */
+function resolveUrl(url: string): string {
+  return url.startsWith('/') ? `${API_HOST}${url}` : url;
+}
+
+interface AvatarProps {
+  /** Remote image URL (optional). Falls back to initials when absent or on error. */
+  url?: string;
+  /** Single character shown when no image is available. */
+  text: string;
+  /** Background colour for the initials fallback. */
+  color: string;
+  /** Diameter in dp. Defaults to 50. */
+  size?: number;
+}
+
+export default function Avatar({ url, text, color, size = 50 }: AvatarProps) {
+  const [failed, setFailed] = useState(false);
+  const radius = size / 2;
+
+  if (url && !failed) {
+    return (
+      <Image
+        source={{ uri: resolveUrl(url) }}
+        style={[
+          styles.image,
+          { width: size, height: size, borderRadius: radius },
+        ]}
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+
+  return (
+    <View
+      style={[
+        styles.fallback,
+        {
+          width: size,
+          height: size,
+          borderRadius: radius,
+          backgroundColor: color,
+        },
+      ]}
+    >
+      <Text color="white" fontSize={size * 0.4} fontWeight="600">
+        {text}
+      </Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  image: {
+    resizeMode: 'cover',
+  },
+  fallback: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});

@@ -1,161 +1,33 @@
-import { useState, useEffect, useCallback } from "react";
-import {
-  FlatList,
-  RefreshControl,
-  TouchableOpacity,
-  ActivityIndicator,
-  View,
-  StyleSheet,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { YStack, XStack, Text, Spacer } from "tamagui";
-import { useAuth } from "@/hooks/use-auth";
-import * as telegramApi from "@/services/telegram";
-import type { Dialog } from "@/services/telegram";
+import { useState, useCallback } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { YStack, XStack, Text, Spacer } from 'tamagui';
+import { useAuth } from '@/hooks/useAuth';
+import { useChatListPage } from '@/hooks/useChatListPage';
+import type { DialogItem } from '@/types/chat';
+import PageLoading from '@/components/shared/page-loading';
+import PageError from '@/components/shared/page-error';
+import DialogList from '@/components/chat/dialog-list';
+import UnboundPrompt from '@/components/chat/unbound-prompt';
 
 const TAB_BAR_OFFSET = 56 + 16 + 16;
 
-function formatTime(timestamp: number | null): string {
-  if (!timestamp) return "";
-  const date = new Date(timestamp * 1000);
-  const now = new Date();
-  const isToday = date.toDateString() === now.toDateString();
-
-  if (isToday) {
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  }
-
-  const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
-  if (date.toDateString() === yesterday.toDateString()) {
-    return "昨天";
-  }
-
-  return date.toLocaleDateString([], { month: "short", day: "numeric" });
-}
-
-function getAvatarColor(id: string): string {
-  const colors = [
-    "#FF6B6B",
-    "#4ECDC4",
-    "#45B7D1",
-    "#96CEB4",
-    "#FFEAA7",
-    "#DDA0DD",
-    "#98D8C8",
-    "#F7DC6F",
-  ];
-  const index = Math.abs(parseInt(id, 10) || 0) % colors.length;
-  return colors[index];
-}
-
-function DialogItem({
-  dialog,
-  onPress,
-}: {
-  dialog: Dialog;
-  onPress: () => void;
-}) {
-  const initial = dialog.title.charAt(0).toUpperCase();
-  const avatarColor = getAvatarColor(dialog.id);
-
-  return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-      <View style={styles.dialogRow}>
-        {/* Avatar */}
-        <View style={[styles.avatar, { backgroundColor: avatarColor }]}>
-          <Text color="white" fontSize={18} fontWeight="600">
-            {initial}
-          </Text>
-        </View>
-
-        {/* Content */}
-        <YStack flex={1} gap="$1">
-          <View style={styles.rowBetween}>
-            <Text
-              fontSize="$4"
-              fontWeight="600"
-              color="$color"
-              numberOfLines={1}
-              flex={1}
-              mr="$2"
-            >
-              {dialog.title}
-            </Text>
-            <Text fontSize="$1" color="$gray10">
-              {formatTime(dialog.lastMessageDate)}
-            </Text>
-          </View>
-
-          <View style={styles.rowBetween}>
-            <Text
-              fontSize="$2"
-              color="$gray11"
-              numberOfLines={1}
-              flex={1}
-              mr="$2"
-            >
-              {dialog.lastMessage || "..."}
-            </Text>
-            {dialog.unreadCount > 0 && (
-              <View style={styles.badge}>
-                <Text color="white" fontSize={11} fontWeight="700">
-                  {dialog.unreadCount > 99 ? "99+" : dialog.unreadCount}
-                </Text>
-              </View>
-            )}
-          </View>
-        </YStack>
-      </View>
-    </TouchableOpacity>
-  );
-}
-
-export default function AIScreen() {
+export default function MessagesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { session, isLoggedIn } = useAuth();
-
-  const [dialogs, setDialogs] = useState<Dialog[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { session } = useAuth();
+  const { data, loading, error, refresh } = useChatListPage(session);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState("");
-
-  const fetchDialogs = useCallback(async () => {
-    if (!session) return;
-    try {
-      setError("");
-      const result = await telegramApi.getDialogs(session, 50);
-      if (result.success) {
-        setDialogs(result.dialogs);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "加载对话列表失败");
-    }
-  }, [session]);
-
-  useEffect(() => {
-    if (!session) {
-      setLoading(false);
-      return;
-    }
-    (async () => {
-      setLoading(true);
-      await fetchDialogs();
-      setLoading(false);
-    })();
-  }, [fetchDialogs, session]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchDialogs();
+    await refresh();
     setRefreshing(false);
-  }, [fetchDialogs]);
+  }, [refresh]);
 
-  const handleDialogPress = (dialog: Dialog) => {
+  const handleDialogPress = (dialog: DialogItem) => {
     router.push({
-      pathname: "/chat/[id]",
+      pathname: '/chat/[id]',
       params: {
         id: dialog.id,
         title: dialog.title,
@@ -165,147 +37,38 @@ export default function AIScreen() {
     });
   };
 
-  // Not logged in - show prompt to bind Telegram
-  if (!isLoggedIn) {
-    return (
-      <YStack flex={1} pt={insets.top} bg="$background">
-        <XStack px="$4" py="$3">
-          <Text fontSize="$7" fontWeight="700" color="$color" letterSpacing={-0.5}>
-            消息
-          </Text>
-          <Spacer flex={1} />
-        </XStack>
-        <View style={styles.centered}>
-          <Text color="$gray11" fontSize="$4" fontWeight="600">
-            尚未绑定 Telegram 账号
-          </Text>
-          <Text color="$gray11" fontSize="$2" mt="$2" px="$6" style={{ textAlign: "center" }}>
-            前往「个人中心」绑定你的 Telegram 账号后，即可查看消息。
-          </Text>
-          <TouchableOpacity
-            style={styles.bindButton}
-            onPress={() => router.push("/telegram_login")}
-            activeOpacity={0.8}
-          >
-            <Text color="white" fontWeight="600" fontSize="$3">
-              前往绑定
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </YStack>
-    );
-  }
-
-  if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" />
-        <Text color="$gray11" mt="$3" fontSize="$2">
-          加载对话列表...
-        </Text>
-      </View>
-    );
-  }
+  if (loading && !refreshing) return <PageLoading message="加载对话列表..." />;
+  if (error) return <PageError message={error} onRetry={refresh} />;
+  if (!data) return null;
 
   return (
     <YStack flex={1} pt={insets.top} bg="$background">
-      {/* Header */}
       <XStack px="$4" py="$3">
-        <Text fontSize="$7" fontWeight="700" color="$color" letterSpacing={-0.5}>
-          消息
+        <Text
+          fontSize="$7"
+          fontWeight="700"
+          color="$color"
+          letterSpacing={-0.5}
+        >
+          {data.header.title}
         </Text>
         <Spacer flex={1} />
       </XStack>
 
-      {/* Error */}
-      {error ? (
-        <View style={styles.errorBox}>
-          <Text color="$red11" fontSize="$2">
-            {error}
-          </Text>
-        </View>
-      ) : null}
-
-      {/* Dialog List */}
-      <FlatList
-        data={dialogs}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <DialogItem dialog={item} onPress={() => handleDialogPress(item)} />
-        )}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        contentContainerStyle={{
-          paddingBottom: insets.bottom + TAB_BAR_OFFSET,
-        }}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text color="$gray11" fontSize="$3">
-              暂无对话
-            </Text>
-          </View>
-        }
-      />
+      {data.unboundState ? (
+        <UnboundPrompt
+          data={data.unboundState}
+          onBind={() => router.push('/telegram_login')}
+        />
+      ) : (
+        <DialogList
+          dialogs={data.dialogs ?? []}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          onDialogPress={handleDialogPress}
+          contentPaddingBottom={insets.bottom + TAB_BAR_OFFSET}
+        />
+      )}
     </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  dialogRow: {
-    flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
-    alignItems: "center",
-  },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  rowBetween: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  badge: {
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "#007AFF",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 4,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  errorBox: {
-    marginHorizontal: 16,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginBottom: 8,
-    backgroundColor: "rgba(255,0,0,0.1)",
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 40,
-  },
-  bindButton: {
-    marginTop: 20,
-    height: 44,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    backgroundColor: "#007AFF",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});

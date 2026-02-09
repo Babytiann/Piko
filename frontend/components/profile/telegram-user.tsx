@@ -33,6 +33,7 @@ export default function TelegramUser({
 }: TelegramUserProps) {
   return (
     <>
+      {/* User Info */}
       <XStack gap="$3" items="center">
         <View
           style={[styles.avatar, { backgroundColor: getAvatarColor(user.id) }]}
@@ -59,6 +60,7 @@ export default function TelegramUser({
         </YStack>
       </XStack>
 
+      {/* Unbind Button */}
       <TouchableOpacity
         style={styles.unbindButton}
         onPress={handleUnbind}

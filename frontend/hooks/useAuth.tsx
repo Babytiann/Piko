@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
-import { Platform } from "react-native";
-import * as SecureStore from "expo-secure-store";
+import { useState, useEffect, useCallback } from 'react';
+import { Platform } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 
-import { createSafeContext } from "@/contexts/pageBaseContext";
+import { createSafeContext } from '@/contexts/pageBaseContext';
 
-const SESSION_KEY = "telegram_session";
-const USER_KEY = "telegram_user";
+const SESSION_KEY = 'telegram_session';
+const USER_KEY = 'telegram_user';
 
 export interface TelegramUser {
   id: string;
@@ -25,14 +25,14 @@ export interface AuthContextValue {
 }
 
 async function getItem(key: string): Promise<string | null> {
-  if (Platform.OS === "web") {
+  if (Platform.OS === 'web') {
     return localStorage.getItem(key);
   }
   return SecureStore.getItemAsync(key);
 }
 
 async function setItem(key: string, value: string): Promise<void> {
-  if (Platform.OS === "web") {
+  if (Platform.OS === 'web') {
     localStorage.setItem(key, value);
     return;
   }
@@ -40,14 +40,15 @@ async function setItem(key: string, value: string): Promise<void> {
 }
 
 async function deleteItem(key: string): Promise<void> {
-  if (Platform.OS === "web") {
+  if (Platform.OS === 'web') {
     localStorage.removeItem(key);
     return;
   }
   await SecureStore.deleteItemAsync(key);
 }
 
-export const [AuthProvider, useAuth] = createSafeContext<AuthContextValue>("Auth");
+export const [AuthProvider, useAuth] =
+  createSafeContext<AuthContextValue>('Auth');
 
 export function useAuthValue(): AuthContextValue {
   const [session, setSession] = useState<string | null>(null);
@@ -66,7 +67,7 @@ export function useAuthValue(): AuthContextValue {
           setUser(JSON.parse(storedUser));
         }
       } catch (error) {
-        console.error("Failed to load auth state:", error);
+        console.error('Failed to load auth state:', error);
       } finally {
         setIsLoading(false);
       }
@@ -80,7 +81,7 @@ export function useAuthValue(): AuthContextValue {
       setSession(newSession);
       setUser(newUser);
     },
-    []
+    [],
   );
 
   const logout = useCallback(async () => {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -6,52 +6,52 @@ import {
   StyleSheet,
   Keyboard,
   TouchableWithoutFeedback,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { YStack, Text, Spacer } from "tamagui";
-import { useAuth } from "@/hooks/use-auth";
-import * as telegramApi from "@/services/telegram";
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { YStack, Text, Spacer } from 'tamagui';
+import { useAuth } from '@/hooks/useAuth';
+import * as telegramApi from '@/services/telegram';
 
-import PhoneStep from "@/components/telegram-login/PhoneStep";
-import CodeStep from "@/components/telegram-login/CodeStep";
-import TwoFAStep from "@/components/telegram-login/TwoFAStep";
-import { getCodeByName } from "@/components/telegram-login/CountryCodeSelect";
+import PhoneStep from '@/components/telegram-login/PhoneStep';
+import CodeStep from '@/components/telegram-login/CodeStep';
+import TwoFAStep from '@/components/telegram-login/TwoFAStep';
+import { getCodeByName } from '@/components/telegram-login/CountryCodeSelect';
 
-type Step = "phone" | "code" | "2fa";
+type Step = 'phone' | 'code' | '2fa';
 
 export default function TelegramLoginScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { login } = useAuth();
 
-  const [step, setStep] = useState<Step>("phone");
+  const [step, setStep] = useState<Step>('phone');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   // Form state
-  const [countryName, setCountryName] = useState("中国");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [phoneCodeHash, setPhoneCodeHash] = useState("");
-  const [phoneCode, setPhoneCode] = useState("");
-  const [password, setPassword] = useState("");
-  const [tempSession, setTempSession] = useState("");
+  const [countryName, setCountryName] = useState('中国');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneCodeHash, setPhoneCodeHash] = useState('');
+  const [phoneCode, setPhoneCode] = useState('');
+  const [password, setPassword] = useState('');
+  const [tempSession, setTempSession] = useState('');
 
   const fullPhoneNumber = `${getCodeByName(countryName)}${phoneNumber.trim()}`;
 
   const handleSendCode = async () => {
     if (!phoneNumber.trim()) {
-      setError("请输入手机号");
+      setError('请输入手机号');
       return;
     }
     setLoading(true);
-    setError("");
+    setError('');
     try {
       const result = await telegramApi.sendCode(fullPhoneNumber);
       setPhoneCodeHash(result.phoneCodeHash);
-      setStep("code");
+      setStep('code');
     } catch (err) {
-      setError(err instanceof Error ? err.message : "发送验证码失败");
+      setError(err instanceof Error ? err.message : '发送验证码失败');
     } finally {
       setLoading(false);
     }
@@ -59,21 +59,21 @@ export default function TelegramLoginScreen() {
 
   const handleSignIn = async () => {
     if (!phoneCode.trim()) {
-      setError("请输入验证码");
+      setError('请输入验证码');
       return;
     }
     setLoading(true);
-    setError("");
+    setError('');
     try {
       const result = await telegramApi.signIn(
         fullPhoneNumber,
         phoneCode,
-        phoneCodeHash
+        phoneCodeHash,
       );
 
       if (result.require2FA) {
-        setTempSession(result.session ?? "");
-        setStep("2fa");
+        setTempSession(result.session ?? '');
+        setStep('2fa');
         return;
       }
 
@@ -82,7 +82,7 @@ export default function TelegramLoginScreen() {
         router.back();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "登录失败");
+      setError(err instanceof Error ? err.message : '登录失败');
     } finally {
       setLoading(false);
     }
@@ -90,11 +90,11 @@ export default function TelegramLoginScreen() {
 
   const handleCheckPassword = async () => {
     if (!password.trim()) {
-      setError("请输入两步验证密码");
+      setError('请输入两步验证密码');
       return;
     }
     setLoading(true);
-    setError("");
+    setError('');
     try {
       const result = await telegramApi.checkPassword(tempSession, password);
       if (result.success) {
@@ -102,7 +102,7 @@ export default function TelegramLoginScreen() {
         router.back();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "密码验证失败");
+      setError(err instanceof Error ? err.message : '密码验证失败');
     } finally {
       setLoading(false);
     }
@@ -112,12 +112,12 @@ export default function TelegramLoginScreen() {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={{ flex: 1 }}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{ flex: 1 }}
         >
           <YStack
             flex={1}
-            pt={20}
+            pt={insets.top + 20}
             pb={insets.bottom + 20}
             px="$6"
             bg="$background"
@@ -127,9 +127,9 @@ export default function TelegramLoginScreen() {
                 绑定 Telegram 账号
               </Text>
               <Text fontSize="$3" color="$gray11" mt="$2">
-                {step === "phone" && "输入你的手机号以连接 Telegram"}
-                {step === "code" && "输入你收到的验证码"}
-                {step === "2fa" && "输入你的两步验证密码"}
+                {step === 'phone' && '输入你的手机号以连接 Telegram'}
+                {step === 'code' && '输入你收到的验证码'}
+                {step === '2fa' && '输入你的两步验证密码'}
               </Text>
             </View>
 
@@ -142,7 +142,7 @@ export default function TelegramLoginScreen() {
               </View>
             ) : null}
 
-            {step === "phone" && (
+            {step === 'phone' && (
               <PhoneStep
                 phoneNumber={phoneNumber}
                 onPhoneNumberChange={setPhoneNumber}
@@ -153,21 +153,21 @@ export default function TelegramLoginScreen() {
               />
             )}
 
-            {step === "code" && (
+            {step === 'code' && (
               <CodeStep
                 phoneNumber={fullPhoneNumber}
                 phoneCode={phoneCode}
                 onPhoneCodeChange={setPhoneCode}
                 onSignIn={handleSignIn}
                 onBack={() => {
-                  setStep("phone");
-                  setError("");
+                  setStep('phone');
+                  setError('');
                 }}
                 loading={loading}
               />
             )}
 
-            {step === "2fa" && (
+            {step === '2fa' && (
               <TwoFAStep
                 password={password}
                 onPasswordChange={setPassword}
@@ -186,11 +186,11 @@ export default function TelegramLoginScreen() {
 
 const styles = StyleSheet.create({
   headerCenter: {
-    alignItems: "center",
+    alignItems: 'center',
     marginBottom: 24,
   },
   errorBox: {
-    backgroundColor: "rgba(255,0,0,0.1)",
+    backgroundColor: 'rgba(255,0,0,0.1)',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,

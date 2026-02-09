@@ -1,23 +1,29 @@
 import { TouchableOpacity, StyleSheet } from 'react-native';
 import { Text } from 'tamagui';
 
-interface TelegramProps {
-  handleBindTelegram: () => void;
+interface TelegramUnboundProps {
+  prompt: string;
+  buttonText: string;
+  onBind: () => void;
 }
 
-export default function Telegram({ handleBindTelegram }: TelegramProps) {
+export default function TelegramUnbound({
+  prompt,
+  buttonText,
+  onBind,
+}: TelegramUnboundProps) {
   return (
     <>
       <Text fontSize="$2" color="$gray11">
-        绑定 Telegram 账号后，可以查看和管理你的 Telegram 消息。
+        {prompt}
       </Text>
       <TouchableOpacity
         style={styles.bindButton}
-        onPress={handleBindTelegram}
+        onPress={onBind}
         activeOpacity={0.8}
       >
         <Text color="white" fontWeight="600" fontSize="$3">
-          绑定 Telegram 账号
+          {buttonText}
         </Text>
       </TouchableOpacity>
     </>

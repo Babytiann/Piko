@@ -2,20 +2,21 @@ import { Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, Spacer } from 'tamagui';
-import { useAuth } from '@/hooks/use-auth';
-import Telegram from '@/components/profile/telegram';
-import TelegramUser from '@/components/profile/telegram-logged-car';
+import { useAuth } from '@/hooks/useAuth';
+import { useProfilePage } from '@/hooks/useProfilePage';
+import PageLoading from '@/components/shared/page-loading';
+import PageError from '@/components/shared/page-error';
+import TelegramSection from '@/components/profile/telegram-section';
 
 const TAB_BAR_OFFSET = 56 + 16 + 16;
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { user, isLoggedIn, logout } = useAuth();
+  const { session, logout } = useAuth();
+  const { data, loading, error, refresh } = useProfilePage(session);
 
-  const handleBindTelegram = () => {
-    router.push('/telegram_login');
-  };
+  const handleBind = () => router.push('/telegram_login');
 
   const handleUnbind = () => {
     Alert.alert('解除绑定', '确定要解除 Telegram 账号绑定吗？', [
@@ -30,6 +31,10 @@ export default function ProfileScreen() {
     ]);
   };
 
+  if (loading) return <PageLoading />;
+  if (error) return <PageError message={error} onRetry={refresh} />;
+  if (!data) return null;
+
   return (
     <YStack
       flex={1}
@@ -37,7 +42,6 @@ export default function ProfileScreen() {
       pb={insets.bottom + TAB_BAR_OFFSET}
       bg="$background"
     >
-      {/* Header */}
       <XStack px="$4" py="$3">
         <Text
           fontSize="$7"
@@ -45,24 +49,17 @@ export default function ProfileScreen() {
           color="$color"
           letterSpacing={-0.5}
         >
-          个人中心
+          {data.header.title}
         </Text>
         <Spacer flex={1} />
       </XStack>
 
       <YStack px="$4" gap="$4" flex={1}>
-        {/* Telegram Binding Section */}
-        <YStack bg="$gray2" borderRadius="$4" p="$4" gap="$3">
-          <Text fontSize="$4" fontWeight="600" color="$color">
-            Telegram 账号
-          </Text>
-
-          {isLoggedIn && user ? (
-            <TelegramUser user={user} handleUnbind={handleUnbind} />
-          ) : (
-            <Telegram handleBindTelegram={handleBindTelegram} />
-          )}
-        </YStack>
+        <TelegramSection
+          data={data.telegramSection}
+          onBind={handleBind}
+          onUnbind={handleUnbind}
+        />
       </YStack>
     </YStack>
   );

@@ -8,7 +8,8 @@ import '../global.css';
 import { TamaguiProvider } from 'tamagui';
 import { PortalProvider } from '@tamagui/portal';
 import { config } from '../tamagui.config';
-import { AuthProvider, useAuthValue } from '@/hooks/use-auth';
+import { AuthProvider, useAuthValue } from '@/hooks/useAuth';
+import { PageDataProvider } from '@/contexts/page-data-context';
 
 export default function RootLayout() {
   const scheme = useColorScheme();
@@ -16,26 +17,31 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <TamaguiProvider config={config} defaultTheme={scheme === 'dark' ? 'dark' : 'light'}>
+      <TamaguiProvider
+        config={config}
+        defaultTheme={scheme === 'dark' ? 'dark' : 'light'}
+      >
         <PortalProvider shouldAddRootHost>
           <AuthProvider value={authValue}>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen
-                name="chat/[id]"
-                options={{
-                  headerShown: true,
-                  title: 'Chat',
-                }}
-              />
-              <Stack.Screen
-                name="profile/telegram_login"
-                options={{
-                  headerShown: true,
-                  title: '绑定 Telegram',
-                }}
-              />
-            </Stack>
+            <PageDataProvider session={authValue.session}>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen
+                  name="chat/[id]"
+                  options={{
+                    headerShown: true,
+                    title: 'Chat',
+                  }}
+                />
+                <Stack.Screen
+                  name="telegram_login"
+                  options={{
+                    headerShown: true,
+                    title: '绑定 Telegram',
+                  }}
+                />
+              </Stack>
+            </PageDataProvider>
           </AuthProvider>
         </PortalProvider>
         <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
