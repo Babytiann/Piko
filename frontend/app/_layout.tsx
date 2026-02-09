@@ -35,14 +35,6 @@ export default function RootLayout() {
                   title: '绑定 Telegram',
                 }}
               />
-              <Stack.Screen
-                name="modal"
-                options={{
-                  presentation: 'modal',
-                  headerShown: true,
-                  title: 'Modal',
-                }}
-              />
             </Stack>
           </AuthProvider>
         </PortalProvider>

@@ -1,8 +1,7 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
-
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import AnimatedTabBar from '@/components/animate-tab-bar';
 
 export default function TabLayout() {
@@ -16,7 +15,7 @@ export default function TabLayout() {
         options={{
           title: '首页',
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={24} name="house.fill" color={color} />
+            <Ionicons size={24} name="home-outline" color={color} />
           ),
         }}
       />
@@ -25,7 +24,7 @@ export default function TabLayout() {
         options={{
           title: '消息',
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={24} name="message.fill" color={color} />
+            <Ionicons size={24} name="chatbubbles-outline" color={color} />
           ),
         }}
       />
@@ -34,7 +33,7 @@ export default function TabLayout() {
         options={{
           title: '个人中心',
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={24} name="person.fill" color={color} />
+            <Ionicons size={24} name="person-outline" color={color} />
           ),
         }}
       />
