@@ -5,10 +5,17 @@
   "packageManager": "pnpm@9.15.0",
   "scripts": {
     "start": "concurrently \"pnpm --filter backend dev\" \"cd frontend && expo run:ios\"",
-    "build": "pnpm --filter backend build"
+    "build": "pnpm --filter backend build",
+    "prepare": "husky"
   },
   "devDependencies": {
-    "concurrently": "^9.1.0"
+    "concurrently": "^9.1.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.8.1"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,css,md,html}": "prettier --write"
   },
   "engines": {
     "node": ">=18"
