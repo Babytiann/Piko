@@ -1,12 +1,8 @@
-import {
-  useState,
-  useEffect,
-  useCallback,
-  useContext,
-  createContext,
-} from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
+
+import { createSafeContext } from "@/contexts/pageBaseContext";
 
 const SESSION_KEY = "telegram_session";
 const USER_KEY = "telegram_user";
@@ -19,7 +15,7 @@ export interface TelegramUser {
   phone: string;
 }
 
-interface AuthContextValue {
+export interface AuthContextValue {
   session: string | null;
   user: TelegramUser | null;
   isLoggedIn: boolean;
@@ -27,8 +23,6 @@ interface AuthContextValue {
   login: (session: string, user: TelegramUser) => Promise<void>;
   logout: () => Promise<void>;
 }
-
-// ─── Storage helpers ───────────────────────────────────────────────
 
 async function getItem(key: string): Promise<string | null> {
   if (Platform.OS === "web") {
@@ -53,19 +47,13 @@ async function deleteItem(key: string): Promise<void> {
   await SecureStore.deleteItemAsync(key);
 }
 
-// ─── Context ───────────────────────────────────────────────────────
+export const [AuthProvider, useAuth] = createSafeContext<AuthContextValue>("Auth");
 
-const AuthContext = createContext<AuthContextValue | null>(null);
-
-/**
- * Provider component — wrap your root layout with this.
- */
-export function AuthProvider({ children }: { children: React.ReactNode }): React.ReactNode {
+export function useAuthValue(): AuthContextValue {
   const [session, setSession] = useState<string | null>(null);
   const [user, setUser] = useState<TelegramUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load session on mount
   useEffect(() => {
     (async () => {
       try {
@@ -102,29 +90,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     setUser(null);
   }, []);
 
-  return (
-    <AuthContext.Provider
-      value={{
-        session,
-        user,
-        isLoggedIn: !!session,
-        isLoading,
-        login,
-        logout,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-/**
- * Hook to access auth state — must be used inside <AuthProvider>.
- */
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error("useAuth must be used within an <AuthProvider>");
-  }
-  return ctx;
+  return {
+    session,
+    user,
+    isLoggedIn: !!session,
+    isLoading,
+    login,
+    logout,
+  };
 }

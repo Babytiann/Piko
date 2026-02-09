@@ -13,14 +13,14 @@ import { YStack, Text, Spacer } from "tamagui";
 import { useAuth } from "@/hooks/use-auth";
 import * as telegramApi from "@/services/telegram";
 
-import PhoneStep from "./_components/PhoneStep";
-import CodeStep from "./_components/CodeStep";
-import TwoFAStep from "./_components/TwoFAStep";
-import { getCodeByName } from "./_components/CountryCodeSelect";
+import PhoneStep from "@/components/telegram-login/PhoneStep";
+import CodeStep from "@/components/telegram-login/CodeStep";
+import TwoFAStep from "@/components/telegram-login/TwoFAStep";
+import { getCodeByName } from "@/components/telegram-login/CountryCodeSelect";
 
 type Step = "phone" | "code" | "2fa";
 
-export default function LoginScreen() {
+export default function TelegramLoginScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { login } = useAuth();
@@ -79,7 +79,7 @@ export default function LoginScreen() {
 
       if (result.success && result.session && result.user) {
         await login(result.session, result.user);
-        router.replace("/(tabs)");
+        router.back();
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "登录失败");
@@ -99,7 +99,7 @@ export default function LoginScreen() {
       const result = await telegramApi.checkPassword(tempSession, password);
       if (result.success) {
         await login(result.session, result.user);
-        router.replace("/(tabs)");
+        router.back();
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "密码验证失败");
@@ -117,14 +117,14 @@ export default function LoginScreen() {
         >
           <YStack
             flex={1}
-            pt={insets.top + 40}
+            pt={20}
             pb={insets.bottom + 20}
             px="$6"
             bg="$background"
           >
             <View style={styles.headerCenter}>
-              <Text fontSize={32} fontWeight="800" color="$color" letterSpacing={-1}>
-                Piko
+              <Text fontSize={24} fontWeight="700" color="$color">
+                绑定 Telegram 账号
               </Text>
               <Text fontSize="$3" color="$gray11" mt="$2">
                 {step === "phone" && "输入你的手机号以连接 Telegram"}

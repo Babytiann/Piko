@@ -23,9 +23,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="ai/index"
         options={{
-          title: 'AI',
+          title: '消息',
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={24} name="sparkles" color={color} />
+            <IconSymbol size={24} name="message.fill" color={color} />
           ),
         }}
       />

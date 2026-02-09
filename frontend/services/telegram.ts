@@ -1,9 +1,4 @@
-import { Platform } from "react-native";
-
-/**
- * Base URL for the Piko backend API.
- */
-const API_BASE = "http://192.168.6.184:3000/piko/telegram";
+const API_BASE = `http://100.83.217.199:3000/piko/telegram`;
 
 async function post<T>(endpoint: string, body: Record<string, unknown>): Promise<T> {
   const response = await fetch(`${API_BASE}/${endpoint}`, {
@@ -18,8 +13,6 @@ async function post<T>(endpoint: string, body: Record<string, unknown>): Promise
   }
   return data as T;
 }
-
-// ─── Types ─────────────────────────────────────────────────────────
 
 export interface TelegramUser {
   id: string;
@@ -98,7 +91,6 @@ export interface SendMessageResponse {
   date: number;
 }
 
-// ─── API Methods ───────────────────────────────────────────────────
 
 export function sendCode(phoneNumber: string): Promise<SendCodeResponse> {
   return post<SendCodeResponse>("send-code/v1", { phoneNumber });
