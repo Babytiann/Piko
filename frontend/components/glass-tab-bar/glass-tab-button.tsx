@@ -2,7 +2,7 @@ import React, { useCallback, useRef } from 'react';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Animated, Pressable, StyleSheet, Text } from 'react-native';
 
-interface TabButtonProps {
+interface GlassTabButtonProps {
   route: BottomTabBarProps['state']['routes'][number];
   isFocused: boolean;
   options: BottomTabBarProps['descriptors'][string]['options'];
@@ -10,7 +10,14 @@ interface TabButtonProps {
   onPress: () => void;
 }
 
-export default function TabButton({ route, isFocused, options, color, onPress }: TabButtonProps) {
+/** Individual tab button with press-scale animation. */
+export default function GlassTabButton({
+  route,
+  isFocused,
+  options,
+  color,
+  onPress,
+}: GlassTabButtonProps) {
   const scale = useRef(new Animated.Value(1)).current;
 
   const onPressIn = useCallback(() => {

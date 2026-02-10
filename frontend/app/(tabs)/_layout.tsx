@@ -2,12 +2,12 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-import AnimatedTabBar from '@/components/animate-tab-bar';
+import GlassTabBar from '@/components/glass-tab-bar';
 
 export default function TabLayout() {
   return (
     <Tabs
-      tabBar={(props) => <AnimatedTabBar {...props} />}
+      tabBar={(props) => <GlassTabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
       <Tabs.Screen

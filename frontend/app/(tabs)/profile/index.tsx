@@ -1,6 +1,7 @@
 import { Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { TAB_BAR_CONTENT_HEIGHT } from '@/constants';
 import { YStack, XStack, Text, Spacer } from 'tamagui';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageData } from '@/hooks/usePageData';
@@ -9,8 +10,6 @@ import type { ProfilePageData } from '@/types/profile';
 import PageLoading from '@/components/shared/page-loading';
 import PageError from '@/components/shared/page-error';
 import TelegramSection from '@/components/profile/telegram-section';
-
-const TAB_BAR_OFFSET = 56 + 16 + 16;
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -44,7 +43,7 @@ export default function ProfileScreen() {
     <YStack
       flex={1}
       pt={insets.top}
-      pb={insets.bottom + TAB_BAR_OFFSET}
+      pb={insets.bottom + TAB_BAR_CONTENT_HEIGHT}
       bg="$background"
     >
       <XStack px="$4" py="$3">

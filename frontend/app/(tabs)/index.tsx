@@ -6,8 +6,7 @@ import type { HomePageData } from '@/types/home';
 import PageLoading from '@/components/shared/page-loading';
 import PageError from '@/components/shared/page-error';
 import WelcomeCard from '@/components/home/welcome-card';
-
-const TAB_BAR_OFFSET = 56 + 16 + 16;
+import { TAB_BAR_CONTENT_HEIGHT } from '@/constants';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -24,7 +23,7 @@ export default function HomeScreen() {
     <YStack
       flex={1}
       pt={insets.top}
-      pb={insets.bottom + TAB_BAR_OFFSET}
+      pb={insets.bottom + TAB_BAR_CONTENT_HEIGHT}
       px="$4"
       bg="$background"
     >

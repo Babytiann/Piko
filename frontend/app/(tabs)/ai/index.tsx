@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { TAB_BAR_CONTENT_HEIGHT } from '@/constants';
 import { YStack, XStack, Text, Spacer } from 'tamagui';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageData } from '@/hooks/usePageData';
@@ -10,8 +11,6 @@ import PageLoading from '@/components/shared/page-loading';
 import PageError from '@/components/shared/page-error';
 import DialogList from '@/components/chat/dialog-list';
 import UnboundPrompt from '@/components/chat/unbound-prompt';
-
-const TAB_BAR_OFFSET = 56 + 16 + 16;
 
 export default function MessagesScreen() {
   const insets = useSafeAreaInsets();
@@ -70,7 +69,7 @@ export default function MessagesScreen() {
           refreshing={refreshing}
           onRefresh={onRefresh}
           onDialogPress={handleDialogPress}
-          contentPaddingBottom={insets.bottom + TAB_BAR_OFFSET}
+          contentPaddingBottom={insets.bottom + TAB_BAR_CONTENT_HEIGHT}
         />
       )}
     </YStack>

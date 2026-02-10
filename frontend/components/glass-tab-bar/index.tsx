@@ -2,18 +2,32 @@ import * as Haptics from 'expo-haptics';
 import React, { useEffect, useRef, useState } from 'react';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Animated, Easing, Platform, StyleSheet, View } from 'react-native';
+import {
+  Animated,
+  Easing,
+  Platform,
+  StyleSheet,
+  View,
+  useColorScheme,
+} from 'react-native';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 
-import TabButton from './animate-tab-button';
+import GlassTabButton from './glass-tab-button';
 import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/useColorScheme';
 import {
   INDICATOR_MARGIN_H,
   INDICATOR_MARGIN_V,
   TAB_BAR_HEIGHT,
 } from '@/constants';
 
-export default function AnimatedTabBar({
+/**
+ * Floating capsule tab bar with iOS 26 liquid-glass material.
+ *
+ * - Bar background: `GlassView` with `"regular"` style
+ * - Sliding indicator: `GlassView` with `"prominent"` style
+ * - Graceful fallback to translucent rgba on older devices / Android
+ */
+export default function GlassTabBar({
   state,
   descriptors,
   navigation,
@@ -22,7 +36,9 @@ export default function AnimatedTabBar({
   const insets = useSafeAreaInsets();
   const colors = Colors[colorScheme ?? 'light'];
   const isDark = colorScheme === 'dark';
+  const hasGlass = isLiquidGlassAvailable();
 
+  // --- indicator animation state ---
   const [barWidth, setBarWidth] = useState(0);
   const translateX = useRef(new Animated.Value(0)).current;
   const indicatorScale = useRef(new Animated.Value(1)).current;
@@ -38,36 +54,44 @@ export default function AnimatedTabBar({
     const isInitial = prevBarWidth.current === 0;
     prevBarWidth.current = barWidth;
 
+    if (isInitial) {
+      translateX.setValue(targetX);
+      return;
+    }
+
     const SPRING_DURATION = 300;
     const HALF = SPRING_DURATION / 2;
 
-    isInitial
-      ? translateX.setValue(targetX)
-      : Animated.parallel([
-          Animated.spring(translateX, {
-            toValue: targetX,
-            damping: 20,
-            stiffness: 220,
-            mass: 0.8,
-            useNativeDriver: true,
-          }),
-          Animated.sequence([
-            Animated.timing(indicatorScale, {
-              toValue: 1.15,
-              duration: HALF,
-              easing: Easing.out(Easing.ease),
-              useNativeDriver: true,
-            }),
-            Animated.timing(indicatorScale, {
-              toValue: 1,
-              duration: HALF,
-              easing: Easing.inOut(Easing.ease),
-              useNativeDriver: true,
-            }),
-          ]),
-        ]).start();
-  }, [state.index, barWidth]);
+    Animated.parallel([
+      Animated.spring(translateX, {
+        toValue: targetX,
+        damping: 20,
+        stiffness: 220,
+        mass: 0.8,
+        useNativeDriver: true,
+      }),
+      Animated.sequence([
+        Animated.timing(indicatorScale, {
+          toValue: 1.15,
+          duration: HALF,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(indicatorScale, {
+          toValue: 1,
+          duration: HALF,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, [state.index, barWidth, targetX, translateX, indicatorScale]);
+
   const indicatorWidth = tabWidth - INDICATOR_MARGIN_H * 2;
+
+  // --- fallback colors (non-liquid-glass) ---
+  const barBg = isDark ? 'rgba(28,28,30,0.95)' : 'rgba(250,250,250,0.98)';
+  const indicatorBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
 
   return (
     <View
@@ -75,13 +99,20 @@ export default function AnimatedTabBar({
         styles.tabBar,
         {
           bottom: insets.bottom,
-          backgroundColor: isDark
-            ? 'rgba(28,28,30,0.95)'
-            : 'rgba(250,250,250,0.98)',
+          backgroundColor: hasGlass ? 'transparent' : barBg,
         },
       ]}
       onLayout={(e) => setBarWidth(e.nativeEvent.layout.width)}
     >
+      {/* Liquid-glass bar background */}
+      {hasGlass && (
+        <GlassView
+          style={[StyleSheet.absoluteFill, styles.glassClip]}
+          glassEffectStyle="regular"
+        />
+      )}
+
+      {/* Sliding indicator */}
       {barWidth > 0 && (
         <Animated.View
           style={[
@@ -89,26 +120,41 @@ export default function AnimatedTabBar({
             {
               width: indicatorWidth,
               transform: [{ translateX }, { scale: indicatorScale }],
-              backgroundColor: isDark
-                ? 'rgba(255,255,255,0.08)'
-                : 'rgba(0,0,0,0.05)',
-              ...(Platform.OS === 'ios' && {
-                shadowColor: colors.tint,
-                shadowOpacity: isDark ? 0.5 : 0.3,
-              }),
+              backgroundColor: hasGlass
+                ? isDark
+                  ? 'rgba(255,255,255,0.12)'
+                  : 'rgba(255,255,255,0.55)'
+                : indicatorBg,
+              ...(Platform.OS === 'ios' &&
+                !hasGlass && {
+                  shadowColor: colors.tint,
+                  shadowOpacity: isDark ? 0.5 : 0.3,
+                }),
             },
           ]}
-        />
+        >
+          {hasGlass && (
+            <GlassView
+              style={[StyleSheet.absoluteFill, styles.glassClip]}
+              glassEffectStyle="regular"
+              tintColor={
+                isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.4)'
+              }
+            />
+          )}
+        </Animated.View>
       )}
 
+      {/* Tab buttons */}
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
         const isFocused = state.index === index;
         const color = isFocused ? colors.text : colors.tabIconDefault;
 
         const onPress = () => {
-          process.env.EXPO_OS === 'ios' &&
+          if (Platform.OS === 'ios') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
 
           const event = navigation.emit({
             type: 'tabPress',
@@ -116,13 +162,13 @@ export default function AnimatedTabBar({
             canPreventDefault: true,
           });
 
-          !isFocused &&
-            !event.defaultPrevented &&
+          if (!isFocused && !event.defaultPrevented) {
             navigation.navigate(route.name);
+          }
         };
 
         return (
-          <TabButton
+          <GlassTabButton
             key={route.key}
             route={route}
             isFocused={isFocused}
@@ -138,6 +184,7 @@ export default function AnimatedTabBar({
 
 const styles = StyleSheet.create({
   tabBar: {
+    position: 'absolute',
     height: TAB_BAR_HEIGHT,
     borderRadius: 50,
     borderTopWidth: 0,
@@ -145,7 +192,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
-    overflow: 'visible',
+    overflow: 'hidden',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -156,11 +203,16 @@ const styles = StyleSheet.create({
       android: { elevation: 8 },
     }),
   },
+  glassClip: {
+    borderRadius: 50,
+    overflow: 'hidden',
+  },
   indicator: {
     position: 'absolute',
     borderRadius: 50,
     top: INDICATOR_MARGIN_V,
     bottom: INDICATOR_MARGIN_V,
+    overflow: 'hidden',
     ...Platform.select({
       ios: {
         shadowOffset: { width: 0, height: 0 },

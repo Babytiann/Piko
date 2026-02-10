@@ -23,7 +23,7 @@ export default function RootLayout() {
         <PortalProvider shouldAddRootHost>
           <AuthProvider value={authValue}>
             <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="(tabs)" options={{ title: '' }} />
               <Stack.Screen
                 name="chat/[id]"
                 options={{
