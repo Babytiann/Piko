@@ -38,9 +38,9 @@ export default function CodeStep({
         activeOpacity={0.8}
       >
         {loading ? (
-          <ActivityIndicator color="black" />
+          <ActivityIndicator color="white" />
         ) : (
-          <Text color="black" fontWeight="600" fontSize="$4">
+          <Text color="white" fontWeight="600" fontSize="$4">
             验证登录
           </Text>
         )}

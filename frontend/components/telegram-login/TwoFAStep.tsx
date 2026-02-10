@@ -31,7 +31,7 @@ export default function TwoFAStep({
         activeOpacity={0.8}
       >
         {loading ? (
-          <ActivityIndicator color="black" />
+          <ActivityIndicator color="white" />
         ) : (
           <Text color="black" fontWeight="600" fontSize="$4">
             确认密码
