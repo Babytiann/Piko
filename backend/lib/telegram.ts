@@ -142,6 +142,11 @@ export function resolveInputPeer(
       return new Api.InputPeerChannel({ channelId: id, accessHash: hash });
     case 'group':
     default:
+      // Supergroups are technically Channels with megagroup=true.
+      // They carry a non-zero accessHash, whereas regular groups do not.
+      if (accessHash && accessHash !== '0') {
+        return new Api.InputPeerChannel({ channelId: id, accessHash: hash });
+      }
       return new Api.InputPeerChat({ chatId: id });
   }
 }

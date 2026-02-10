@@ -171,6 +171,46 @@ export async function getDialogList(
   }
 }
 
+/**
+ * Download the media attached to a specific message.
+ * Returns a Buffer of the file contents, or null if no downloadable media.
+ */
+export async function downloadMessageMedia(
+  session: string,
+  chatId: string,
+  chatType: string,
+  accessHash: string,
+  messageId: number,
+): Promise<{ buffer: Buffer; mimeType: string } | null> {
+  const client = await createAuthenticatedClient(session);
+  try {
+    const peer = resolveInputPeer(chatId, chatType, accessHash);
+    const messages = await client.getMessages(peer, { ids: [messageId] });
+    const msg = messages[0];
+    if (!msg?.media) return null;
+
+    const data = await client.downloadMedia(msg, {});
+    if (!data) return null;
+
+    const buf = Buffer.isBuffer(data) ? data : Buffer.from(data);
+
+    // Derive a rough MIME type from the media class
+    let mimeType = 'application/octet-stream';
+    if (msg.media instanceof Api.MessageMediaPhoto) {
+      mimeType = 'image/jpeg';
+    } else if (msg.media instanceof Api.MessageMediaDocument) {
+      const doc = msg.media.document;
+      if (doc instanceof Api.Document && doc.mimeType) {
+        mimeType = doc.mimeType;
+      }
+    }
+
+    return { buffer: buf, mimeType };
+  } finally {
+    await disconnectClient(client);
+  }
+}
+
 /** Fetch messages from a specific chat. */
 export async function getMessageList(
   session: string,

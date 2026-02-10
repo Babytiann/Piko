@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, useMemo } from 'react';
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -19,6 +19,9 @@ import PageError from '@/components/shared/page-error';
 import MessageBubble from '@/components/chat/message-bubble';
 import MessageInput from '@/components/chat/message-input';
 
+/** Poll for new messages every 3 seconds while the chat screen is active. */
+const CHAT_POLLING_INTERVAL = 3_000;
+
 export default function ChatScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -31,6 +34,11 @@ export default function ChatScreen() {
   const { session } = useAuth();
   const flatListRef = useRef<FlatList>(null);
 
+  const pollingOptions = useMemo(
+    () => ({ pollingInterval: CHAT_POLLING_INTERVAL }),
+    [],
+  );
+
   const { data, loading, error, refresh } = usePageData<ChatDetailPageData>(
     () =>
       fetchChatDetailPage(
@@ -41,6 +49,7 @@ export default function ChatScreen() {
         title ?? 'Chat',
       ),
     [session, id, chatType, accessHash, title],
+    pollingOptions,
   );
 
   useEffect(() => {

@@ -34,8 +34,7 @@ export default function RootLayout() {
               <Stack.Screen
                 name="telegram_login"
                 options={{
-                  headerShown: true,
-                  title: '绑定 Telegram',
+                  headerShown: false,
                 }}
               />
             </Stack>

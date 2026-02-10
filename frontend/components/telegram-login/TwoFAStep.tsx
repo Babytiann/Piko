@@ -1,6 +1,6 @@
-import { ActivityIndicator, TextInput, TouchableOpacity } from "react-native";
-import { YStack, Text } from "tamagui";
-import { loginStyles as styles } from "./styles";
+import { ActivityIndicator, TextInput, TouchableOpacity } from 'react-native';
+import { YStack, Text } from 'tamagui';
+import { loginStyles as styles } from './styles';
 
 interface TwoFAStepProps {
   password: string;
@@ -31,9 +31,9 @@ export default function TwoFAStep({
         activeOpacity={0.8}
       >
         {loading ? (
-          <ActivityIndicator color="white" />
+          <ActivityIndicator color="black" />
         ) : (
-          <Text color="white" fontWeight="600" fontSize="$4">
+          <Text color="black" fontWeight="600" fontSize="$4">
             确认密码
           </Text>
         )}

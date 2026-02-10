@@ -33,6 +33,14 @@ export interface MessageItem {
   isMe: boolean;
   hasMedia: boolean;
   mediaType: string | null;
+  /** URL to download the media via the backend proxy endpoint. */
+  mediaUrl: string | null;
+  /** ID of the message this message is replying to, if any. */
+  replyToMsgId: number | null;
+  /** Preview text of the replied-to message. */
+  replyToText: string | null;
+  /** Sender name of the replied-to message. */
+  replyToSenderName: string | null;
 }
 
 export interface ChatDetailPageData {

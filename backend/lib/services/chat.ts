@@ -1,4 +1,9 @@
-import type { ChatListPageData, ChatDetailPageData } from '@/types/chat';
+import type {
+  ChatListPageData,
+  ChatDetailPageData,
+  MessageItem,
+} from '@/types/chat';
+import type { RawMessage } from './telegram';
 import { getDialogList, getMessageList } from './telegram';
 
 // ---------------------------------------------------------------------------
@@ -43,6 +48,36 @@ function formatTime(timestamp: number | null): string {
 function formatMessageTime(timestamp: number): string {
   const date = new Date(timestamp * 1000);
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+/** Build the media proxy URL for a message with downloadable media. */
+function buildMediaUrl(
+  session: string,
+  chatId: string,
+  chatType: string,
+  accessHash: string,
+  messageId: number,
+): string {
+  const params = new URLSearchParams({
+    session,
+    chatId,
+    chatType,
+    accessHash,
+    messageId: messageId.toString(),
+  });
+  return `/piko/telegram/media/v1?${params.toString()}`;
+}
+
+/** Media types that we can render as an image in the client. */
+const IMAGE_MEDIA_TYPES = new Set([
+  'MessageMediaPhoto',
+  'MessageMediaDocument', // covers stickers, GIFs, etc. — client filters by mime
+]);
+
+/** Truncate a string for reply preview display. */
+function truncateText(text: string, maxLength = 60): string {
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength) + '…';
 }
 
 // ---------------------------------------------------------------------------
@@ -104,9 +139,34 @@ export async function getChatDetailPageData(
     limit,
   );
 
-  return {
-    header: { title },
-    messages: rawMessages.map((m) => ({
+  // Build a lookup map so we can resolve reply references cheaply.
+  const messageById = new Map<number, RawMessage>();
+  for (const m of rawMessages) {
+    messageById.set(m.id, m);
+  }
+
+  const messages: MessageItem[] = rawMessages.map((m) => {
+    // Media URL — only for types we can meaningfully render
+    const mediaUrl =
+      m.hasMedia && m.mediaType && IMAGE_MEDIA_TYPES.has(m.mediaType)
+        ? buildMediaUrl(session, chatId, chatType, accessHash, m.id)
+        : null;
+
+    // Reply preview — look up in the current batch
+    let replyToText: string | null = null;
+    let replyToSenderName: string | null = null;
+    if (m.replyToMsgId != null) {
+      const repliedMsg = messageById.get(m.replyToMsgId);
+      if (repliedMsg) {
+        replyToText = truncateText(
+          repliedMsg.text ||
+            (repliedMsg.hasMedia ? `[${repliedMsg.mediaType ?? '媒体'}]` : ''),
+        );
+        replyToSenderName = repliedMsg.senderName || null;
+      }
+    }
+
+    return {
       id: m.id,
       text: m.text,
       time: formatMessageTime(m.date),
@@ -114,7 +174,16 @@ export async function getChatDetailPageData(
       isMe: m.isMe || m.isOutgoing,
       hasMedia: m.hasMedia,
       mediaType: m.mediaType,
-    })),
+      mediaUrl,
+      replyToMsgId: m.replyToMsgId,
+      replyToText,
+      replyToSenderName,
+    };
+  });
+
+  return {
+    header: { title },
+    messages,
     inputPlaceholder: '输入消息...',
   };
 }

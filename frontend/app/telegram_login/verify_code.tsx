@@ -7,43 +7,56 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { YStack, Text, Spacer } from 'tamagui';
+import { useAuth } from '@/hooks/useAuth';
 import * as telegramApi from '@/services/telegram';
 
-import PhoneStep from '@/components/telegram-login/PhoneStep';
-import { getCodeByName } from '@/components/telegram-login/CountryCodeSelect';
+import CodeStep from '@/components/telegram-login/CodeStep';
 import { useAppSafeArea } from '@/hooks/useSafeArea';
 
-export default function TelegramLoginScreen() {
+export default function VerifyCodeScreen() {
   const { top, bottom } = useAppSafeArea();
   const router = useRouter();
+  const { login } = useAuth();
+  const { phoneNumber, phoneCodeHash } = useLocalSearchParams<{
+    phoneNumber: string;
+    phoneCodeHash: string;
+  }>();
 
+  const [phoneCode, setPhoneCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [countryName, setCountryName] = useState('中国');
-  const [phoneNumber, setPhoneNumber] = useState('');
 
-  const fullPhoneNumber = `${getCodeByName(countryName)} ${phoneNumber.trim()}`;
-
-  const handleSendCode = async () => {
-    if (!phoneNumber.trim()) {
-      setError('请输入手机号');
+  const handleSignIn = async () => {
+    if (!phoneCode.trim()) {
+      setError('请输入验证码');
       return;
     }
     setLoading(true);
     setError('');
     try {
-      const result = await telegramApi.sendCode(fullPhoneNumber);
-      router.push({
-        pathname: '/telegram_login/verify_code',
-        params: {
-          phoneNumber: fullPhoneNumber,
-          phoneCodeHash: result.phoneCodeHash,
-        },
-      });
+      const result = await telegramApi.signIn(
+        phoneNumber!,
+        phoneCode,
+        phoneCodeHash!,
+      );
+
+      if (result.require2FA) {
+        router.push({
+          pathname: '/telegram_login/verify_2fa',
+          params: { session: result.session ?? '' },
+        });
+        return;
+      }
+
+      if (result.success && result.session && result.user) {
+        await login(result.session, result.user);
+        router.dismissAll();
+        router.back();
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : '发送验证码失败');
+      setError(err instanceof Error ? err.message : '登录失败');
     } finally {
       setLoading(false);
     }
@@ -62,7 +75,7 @@ export default function TelegramLoginScreen() {
                 绑定 Telegram 账号
               </Text>
               <Text fontSize="$3" color="$gray11" mt="$2">
-                输入你的手机号以连接 Telegram
+                输入你收到的验证码
               </Text>
             </View>
 
@@ -74,12 +87,12 @@ export default function TelegramLoginScreen() {
               </View>
             ) : null}
 
-            <PhoneStep
-              phoneNumber={phoneNumber}
-              onPhoneNumberChange={setPhoneNumber}
-              countryName={countryName}
-              onCountryChange={setCountryName}
-              onSendCode={handleSendCode}
+            <CodeStep
+              phoneNumber={phoneNumber ?? ''}
+              phoneCode={phoneCode}
+              onPhoneCodeChange={setPhoneCode}
+              onSignIn={handleSignIn}
+              onBack={() => router.back()}
               loading={loading}
             />
 

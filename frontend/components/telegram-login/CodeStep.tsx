@@ -1,6 +1,6 @@
-import { ActivityIndicator, TextInput, TouchableOpacity } from "react-native";
-import { YStack, Text } from "tamagui";
-import { loginStyles as styles } from "./styles";
+import { ActivityIndicator, TextInput, TouchableOpacity } from 'react-native';
+import { YStack, Text } from 'tamagui';
+import { loginStyles as styles } from './styles';
 
 interface CodeStepProps {
   phoneNumber: string;
@@ -38,9 +38,9 @@ export default function CodeStep({
         activeOpacity={0.8}
       >
         {loading ? (
-          <ActivityIndicator color="white" />
+          <ActivityIndicator color="black" />
         ) : (
-          <Text color="white" fontWeight="600" fontSize="$4">
+          <Text color="black" fontWeight="600" fontSize="$4">
             验证登录
           </Text>
         )}

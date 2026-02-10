@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
   bindButton: {
     height: 48,
     borderRadius: 12,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#000',
     justifyContent: 'center',
     alignItems: 'center',
   },
