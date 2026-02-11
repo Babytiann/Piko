@@ -7,8 +7,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageData } from '@/hooks/usePageData';
 import { fetchChatListPage } from '@/services/chat';
 import type { ChatListPageData, DialogItem } from '@/types/chat';
-import PageLoading from '@/components/shared/page-loading';
-import PageError from '@/components/shared/page-error';
+import PageLoading from '@/components/shared/pageLoading';
+import PageError from '@/components/shared/pageStatusView';
 import DialogList from '@/components/chat/dialog-list';
 import UnboundPrompt from '@/components/chat/unbound-prompt';
 

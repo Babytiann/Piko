@@ -2,8 +2,8 @@ import { YStack, Spacer, Text } from 'tamagui';
 import { usePageData } from '@/hooks/usePageData';
 import { fetchHomePage } from '@/services/home';
 import type { HomePageData } from '@/types/home';
-import PageLoading from '@/components/shared/page-loading';
-import PageError from '@/components/shared/page-error';
+import PageLoading from '@/components/shared/pageLoading';
+import PageError from '@/components/shared/pageStatusView';
 import WelcomeCard from '@/components/home/welcome-card';
 import { useAppSafeArea } from '@/hooks/useSafeArea';
 

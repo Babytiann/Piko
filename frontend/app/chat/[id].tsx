@@ -14,8 +14,8 @@ import { usePageData } from '@/hooks/usePageData';
 import { fetchChatDetailPage } from '@/services/chat';
 import type { ChatDetailPageData, MessageItem } from '@/types/chat';
 import * as telegramApi from '@/services/telegram';
-import PageLoading from '@/components/shared/page-loading';
-import PageError from '@/components/shared/page-error';
+import PageLoading from '@/components/shared/pageLoading';
+import PageError from '@/components/shared/pageStatusView';
 import MessageBubble from '@/components/chat/message-bubble';
 import MessageInput from '@/components/chat/message-input';
 

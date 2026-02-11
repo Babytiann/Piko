@@ -7,8 +7,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageData } from '@/hooks/usePageData';
 import { fetchProfilePage } from '@/services/profile';
 import type { ProfilePageData } from '@/types/profile';
-import PageLoading from '@/components/shared/page-loading';
-import PageError from '@/components/shared/page-error';
+import PageLoading from '@/components/shared/pageLoading';
+import PageError from '@/components/shared/pageStatusView';
 import TelegramSection from '@/components/profile/telegram-section';
 
 export default function ProfileScreen() {
