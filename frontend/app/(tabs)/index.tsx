@@ -1,4 +1,3 @@
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { YStack, Spacer, Text } from 'tamagui';
 import { usePageData } from '@/hooks/usePageData';
 import { fetchHomePage } from '@/services/home';
@@ -6,10 +5,10 @@ import type { HomePageData } from '@/types/home';
 import PageLoading from '@/components/shared/page-loading';
 import PageError from '@/components/shared/page-error';
 import WelcomeCard from '@/components/home/welcome-card';
-import { TAB_BAR_CONTENT_HEIGHT } from '@/constants';
+import { useAppSafeArea } from '@/hooks/useSafeArea';
 
 export default function HomeScreen() {
-  const insets = useSafeAreaInsets();
+  const { top, bottom } = useAppSafeArea();
   const { data, loading, error, refresh } = usePageData<HomePageData>(
     () => fetchHomePage(),
     [],
@@ -20,13 +19,7 @@ export default function HomeScreen() {
   if (!data) return null;
 
   return (
-    <YStack
-      flex={1}
-      pt={insets.top}
-      pb={insets.bottom + TAB_BAR_CONTENT_HEIGHT}
-      px="$4"
-      bg="$background"
-    >
+    <YStack flex={1} pt={top} pb={bottom} px="$4" bg="$background">
       <Spacer size="$4" />
       <Text fontSize="$7" fontWeight="700" color="$color" letterSpacing={-0.5}>
         {data.header.title}
