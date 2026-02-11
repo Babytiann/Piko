@@ -1,13 +1,10 @@
 import { Api } from 'telegram';
+import parsePhoneNumber from 'libphonenumber-js';
 import {
   createAuthenticatedClient,
   disconnectClient,
   resolveInputPeer,
 } from '@/lib/telegram';
-
-// ---------------------------------------------------------------------------
-// Types (internal to service layer)
-// ---------------------------------------------------------------------------
 
 export interface TelegramUserInfo {
   id: string;
@@ -43,10 +40,6 @@ export interface RawMessage {
   mediaType: string | null;
 }
 
-// ---------------------------------------------------------------------------
-// Profile photo in-memory cache (TTL 5 min)
-// ---------------------------------------------------------------------------
-
 interface PhotoCacheEntry {
   buffer: Buffer;
   timestamp: number;
@@ -60,22 +53,22 @@ function sessionCacheKey(session: string): string {
   return session.slice(0, 32);
 }
 
-// ---------------------------------------------------------------------------
-// Service functions
-// ---------------------------------------------------------------------------
-
-/** Get current user info from Telegram via session. */
 export async function getUserInfo(session: string): Promise<TelegramUserInfo> {
   const client = await createAuthenticatedClient(session);
   try {
-    const me = (await client.getMe()) as Api.User;
+    const { id, firstName, lastName, username, phone, photo } =
+      (await client.getMe()) as Api.User;
+    const parsed = phone ? parsePhoneNumber(`+${phone}`) : null;
+    const processedPhone = parsed
+      ? `+${parsed.countryCallingCode} ${parsed.nationalNumber}`
+      : '';
     return {
-      id: me.id.toString(),
-      firstName: me.firstName ?? '',
-      lastName: me.lastName ?? '',
-      username: me.username ?? '',
-      phone: me.phone ?? '',
-      hasPhoto: !!me.photo,
+      id: id.toString(),
+      firstName: firstName ?? '',
+      lastName: lastName ?? '',
+      username: username ?? '',
+      phone: processedPhone ?? '',
+      hasPhoto: !!photo,
     };
   } finally {
     await disconnectClient(client);
@@ -113,7 +106,6 @@ export async function getProfilePhoto(
   }
 }
 
-/** Fetch the dialog (chat) list for an authenticated user. */
 export async function getDialogList(
   session: string,
   limit = 30,
@@ -171,10 +163,6 @@ export async function getDialogList(
   }
 }
 
-/**
- * Download the media attached to a specific message.
- * Returns a Buffer of the file contents, or null if no downloadable media.
- */
 export async function downloadMessageMedia(
   session: string,
   chatId: string,
@@ -194,7 +182,6 @@ export async function downloadMessageMedia(
 
     const buf = Buffer.isBuffer(data) ? data : Buffer.from(data);
 
-    // Derive a rough MIME type from the media class
     let mimeType = 'application/octet-stream';
     if (msg.media instanceof Api.MessageMediaPhoto) {
       mimeType = 'image/jpeg';
@@ -211,7 +198,6 @@ export async function downloadMessageMedia(
   }
 }
 
-/** Fetch messages from a specific chat. */
 export async function getMessageList(
   session: string,
   chatId: string,

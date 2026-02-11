@@ -1,6 +1,6 @@
 import type { ApiResponse } from '@/types/api';
 
-export const API_HOST = 'http://100.83.217.199:3000';
+export const API_HOST = 'http://192.168.6.228:3000';
 const API_BASE = `${API_HOST}/piko`;
 
 /**

@@ -1,8 +1,9 @@
 import { Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { TAB_BAR_CONTENT_HEIGHT } from '@/constants';
 import { YStack, XStack, Text, Spacer } from 'tamagui';
+
+import { TAB_BAR_CONTENT_HEIGHT } from '@/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageData } from '@/hooks/usePageData';
 import { fetchProfilePage } from '@/services/profile';
@@ -37,7 +38,8 @@ export default function ProfileScreen() {
 
   if (loading) return <PageLoading />;
   if (error) return <PageError message={error} onRetry={refresh} />;
-  if (!data) return null;
+  if (!data) return <></>;
+  console.log('user data: ', data);
 
   return (
     <YStack
