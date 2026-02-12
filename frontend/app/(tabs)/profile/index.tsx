@@ -39,7 +39,6 @@ export default function ProfileScreen() {
   if (loading) return <PageLoading />;
   if (error) return <PageError message={error} onRetry={refresh} />;
   if (!data) return <></>;
-  console.log('user data: ', data);
 
   return (
     <YStack

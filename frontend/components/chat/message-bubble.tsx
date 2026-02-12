@@ -9,11 +9,6 @@ interface MessageBubbleProps {
   message: MessageItem;
 }
 
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
-
-/** Small preview block shown when this message is a reply to another. */
 function ReplyPreview({
   senderName,
   text,
@@ -57,7 +52,6 @@ function ReplyPreview({
   );
 }
 
-/** Renders a media image with a loading placeholder. */
 function MediaImage({ url, isMe }: { url: string; isMe: boolean }) {
   const [aspectRatio, setAspectRatio] = useState(1.5);
 
@@ -85,10 +79,6 @@ function MediaImage({ url, isMe }: { url: string; isMe: boolean }) {
     </View>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Main component
-// ---------------------------------------------------------------------------
 
 export default function MessageBubble({ message }: MessageBubbleProps) {
   const { isMe } = message;
