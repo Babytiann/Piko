@@ -1,11 +1,5 @@
 import { useRef, useCallback, useEffect, useMemo } from 'react';
-import {
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  View,
-  StyleSheet,
-} from 'react-native';
+import { FlatList, KeyboardAvoidingView, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { YStack, Text } from 'tamagui';
@@ -95,7 +89,7 @@ export default function ChatScreen() {
     >
       <YStack flex={1} bg="$background">
         {messages.length === 0 ? (
-          <View style={styles.emptyContainer}>
+          <View className="flex-1 justify-center items-center py-10">
             <Text color="$gray11" fontSize="$3">
               暂无消息
             </Text>
@@ -124,12 +118,3 @@ export default function ChatScreen() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-});

@@ -1,4 +1,4 @@
-import { TouchableOpacity, StyleSheet, View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 import { YStack, Text } from 'tamagui';
 import type { DialogItem as DialogItemData } from '@/types/chat';
 import Avatar from '@/components/shared/avatar';
@@ -11,11 +11,11 @@ interface DialogItemProps {
 export default function DialogItem({ dialog, onPress }: DialogItemProps) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-      <View style={styles.row}>
+      <View className="flex-row px-4 py-3 gap-3 items-center">
         <Avatar text={dialog.avatarText} color={dialog.avatarColor} />
 
         <YStack flex={1} gap="$1">
-          <View style={styles.rowBetween}>
+          <View className="flex-row justify-between items-center">
             <Text
               fontSize="$4"
               fontWeight="600"
@@ -31,7 +31,7 @@ export default function DialogItem({ dialog, onPress }: DialogItemProps) {
             </Text>
           </View>
 
-          <View style={styles.rowBetween}>
+          <View className="flex-row justify-between items-center">
             <Text
               fontSize="$2"
               color="$gray11"
@@ -42,7 +42,7 @@ export default function DialogItem({ dialog, onPress }: DialogItemProps) {
               {dialog.lastMessage}
             </Text>
             {dialog.unreadCount > 0 ? (
-              <View style={styles.badge}>
+              <View className="min-w-5 h-5 rounded-[10px] bg-[#007AFF] justify-center items-center px-1">
                 <Text color="white" fontSize={11} fontWeight="700">
                   {dialog.unreadCount > 99 ? '99+' : dialog.unreadCount}
                 </Text>
@@ -54,27 +54,3 @@ export default function DialogItem({ dialog, onPress }: DialogItemProps) {
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
-    alignItems: 'center',
-  },
-  rowBetween: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  badge: {
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#007AFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 4,
-  },
-});

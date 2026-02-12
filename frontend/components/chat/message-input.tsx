@@ -1,10 +1,5 @@
 import { useState } from 'react';
-import {
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  StyleSheet,
-} from 'react-native';
+import { TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { XStack, Text, View } from 'tamagui';
 
 interface MessageInputProps {
@@ -44,7 +39,7 @@ export default function MessageInput({
     >
       <XStack px="$3" py="$2" gap="$2" alignItems="flex-end">
         <TextInput
-          style={styles.input}
+          className="flex-1 min-h-9 max-h-[100px] rounded-[18px] bg-gray-500/10 px-4 py-2 text-[15px]"
           placeholder={placeholder}
           value={text}
           onChangeText={setText}
@@ -54,10 +49,10 @@ export default function MessageInput({
         <TouchableOpacity
           onPress={handleSend}
           disabled={sending || !trimmed}
-          style={[
-            styles.sendButton,
-            { backgroundColor: trimmed ? '#007AFF' : 'rgba(128,128,128,0.2)' },
-          ]}
+          className="w-9 h-9 rounded-[18px] justify-center items-center"
+          style={{
+            backgroundColor: trimmed ? '#007AFF' : 'rgba(128,128,128,0.2)',
+          }}
         >
           {sending ? (
             <ActivityIndicator color="white" size="small" />
@@ -75,23 +70,3 @@ export default function MessageInput({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  input: {
-    flex: 1,
-    minHeight: 36,
-    maxHeight: 100,
-    borderRadius: 18,
-    backgroundColor: 'rgba(128,128,128,0.1)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    fontSize: 15,
-  },
-  sendButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { Image, View } from 'react-native';
 import { Text } from 'tamagui';
 import { API_HOST } from '@/services/api-client';
 
@@ -27,10 +27,8 @@ export default function Avatar({ url, text, color, size = 50 }: AvatarProps) {
     return (
       <Image
         source={{ uri: resolveUrl(url) }}
-        style={[
-          styles.image,
-          { width: size, height: size, borderRadius: radius },
-        ]}
+        className="object-cover"
+        style={{ width: size, height: size, borderRadius: radius }}
         onError={() => setFailed(true)}
       />
     );
@@ -38,15 +36,13 @@ export default function Avatar({ url, text, color, size = 50 }: AvatarProps) {
 
   return (
     <View
-      style={[
-        styles.fallback,
-        {
-          width: size,
-          height: size,
-          borderRadius: radius,
-          backgroundColor: color,
-        },
-      ]}
+      className="justify-center items-center"
+      style={{
+        width: size,
+        height: size,
+        borderRadius: radius,
+        backgroundColor: color,
+      }}
     >
       <Text color="white" fontSize={size * 0.4} fontWeight="600">
         {text}
@@ -54,13 +50,3 @@ export default function Avatar({ url, text, color, size = 50 }: AvatarProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  image: {
-    resizeMode: 'cover',
-  },
-  fallback: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

@@ -1,4 +1,4 @@
-import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { FlatList, RefreshControl, View } from 'react-native';
 import { Text } from 'tamagui';
 import type { DialogItem as DialogItemData } from '@/types/chat';
 import DialogItem from './dialog-item';
@@ -30,7 +30,7 @@ export default function DialogList({
       }
       contentContainerStyle={{ paddingBottom: contentPaddingBottom }}
       ListEmptyComponent={
-        <View style={styles.empty}>
+        <View className="flex-1 justify-center items-center py-10">
           <Text color="$gray11" fontSize="$3">
             暂无对话
           </Text>
@@ -39,12 +39,3 @@ export default function DialogList({
     />
   );
 }
-
-const styles = StyleSheet.create({
-  empty: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-});

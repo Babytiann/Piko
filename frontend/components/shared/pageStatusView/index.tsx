@@ -1,4 +1,4 @@
-import { TouchableOpacity, StyleSheet } from 'react-native';
+import { TouchableOpacity } from 'react-native';
 import { YStack, Text } from 'tamagui';
 
 export enum PageErrorType {
@@ -38,20 +38,32 @@ export default function PageError({
   errorType = PageErrorType.DEFAULT,
 }: PageErrorProps) {
   return (
-    <YStack flex={1} bg="$background" px="$4" style={styles.container}>
-      <Text color="$gray11" fontSize="$5" fontWeight="600" style={styles.title}>
+    <YStack
+      flex={1}
+      bg="$background"
+      px="$4"
+      justifyContent="center"
+      alignItems="center"
+    >
+      <Text color="$gray11" fontSize="$5" fontWeight="600" textAlign="center">
         {ERROR_TITLE[errorType]}
       </Text>
 
       {message ? (
-        <Text color="$gray10" fontSize="$3" mt="$2" style={styles.message}>
+        <Text
+          color="$gray10"
+          fontSize="$3"
+          mt="$2"
+          textAlign="center"
+          lineHeight={20}
+        >
           {message}
         </Text>
       ) : null}
 
       {onRetry ? (
         <TouchableOpacity
-          style={styles.retryButton}
+          className="mt-6 h-11 px-8 rounded-[22px] bg-black justify-center items-center"
           onPress={onRetry}
           activeOpacity={0.8}
         >
@@ -63,26 +75,3 @@ export default function PageError({
     </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    textAlign: 'center',
-  },
-  message: {
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  retryButton: {
-    marginTop: 24,
-    height: 44,
-    paddingHorizontal: 32,
-    borderRadius: 22,
-    backgroundColor: '#000',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

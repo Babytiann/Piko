@@ -1,4 +1,4 @@
-import { TouchableOpacity, StyleSheet } from 'react-native';
+import { TouchableOpacity } from 'react-native';
 import { Text } from 'tamagui';
 
 interface TelegramUnboundProps {
@@ -18,7 +18,7 @@ export default function TelegramUnbound({
         {prompt}
       </Text>
       <TouchableOpacity
-        style={styles.bindButton}
+        className="h-12 rounded-xl bg-black justify-center items-center"
         onPress={onBind}
         activeOpacity={0.8}
       >
@@ -29,13 +29,3 @@ export default function TelegramUnbound({
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  bindButton: {
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: '#000',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

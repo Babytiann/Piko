@@ -1,4 +1,4 @@
-import { TouchableOpacity, StyleSheet } from 'react-native';
+import { TouchableOpacity } from 'react-native';
 import { YStack, Text } from 'tamagui';
 import type { UnboundState } from '@/types/chat';
 
@@ -17,7 +17,7 @@ export default function UnboundPrompt({ data, onBind }: UnboundPromptProps) {
         {data.description}
       </Text>
       <TouchableOpacity
-        style={styles.button}
+        className="mt-5 h-11 px-6 rounded-xl bg-black justify-center items-center"
         onPress={onBind}
         activeOpacity={0.8}
       >
@@ -28,15 +28,3 @@ export default function UnboundPrompt({ data, onBind }: UnboundPromptProps) {
     </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    marginTop: 20,
-    height: 44,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    backgroundColor: '#000',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

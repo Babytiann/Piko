@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { StyleSheet } from 'react-native';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { Image } from 'expo-image';
 import { API_HOST } from '@/services/api-client';
@@ -64,7 +63,7 @@ function MediaImage({ url, isMe }: { url: string; isMe: boolean }) {
     >
       <Image
         source={{ uri: `${API_HOST}${url}` }}
-        style={styles.image}
+        className="w-full h-full rounded-lg"
         contentFit="cover"
         transition={200}
         onLoad={(e) => {
@@ -150,11 +149,3 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
     </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  image: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 8,
-  },
-});

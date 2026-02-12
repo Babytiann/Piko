@@ -1,4 +1,4 @@
-import { TouchableOpacity, StyleSheet } from 'react-native';
+import { TouchableOpacity } from 'react-native';
 import { XStack, YStack, Text } from 'tamagui';
 import type { ProfileUser } from '@/types/profile';
 import Avatar from '@/components/shared/avatar';
@@ -40,7 +40,7 @@ export default function TelegramBound({
       </XStack>
 
       <TouchableOpacity
-        style={styles.unbindButton}
+        className="h-11 rounded-xl bg-red-500/10 justify-center items-center"
         onPress={onUnbind}
         activeOpacity={0.8}
       >
@@ -51,13 +51,3 @@ export default function TelegramBound({
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  unbindButton: {
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,59,48,0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
