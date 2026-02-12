@@ -40,7 +40,7 @@ export default function MessagesScreen() {
     });
   };
 
-  if (loading && !refreshing) return <PageLoading message="加载对话列表..." />;
+  if (loading && !refreshing) return <PageLoading />;
   if (error) return <PageError message={error} onRetry={refresh} />;
   if (!data) return null;
 

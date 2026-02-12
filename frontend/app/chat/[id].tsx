@@ -74,7 +74,7 @@ export default function ChatScreen() {
     [session, id, chatType, accessHash, refresh],
   );
 
-  if (loading) return <PageLoading message="加载消息..." />;
+  if (loading) return <PageLoading />;
   if (error) return <PageError message={error} onRetry={refresh} />;
   if (!data) return null;
 

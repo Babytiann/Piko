@@ -1,24 +1,17 @@
-import { ActivityIndicator } from 'react-native';
-import { YStack, Text } from 'tamagui';
+import { ActivityIndicator, View, StyleSheet } from 'react-native';
 
-interface PageLoadingProps {
-  message?: string;
-}
-
-export default function PageLoading({
-  message = '加载中...',
-}: PageLoadingProps) {
+export default function PageLoading() {
   return (
-    <YStack
-      flex={1}
-      justifyContent="center"
-      alignItems="center"
-      bg="$background"
-    >
+    <View style={styles.container}>
       <ActivityIndicator size="large" />
-      <Text color="$gray11" mt="$3" fontSize="$2">
-        {message}
-      </Text>
-    </YStack>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
