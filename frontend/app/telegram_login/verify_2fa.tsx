@@ -12,7 +12,7 @@ import { YStack, Text, Spacer } from 'tamagui';
 import { useAuth } from '@/hooks/useAuth';
 import * as telegramApi from '@/services/telegram';
 
-import TwoFAStep from '@/components/telegram-login/TwoFAStep';
+import TwoFAStep from '@/components/telegramLogin/tl-two-FA-step';
 import { useAppSafeArea } from '@/hooks/useSafeArea';
 
 export default function Verify2FAScreen() {

@@ -12,7 +12,7 @@ import { YStack, Text, Spacer } from 'tamagui';
 import { useAuth } from '@/hooks/useAuth';
 import * as telegramApi from '@/services/telegram';
 
-import CodeStep from '@/components/telegram-login/CodeStep';
+import CodeStep from '@/components/telegramLogin/tl-code-step';
 import { useAppSafeArea } from '@/hooks/useSafeArea';
 
 export default function VerifyCodeScreen() {

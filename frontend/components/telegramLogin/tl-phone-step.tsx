@@ -1,8 +1,7 @@
-import { ActivityIndicator, TouchableOpacity } from "react-native";
-import { YStack, Text, XStack, Input } from "tamagui";
+import { ActivityIndicator, TouchableOpacity } from 'react-native';
+import { YStack, Text, XStack, Input } from 'tamagui';
 
-import { loginStyles as styles } from "./styles";
-import { CountryCodeSelect } from "./CountryCodeSelect";
+import { CountryCodeSelect } from './tl-country-code-select';
 
 interface PhoneStepProps {
   phoneNumber: string;
@@ -39,7 +38,7 @@ export default function PhoneStep({
       </XStack>
 
       <TouchableOpacity
-        style={[styles.button, loading && styles.buttonDisabled]}
+        className={`h-12 rounded-xl bg-black justify-center items-center ${loading ? 'opacity-60' : ''}`}
         onPress={onSendCode}
         disabled={loading}
         activeOpacity={0.8}

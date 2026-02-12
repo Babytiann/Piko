@@ -1,6 +1,5 @@
 import { ActivityIndicator, TextInput, TouchableOpacity } from 'react-native';
 import { YStack, Text } from 'tamagui';
-import { loginStyles as styles } from './styles';
 
 interface CodeStepProps {
   phoneNumber: string;
@@ -25,14 +24,14 @@ export default function CodeStep({
         验证码已发送至 {phoneNumber}
       </Text>
       <TextInput
-        style={styles.input}
+        className="h-12 rounded-xl bg-gray-500/10 px-4 text-base"
         placeholder="输入验证码"
         value={phoneCode}
         onChangeText={onPhoneCodeChange}
         keyboardType="number-pad"
       />
       <TouchableOpacity
-        style={[styles.button, loading && styles.buttonDisabled]}
+        className={`h-12 rounded-xl bg-black justify-center items-center ${loading ? 'opacity-60' : ''}`}
         onPress={onSignIn}
         disabled={loading}
         activeOpacity={0.8}
@@ -45,7 +44,7 @@ export default function CodeStep({
           </Text>
         )}
       </TouchableOpacity>
-      <TouchableOpacity onPress={onBack} style={styles.linkButton}>
+      <TouchableOpacity onPress={onBack} className="items-center py-2">
         <Text color="$gray11" fontSize="$2">
           返回修改手机号
         </Text>

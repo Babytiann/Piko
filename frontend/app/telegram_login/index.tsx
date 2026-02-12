@@ -11,8 +11,8 @@ import { useRouter } from 'expo-router';
 import { YStack, Text, Spacer } from 'tamagui';
 import * as telegramApi from '@/services/telegram';
 
-import PhoneStep from '@/components/telegram-login/PhoneStep';
-import { getCodeByName } from '@/components/telegram-login/CountryCodeSelect';
+import PhoneStep from '@/components/telegramLogin/tl-phone-step';
+import { getCodeByName } from '@/components/telegramLogin/tl-country-code-select';
 import { useAppSafeArea } from '@/hooks/useSafeArea';
 
 export default function TelegramLoginScreen() {

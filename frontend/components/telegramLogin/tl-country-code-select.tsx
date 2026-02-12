@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef } from 'react';
 import {
   TouchableOpacity,
   ScrollView,
@@ -8,52 +8,52 @@ import {
   View,
   Pressable,
   type LayoutRectangle,
-} from "react-native";
-import { Check, ChevronDown } from "@tamagui/lucide-icons";
-import { Text } from "tamagui";
+} from 'react-native';
+import { Check, ChevronDown } from '@tamagui/lucide-icons';
+import { Text } from 'tamagui';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withTiming,
-} from "react-native-reanimated";
-import { GlassBackground } from "./GlassBackground";
+} from 'react-native-reanimated';
+import { GlassBackground } from './tl-glass-background';
 
 const countries = [
-  { name: "中国", code: "+86" },
-  { name: "中国香港", code: "+852" },
-  { name: "中国澳门", code: "+853" },
-  { name: "中国台湾", code: "+886" },
-  { name: "美国", code: "+1" },
-  { name: "英国", code: "+44" },
-  { name: "日本", code: "+81" },
-  { name: "韩国", code: "+82" },
-  { name: "新加坡", code: "+65" },
-  { name: "马来西亚", code: "+60" },
-  { name: "泰国", code: "+66" },
-  { name: "印度", code: "+91" },
-  { name: "澳大利亚", code: "+61" },
-  { name: "加拿大", code: "+1" },
-  { name: "德国", code: "+49" },
-  { name: "法国", code: "+33" },
-  { name: "意大利", code: "+39" },
-  { name: "俄罗斯", code: "+7" },
-  { name: "巴西", code: "+55" },
-  { name: "印度尼西亚", code: "+62" },
-  { name: "菲律宾", code: "+63" },
-  { name: "越南", code: "+84" },
-  { name: "阿联酋", code: "+971" },
-  { name: "新西兰", code: "+64" },
-  { name: "荷兰", code: "+31" },
-  { name: "西班牙", code: "+34" },
-  { name: "葡萄牙", code: "+351" },
-  { name: "土耳其", code: "+90" },
-  { name: "沙特阿拉伯", code: "+966" },
-  { name: "埃及", code: "+20" },
+  { name: '中国', code: '+86' },
+  { name: '中国香港', code: '+852' },
+  { name: '中国澳门', code: '+853' },
+  { name: '中国台湾', code: '+886' },
+  { name: '美国', code: '+1' },
+  { name: '英国', code: '+44' },
+  { name: '日本', code: '+81' },
+  { name: '韩国', code: '+82' },
+  { name: '新加坡', code: '+65' },
+  { name: '马来西亚', code: '+60' },
+  { name: '泰国', code: '+66' },
+  { name: '印度', code: '+91' },
+  { name: '澳大利亚', code: '+61' },
+  { name: '加拿大', code: '+1' },
+  { name: '德国', code: '+49' },
+  { name: '法国', code: '+33' },
+  { name: '意大利', code: '+39' },
+  { name: '俄罗斯', code: '+7' },
+  { name: '巴西', code: '+55' },
+  { name: '印度尼西亚', code: '+62' },
+  { name: '菲律宾', code: '+63' },
+  { name: '越南', code: '+84' },
+  { name: '阿联酋', code: '+971' },
+  { name: '新西兰', code: '+64' },
+  { name: '荷兰', code: '+31' },
+  { name: '西班牙', code: '+34' },
+  { name: '葡萄牙', code: '+351' },
+  { name: '土耳其', code: '+90' },
+  { name: '沙特阿拉伯', code: '+966' },
+  { name: '埃及', code: '+20' },
 ] as const;
 
 function getCodeByName(name: string): string {
-  return countries.find((c) => c.name === name)?.code ?? "+86";
+  return countries.find((c) => c.name === name)?.code ?? '+86';
 }
 
 interface CountryCodeSelectProps {
@@ -76,10 +76,10 @@ export function CountryCodeSelect({
 }: CountryCodeSelectProps) {
   const [open, setOpen] = useState(false);
   const scheme = useColorScheme();
-  const isDark = scheme === "dark";
+  const isDark = scheme === 'dark';
   const triggerRef = useRef<View>(null);
   const [triggerLayout, setTriggerLayout] = useState<LayoutRectangle | null>(
-    null
+    null,
   );
 
   const opacity = useSharedValue(0);
@@ -115,7 +115,7 @@ export function CountryCodeSelect({
       onValueChange(name);
       closeDropdown();
     },
-    [onValueChange, closeDropdown]
+    [onValueChange, closeDropdown],
   );
 
   const selectedCode = getCodeByName(value);
@@ -129,18 +129,16 @@ export function CountryCodeSelect({
           styles.trigger,
           {
             backgroundColor: isDark
-              ? "rgba(255,255,255,0.08)"
-              : "rgba(0,0,0,0.05)",
-            borderColor: isDark
-              ? "rgba(255,255,255,0.12)"
-              : "rgba(0,0,0,0.08)",
+              ? 'rgba(255,255,255,0.08)'
+              : 'rgba(0,0,0,0.05)',
+            borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
           },
         ]}
       >
         <Text fontSize={15} fontWeight="500" color="$color">
           {selectedCode}
         </Text>
-        <ChevronDown size={16} color={isDark ? "#999" : "#666"} />
+        <ChevronDown size={16} color={isDark ? '#999' : '#666'} />
       </TouchableOpacity>
 
       <Modal
@@ -171,15 +169,15 @@ export function CountryCodeSelect({
                   styles.labelRow,
                   {
                     borderBottomColor: isDark
-                      ? "rgba(255,255,255,0.08)"
-                      : "rgba(0,0,0,0.06)",
+                      ? 'rgba(255,255,255,0.08)'
+                      : 'rgba(0,0,0,0.06)',
                   },
                 ]}
               >
                 <Text
                   fontSize={13}
                   fontWeight="600"
-                  color={isDark ? "#8E8E93" : "#8E8E93"}
+                  color={isDark ? '#8E8E93' : '#8E8E93'}
                 >
                   国家/地区
                 </Text>
@@ -202,34 +200,32 @@ export function CountryCodeSelect({
                         i < countries.length - 1 && {
                           borderBottomWidth: StyleSheet.hairlineWidth,
                           borderBottomColor: isDark
-                            ? "rgba(255,255,255,0.06)"
-                            : "rgba(0,0,0,0.06)",
+                            ? 'rgba(255,255,255,0.06)'
+                            : 'rgba(0,0,0,0.06)',
                         },
                         isSelected && {
                           backgroundColor: isDark
-                            ? "rgba(10,132,255,0.15)"
-                            : "rgba(0,122,255,0.08)",
+                            ? 'rgba(10,132,255,0.15)'
+                            : 'rgba(0,122,255,0.08)',
                         },
                       ]}
                     >
                       <Text
                         fontSize={15}
-                        color={isSelected ? "#007AFF" : "$color"}
-                        fontWeight={isSelected ? "600" : "400"}
+                        color={isSelected ? '#007AFF' : '$color'}
+                        fontWeight={isSelected ? '600' : '400'}
                         flex={1}
                       >
                         {item.name}
                       </Text>
                       <Text
                         fontSize={14}
-                        color={isDark ? "#8E8E93" : "#8E8E93"}
+                        color={isDark ? '#8E8E93' : '#8E8E93'}
                         mr={isSelected ? 8 : 0}
                       >
                         {item.code}
                       </Text>
-                      {isSelected && (
-                        <Check size={16} color="#007AFF" />
-                      )}
+                      {isSelected && <Check size={16} color="#007AFF" />}
                     </TouchableOpacity>
                   );
                 })}
@@ -244,9 +240,9 @@ export function CountryCodeSelect({
 
 const styles = StyleSheet.create({
   trigger: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: 4,
     height: 44,
     width: 90,
@@ -254,7 +250,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   dropdownPositioner: {
-    position: "absolute",
+    position: 'absolute',
     zIndex: 999999,
   },
   labelRow: {
@@ -263,8 +259,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   itemRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     height: ITEM_HEIGHT,
     paddingHorizontal: 16,
   },
