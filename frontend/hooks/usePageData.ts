@@ -10,7 +10,12 @@ export interface PageDataState<T> {
   data: T | null;
   loading: boolean;
   error: string;
+  /** Full refresh — shows the loading indicator. */
   refresh: () => Promise<void>;
+  /** Silent refresh — re-fetches without showing loading. */
+  silentRefresh: () => Promise<void>;
+  /** Directly update the local data without a network request. */
+  setData: React.Dispatch<React.SetStateAction<T | null>>;
 }
 
 /**
@@ -82,5 +87,9 @@ export function usePageData<T>(
     setLoading(false);
   }, [load]);
 
-  return { data, loading, error, refresh };
+  const silentRefresh = useCallback(async () => {
+    await silentLoad();
+  }, [silentLoad]);
+
+  return { data, loading, error, refresh, silentRefresh, setData };
 }

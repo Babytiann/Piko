@@ -10,18 +10,22 @@ if (!API_ID || !API_HASH) {
   );
 }
 
-/**
- * In-memory store for active TelegramClient instances keyed by phone number.
- * Used during the login flow (send-code -> sign-in) where we need to reuse
- * the same client across multiple requests.
- *
- * Attached to globalThis so it survives Next.js dev-mode hot reloads —
- * otherwise the Map is reset when the module is re-evaluated, causing
- * sign-in to create a new client instead of reusing the one from send-code.
- */
+// ---------------------------------------------------------------------------
+// Global stores (survive Next.js dev-mode hot reloads via globalThis)
+// ---------------------------------------------------------------------------
+
+interface PooledClient {
+  client: TelegramClient;
+  lastUsed: number;
+}
+
 const globalForTelegram = globalThis as unknown as {
   __pendingTelegramClients?: Map<string, TelegramClient>;
+  __clientPool?: Map<string, PooledClient>;
+  __clientPoolTimer?: ReturnType<typeof setInterval>;
 };
+
+// Pending clients for the login flow
 if (!globalForTelegram.__pendingTelegramClients) {
   globalForTelegram.__pendingTelegramClients = new Map<
     string,
@@ -29,6 +33,109 @@ if (!globalForTelegram.__pendingTelegramClients) {
   >();
 }
 const pendingClients = globalForTelegram.__pendingTelegramClients;
+
+// ---------------------------------------------------------------------------
+// Authenticated client pool
+// ---------------------------------------------------------------------------
+
+/** Time-to-live for idle pooled clients (10 minutes). */
+const POOL_TTL = 10 * 60 * 1000;
+/** Maximum number of concurrent clients in the pool. */
+const POOL_MAX_SIZE = 20;
+/** Interval for sweeping expired clients (60 seconds). */
+const POOL_SWEEP_INTERVAL = 60 * 1000;
+
+if (!globalForTelegram.__clientPool) {
+  globalForTelegram.__clientPool = new Map<string, PooledClient>();
+}
+const clientPool = globalForTelegram.__clientPool;
+
+/** Use first 32 chars of the session string as the pool key. */
+function poolKey(sessionString: string): string {
+  return sessionString.slice(0, 32);
+}
+
+/** Evict the least-recently-used client to make room. */
+function evictLRU(): void {
+  let oldestKey: string | null = null;
+  let oldestTime = Infinity;
+  for (const [key, entry] of clientPool) {
+    if (entry.lastUsed < oldestTime) {
+      oldestTime = entry.lastUsed;
+      oldestKey = key;
+    }
+  }
+  if (oldestKey) {
+    const entry = clientPool.get(oldestKey);
+    clientPool.delete(oldestKey);
+    if (entry) {
+      entry.client.disconnect().catch(() => {});
+    }
+  }
+}
+
+/** Remove expired clients from the pool. */
+function sweepPool(): void {
+  const now = Date.now();
+  for (const [key, entry] of clientPool) {
+    if (now - entry.lastUsed > POOL_TTL) {
+      clientPool.delete(key);
+      entry.client.disconnect().catch(() => {});
+    }
+  }
+}
+
+// Start the periodic sweep (only once globally)
+if (!globalForTelegram.__clientPoolTimer) {
+  globalForTelegram.__clientPoolTimer = setInterval(
+    sweepPool,
+    POOL_SWEEP_INTERVAL,
+  );
+  // Allow the process to exit even if the timer is active
+  if (globalForTelegram.__clientPoolTimer?.unref) {
+    globalForTelegram.__clientPoolTimer.unref();
+  }
+}
+
+/**
+ * Get a pooled (long-lived) authenticated TelegramClient for a session.
+ * Creates and connects a new client only when no usable one exists in the pool.
+ */
+export async function getPooledClient(
+  sessionString: string,
+): Promise<TelegramClient> {
+  const key = poolKey(sessionString);
+  const existing = clientPool.get(key);
+
+  if (existing) {
+    // Reconnect if the connection dropped
+    if (!existing.client.connected) {
+      try {
+        await existing.client.connect();
+      } catch {
+        // Connection failed — discard and create a fresh client below
+        clientPool.delete(key);
+        existing.client.disconnect().catch(() => {});
+      }
+    }
+    // Re-check after potential reconnect attempt
+    const stillValid = clientPool.get(key);
+    if (stillValid) {
+      stillValid.lastUsed = Date.now();
+      return stillValid.client;
+    }
+  }
+
+  // Evict LRU if pool is full
+  if (clientPool.size >= POOL_MAX_SIZE) {
+    evictLRU();
+  }
+
+  const client = createClient(sessionString);
+  await client.connect();
+  clientPool.set(key, { client, lastUsed: Date.now() });
+  return client;
+}
 
 /**
  * Create a new TelegramClient with an optional existing session string.
@@ -132,8 +239,8 @@ export function resolveInputPeer(
   chatType: string,
   accessHash: string,
 ): Api.TypeInputPeer {
-  const id = BigInt(chatId);
-  const hash = BigInt(accessHash || '0');
+  const id = BigInt(chatId) as unknown as Api.long;
+  const hash = BigInt(accessHash || '0') as unknown as Api.long;
 
   switch (chatType) {
     case 'user':

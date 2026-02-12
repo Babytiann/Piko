@@ -1,6 +1,6 @@
-import { defaultConfig } from '@tamagui/config/v5'
-import { createAnimations } from '@tamagui/animations-react-native'
-import { createTamagui } from 'tamagui'
+import { defaultConfig } from '@tamagui/config/v5';
+import { createAnimations } from '@tamagui/animations-react-native';
+import { createTamagui } from 'tamagui';
 
 export const config = createTamagui({
   ...defaultConfig,
@@ -28,7 +28,7 @@ export const config = createTamagui({
     ...defaultConfig.themes,
     light: {
       ...defaultConfig.themes.light,
-      background: '#f2f2f2',
+      background: '#ffffff',
     },
     dark: {
       ...defaultConfig.themes.dark,
@@ -39,12 +39,12 @@ export const config = createTamagui({
     ...defaultConfig.media,
     // add your own media queries here, if wanted
   },
-})
+});
 
-type OurConfig = typeof config
+type OurConfig = typeof config;
 
 declare module 'tamagui' {
   interface TamaguiCustomConfig extends OurConfig {}
 }
 
-export default config
+export default config;

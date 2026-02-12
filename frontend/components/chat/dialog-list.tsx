@@ -1,7 +1,15 @@
-import { FlatList, RefreshControl, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { Text } from 'tamagui';
 import type { DialogItem as DialogItemData } from '@/types/chat';
 import DialogItem from './dialog-item';
+
+// Telegram-style separator: left margin aligns with the text area
+// padding(16) + avatar(50) + gap(12) = 78
+const SEPARATOR_LEFT_MARGIN = 78;
+
+function ItemSeparator() {
+  return <View style={styles.separator} />;
+}
 
 interface DialogListProps {
   dialogs: DialogItemData[];
@@ -25,6 +33,7 @@ export default function DialogList({
       renderItem={({ item }) => (
         <DialogItem dialog={item} onPress={() => onDialogPress(item)} />
       )}
+      ItemSeparatorComponent={ItemSeparator}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
@@ -39,3 +48,11 @@ export default function DialogList({
     />
   );
 }
+
+const styles = StyleSheet.create({
+  separator: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#E5E5EA',
+    marginLeft: SEPARATOR_LEFT_MARGIN,
+  },
+});

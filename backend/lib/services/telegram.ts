@@ -1,10 +1,6 @@
 import { Api } from 'telegram';
 import parsePhoneNumber from 'libphonenumber-js';
-import {
-  createAuthenticatedClient,
-  disconnectClient,
-  resolveInputPeer,
-} from '@/lib/telegram';
+import { getPooledClient, resolveInputPeer } from '@/lib/telegram';
 
 export interface TelegramUserInfo {
   id: string;
@@ -33,6 +29,8 @@ export interface RawMessage {
   date: number;
   senderId: string;
   senderName: string;
+  senderType: 'user' | 'group' | 'channel';
+  senderAccessHash: string;
   isOutgoing: boolean;
   isMe: boolean;
   replyToMsgId: number | null;
@@ -54,25 +52,21 @@ function sessionCacheKey(session: string): string {
 }
 
 export async function getUserInfo(session: string): Promise<TelegramUserInfo> {
-  const client = await createAuthenticatedClient(session);
-  try {
-    const { id, firstName, lastName, username, phone, photo } =
-      (await client.getMe()) as Api.User;
-    const parsed = phone ? parsePhoneNumber(`+${phone}`) : null;
-    const processedPhone = parsed
-      ? `+${parsed.countryCallingCode} ${parsed.nationalNumber}`
-      : '';
-    return {
-      id: id.toString(),
-      firstName: firstName ?? '',
-      lastName: lastName ?? '',
-      username: username ?? '',
-      phone: processedPhone ?? '',
-      hasPhoto: !!photo,
-    };
-  } finally {
-    await disconnectClient(client);
-  }
+  const client = await getPooledClient(session);
+  const { id, firstName, lastName, username, phone, photo } =
+    (await client.getMe()) as Api.User;
+  const parsed = phone ? parsePhoneNumber(`+${phone}`) : null;
+  const processedPhone = parsed
+    ? `+${parsed.countryCallingCode} ${parsed.nationalNumber}`
+    : '';
+  return {
+    id: id.toString(),
+    firstName: firstName ?? '',
+    lastName: lastName ?? '',
+    username: username ?? '',
+    phone: processedPhone ?? '',
+    hasPhoto: !!photo,
+  };
 }
 
 /** Lightweight check: does the current user have a profile photo? */
@@ -91,18 +85,37 @@ export async function getProfilePhoto(
     return { buffer: cached.buffer, hasPhoto: true };
   }
 
-  const client = await createAuthenticatedClient(session);
-  try {
-    const photo = await client.downloadProfilePhoto('me');
-    if (!photo || (Buffer.isBuffer(photo) && photo.length === 0)) {
-      return { buffer: null, hasPhoto: false };
-    }
+  const client = await getPooledClient(session);
+  const photo = await client.downloadProfilePhoto('me');
+  if (!photo || (Buffer.isBuffer(photo) && photo.length === 0)) {
+    return { buffer: null, hasPhoto: false };
+  }
 
-    const buf = Buffer.isBuffer(photo) ? photo : Buffer.from(photo);
-    photoCache.set(key, { buffer: buf, timestamp: Date.now() });
-    return { buffer: buf, hasPhoto: true };
-  } finally {
-    await disconnectClient(client);
+  const buf = Buffer.isBuffer(photo) ? photo : Buffer.from(photo);
+  photoCache.set(key, { buffer: buf, timestamp: Date.now() });
+  return { buffer: buf, hasPhoto: true };
+}
+
+/**
+ * Download a profile photo for any peer (user, chat, or channel).
+ * Returns the photo buffer or null if no photo is available.
+ */
+export async function downloadPeerPhoto(
+  session: string,
+  peerId: string,
+  peerType: string,
+  accessHash: string,
+): Promise<Buffer | null> {
+  const client = await getPooledClient(session);
+  const peer = resolveInputPeer(peerId, peerType, accessHash);
+  try {
+    const photo = await client.downloadProfilePhoto(peer);
+    if (!photo || (Buffer.isBuffer(photo) && photo.length === 0)) {
+      return null;
+    }
+    return Buffer.isBuffer(photo) ? photo : Buffer.from(photo);
+  } catch {
+    return null;
   }
 }
 
@@ -111,56 +124,58 @@ export async function getDialogList(
   limit = 30,
   offsetDate?: number,
 ): Promise<RawDialog[]> {
-  const client = await createAuthenticatedClient(session);
-  try {
-    const dialogs = await client.getDialogs({ limit, offsetDate });
+  const client = await getPooledClient(session);
+  const dialogs = await client.getDialogs({ limit, offsetDate });
 
-    return dialogs.map((dialog) => {
-      const entity = dialog.entity;
-      let title = dialog.title ?? 'Unknown';
-      let type: 'user' | 'group' | 'channel' = 'user';
-      let username = '';
-      let accessHash = '';
+  return dialogs.map((dialog) => {
+    const entity = dialog.entity;
+    let title = dialog.title ?? 'Unknown';
+    let type: 'user' | 'group' | 'channel' = 'user';
+    let username = '';
+    let accessHash = '';
 
-      if (entity instanceof Api.User) {
-        title =
-          [entity.firstName, entity.lastName].filter(Boolean).join(' ') ||
-          'Unknown';
-        username = entity.username ?? '';
-        type = 'user';
-        accessHash = entity.accessHash?.toString() ?? '';
-      } else if (entity instanceof Api.Chat) {
-        title = entity.title;
-        type = 'group';
-      } else if (entity instanceof Api.Channel) {
-        title = entity.title;
-        username = entity.username ?? '';
-        type = entity.megagroup ? 'group' : 'channel';
-        accessHash = entity.accessHash?.toString() ?? '';
+    if (entity instanceof Api.User) {
+      title =
+        [entity.firstName, entity.lastName].filter(Boolean).join(' ') ||
+        'Unknown';
+      username = entity.username ?? '';
+      type = 'user';
+      accessHash = entity.accessHash?.toString() ?? '';
+    } else if (entity instanceof Api.Chat) {
+      title = entity.title;
+      type = 'group';
+    } else if (entity instanceof Api.Channel) {
+      title = entity.title;
+      username = entity.username ?? '';
+      type = entity.megagroup ? 'group' : 'channel';
+      accessHash = entity.accessHash?.toString() ?? '';
+    }
+
+    let lastMessage = '';
+    let lastMessageDate: number | null = null;
+    if (dialog.message) {
+      lastMessage = dialog.message.message ?? '';
+      if (!lastMessage && dialog.message.media) {
+        const mediaName = dialog.message.media.className;
+        if (mediaName === 'MessageMediaPhoto') lastMessage = '[图片]';
+        else if (mediaName === 'MessageMediaDocument') lastMessage = '[文件]';
+        else lastMessage = '[媒体]';
       }
+      lastMessageDate = dialog.message.date ?? null;
+    }
 
-      let lastMessage = '';
-      let lastMessageDate: number | null = null;
-      if (dialog.message) {
-        lastMessage = dialog.message.message ?? '';
-        lastMessageDate = dialog.message.date ?? null;
-      }
-
-      return {
-        id: dialog.id?.toString() ?? '',
-        title,
-        type,
-        username,
-        accessHash,
-        unreadCount: dialog.unreadCount,
-        lastMessage,
-        lastMessageDate,
-        pinned: dialog.pinned,
-      };
-    });
-  } finally {
-    await disconnectClient(client);
-  }
+    return {
+      id: dialog.id?.toString() ?? '',
+      title,
+      type,
+      username,
+      accessHash,
+      unreadCount: dialog.unreadCount,
+      lastMessage,
+      lastMessageDate,
+      pinned: dialog.pinned,
+    };
+  });
 }
 
 export async function downloadMessageMedia(
@@ -170,32 +185,28 @@ export async function downloadMessageMedia(
   accessHash: string,
   messageId: number,
 ): Promise<{ buffer: Buffer; mimeType: string } | null> {
-  const client = await createAuthenticatedClient(session);
-  try {
-    const peer = resolveInputPeer(chatId, chatType, accessHash);
-    const messages = await client.getMessages(peer, { ids: [messageId] });
-    const msg = messages[0];
-    if (!msg?.media) return null;
+  const client = await getPooledClient(session);
+  const peer = resolveInputPeer(chatId, chatType, accessHash);
+  const messages = await client.getMessages(peer, { ids: [messageId] });
+  const msg = messages[0];
+  if (!msg?.media) return null;
 
-    const data = await client.downloadMedia(msg, {});
-    if (!data) return null;
+  const data = await client.downloadMedia(msg, {});
+  if (!data) return null;
 
-    const buf = Buffer.isBuffer(data) ? data : Buffer.from(data);
+  const buf = Buffer.isBuffer(data) ? data : Buffer.from(data);
 
-    let mimeType = 'application/octet-stream';
-    if (msg.media instanceof Api.MessageMediaPhoto) {
-      mimeType = 'image/jpeg';
-    } else if (msg.media instanceof Api.MessageMediaDocument) {
-      const doc = msg.media.document;
-      if (doc instanceof Api.Document && doc.mimeType) {
-        mimeType = doc.mimeType;
-      }
+  let mimeType = 'application/octet-stream';
+  if (msg.media instanceof Api.MessageMediaPhoto) {
+    mimeType = 'image/jpeg';
+  } else if (msg.media instanceof Api.MessageMediaDocument) {
+    const doc = msg.media.document;
+    if (doc instanceof Api.Document && doc.mimeType) {
+      mimeType = doc.mimeType;
     }
-
-    return { buffer: buf, mimeType };
-  } finally {
-    await disconnectClient(client);
   }
+
+  return { buffer: buf, mimeType };
 }
 
 export async function getMessageList(
@@ -206,51 +217,70 @@ export async function getMessageList(
   limit = 30,
   offsetId?: number,
 ): Promise<RawMessage[]> {
-  const client = await createAuthenticatedClient(session);
+  const client = await getPooledClient(session);
+  const peer = resolveInputPeer(chatId, chatType, accessHash);
+
+  // Fetch messages — with CHANNEL_INVALID fallback for channels/supergroups.
+  // A freshly-pooled client may lack the entity cache entry for certain
+  // channels; loading a small dialog list populates it.
+  let messages;
   try {
-    const peer = resolveInputPeer(chatId, chatType, accessHash);
-    const messages = await client.getMessages(peer, { limit, offsetId });
-
-    const me = await client.getMe();
-    const myId = me.id?.toString();
-
-    return messages.map((msg) => {
-      let senderName = '';
-      let senderId = '';
-      const isOutgoing = msg.out ?? false;
-
-      if (msg.sender) {
-        if (msg.sender instanceof Api.User) {
-          senderName =
-            [msg.sender.firstName, msg.sender.lastName]
-              .filter(Boolean)
-              .join(' ') || 'Unknown';
-          senderId = msg.sender.id?.toString() ?? '';
-        } else if (
-          msg.sender instanceof Api.Chat ||
-          msg.sender instanceof Api.Channel
-        ) {
-          senderName = msg.sender.title ?? 'Unknown';
-          senderId = msg.sender.id?.toString() ?? '';
-        }
-      }
-
-      return {
-        id: msg.id,
-        text: msg.message ?? '',
-        date: msg.date,
-        senderId,
-        senderName,
-        isOutgoing,
-        isMe: senderId === myId,
-        replyToMsgId: msg.replyTo
-          ? ((msg.replyTo as Api.MessageReplyHeader).replyToMsgId ?? null)
-          : null,
-        hasMedia: !!msg.media,
-        mediaType: msg.media ? msg.media.className : null,
-      };
-    });
-  } finally {
-    await disconnectClient(client);
+    messages = await client.getMessages(peer, { limit, offsetId });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : '';
+    if (msg.includes('CHANNEL_INVALID') || msg.includes('PEER_ID_INVALID')) {
+      await client.getDialogs({ limit: 10 });
+      messages = await client.getMessages(peer, { limit, offsetId });
+    } else {
+      throw err;
+    }
   }
+
+  const me = await client.getMe();
+  const myId = me.id?.toString();
+
+  return messages.map((m) => {
+    let senderName = '';
+    let senderId = '';
+    let senderType: 'user' | 'group' | 'channel' = 'user';
+    let senderAccessHash = '';
+    const isOutgoing = m.out ?? false;
+
+    if (m.sender) {
+      if (m.sender instanceof Api.User) {
+        senderName =
+          [m.sender.firstName, m.sender.lastName].filter(Boolean).join(' ') ||
+          'Unknown';
+        senderId = m.sender.id?.toString() ?? '';
+        senderType = 'user';
+        senderAccessHash = m.sender.accessHash?.toString() ?? '';
+      } else if (m.sender instanceof Api.Channel) {
+        senderName = m.sender.title ?? 'Unknown';
+        senderId = m.sender.id?.toString() ?? '';
+        senderType = m.sender.megagroup ? 'group' : 'channel';
+        senderAccessHash = m.sender.accessHash?.toString() ?? '';
+      } else if (m.sender instanceof Api.Chat) {
+        senderName = m.sender.title ?? 'Unknown';
+        senderId = m.sender.id?.toString() ?? '';
+        senderType = 'group';
+      }
+    }
+
+    return {
+      id: m.id,
+      text: m.message ?? '',
+      date: m.date,
+      senderId,
+      senderName,
+      senderType,
+      senderAccessHash,
+      isOutgoing,
+      isMe: senderId === myId,
+      replyToMsgId: m.replyTo
+        ? ((m.replyTo as Api.MessageReplyHeader).replyToMsgId ?? null)
+        : null,
+      hasMedia: !!m.media,
+      mediaType: m.media ? m.media.className : null,
+    };
+  });
 }

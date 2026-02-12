@@ -50,6 +50,22 @@ function formatMessageTime(timestamp: number): string {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
+/** Build the avatar proxy URL for a peer. */
+function buildAvatarUrl(
+  session: string,
+  peerId: string,
+  peerType: string,
+  accessHash: string,
+): string {
+  const params = new URLSearchParams({
+    session,
+    peerId,
+    peerType,
+    accessHash,
+  });
+  return `/piko/telegram/avatar/v1?${params.toString()}`;
+}
+
 /** Build the media proxy URL for a message with downloadable media. */
 function buildMediaUrl(
   session: string,
@@ -112,6 +128,7 @@ export async function getChatListPageData(
       accessHash: d.accessHash,
       avatarText: d.title.charAt(0).toUpperCase(),
       avatarColor: getAvatarColor(d.id),
+      avatarUrl: buildAvatarUrl(session, d.id, d.type, d.accessHash),
       lastMessage: d.lastMessage || '...',
       lastMessageTime: formatTime(d.lastMessageDate),
       unreadCount: d.unreadCount,
@@ -166,11 +183,18 @@ export async function getChatDetailPageData(
       }
     }
 
+    // Sender avatar — skip for outgoing messages (we don't need our own avatar)
+    const senderAvatarUrl =
+      !(m.isMe || m.isOutgoing) && m.senderId
+        ? buildAvatarUrl(session, m.senderId, m.senderType, m.senderAccessHash)
+        : undefined;
+
     return {
       id: m.id,
       text: m.text,
       time: formatMessageTime(m.date),
       senderName: m.senderName,
+      senderAvatarUrl,
       isMe: m.isMe || m.isOutgoing,
       hasMedia: m.hasMedia,
       mediaType: m.mediaType,

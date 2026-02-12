@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
+import { Platform, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { TAB_BAR_CONTENT_HEIGHT } from '@/constants';
-import { YStack, XStack, Text, Spacer } from 'tamagui';
+import { YStack, XStack, Text, Spacer, View } from 'tamagui';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageData } from '@/hooks/usePageData';
 import { fetchChatListPage } from '@/services/chat';
@@ -75,3 +76,21 @@ export default function MessagesScreen() {
     </YStack>
   );
 }
+
+const styles = StyleSheet.create({
+  header: {
+    backgroundColor: '#ffffff',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 0.5 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+    zIndex: 1,
+  },
+});

@@ -12,7 +12,11 @@ export default function DialogItem({ dialog, onPress }: DialogItemProps) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
       <View className="flex-row px-4 py-3 gap-3 items-center">
-        <Avatar text={dialog.avatarText} color={dialog.avatarColor} />
+        <Avatar
+          url={dialog.avatarUrl}
+          text={dialog.avatarText}
+          color={dialog.avatarColor}
+        />
 
         <YStack flex={1} gap="$1">
           <View className="flex-row justify-between items-center">

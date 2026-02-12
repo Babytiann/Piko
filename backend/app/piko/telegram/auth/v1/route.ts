@@ -6,8 +6,7 @@ import {
   createFreshPendingClient,
   getOrCreatePendingClient,
   removePendingClient,
-  createAuthenticatedClient,
-  disconnectClient,
+  getPooledClient,
 } from '@/lib/telegram';
 import {
   SessionTag,
@@ -112,38 +111,24 @@ async function handleSignIn(
 }
 
 async function handleCheckPassword(session: string, password: string) {
-  const client = await createAuthenticatedClient(session);
+  const client = await getPooledClient(session);
 
-  try {
-    const passwordInfo = await client.invoke(new Api.account.GetPassword());
-    const srpPassword = await computeCheck(passwordInfo, password);
+  const passwordInfo = await client.invoke(new Api.account.GetPassword());
+  const srpPassword = await computeCheck(passwordInfo, password);
 
-    const result = await client.invoke(
-      new Api.auth.CheckPassword({ password: srpPassword }),
-    );
+  const result = await client.invoke(
+    new Api.auth.CheckPassword({ password: srpPassword }),
+  );
 
-    const newSession = (client.session as StringSession).save();
+  const newSession = (client.session as StringSession).save();
 
-    return NextResponse.json({
-      success: true,
-      session: newSession,
-      user: userPayload(result.user),
-    });
-  } finally {
-    await disconnectClient(client);
-  }
+  return NextResponse.json({
+    success: true,
+    session: newSession,
+    user: userPayload(result.user),
+  });
 }
 
-// ---------------------------------------------------------------------------
-// Route handler
-// ---------------------------------------------------------------------------
-
-/**
- * POST /piko/telegram/auth/v1
- *
- * Unified Telegram authentication endpoint.
- * Dispatches to sendCode / signIn / checkPassword based on `session_tag`.
- */
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as TelegramAuthRequest;

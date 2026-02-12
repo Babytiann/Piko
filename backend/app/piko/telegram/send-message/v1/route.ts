@@ -1,9 +1,5 @@
-import { NextResponse } from "next/server";
-import {
-  createAuthenticatedClient,
-  disconnectClient,
-  resolveInputPeer,
-} from "@/lib/telegram";
+import { NextResponse } from 'next/server';
+import { getPooledClient, resolveInputPeer } from '@/lib/telegram';
 
 /**
  * POST /piko/telegram/send-message/v1
@@ -13,7 +9,6 @@ import {
  * Returns: { success: true, messageId: number, date: number }
  */
 export async function POST(request: Request) {
-  let client;
   try {
     const { session, chatId, chatType, accessHash, message, replyToMsgId } =
       (await request.json()) as {
@@ -27,14 +22,12 @@ export async function POST(request: Request) {
 
     if (!session || !chatId || !message) {
       return NextResponse.json(
-        { success: false, error: "session, chatId, and message are required" },
-        { status: 400 }
+        { success: false, error: 'session, chatId, and message are required' },
+        { status: 400 },
       );
     }
 
-    client = await createAuthenticatedClient(session);
-
-    // Build the InputPeer directly instead of relying on entity cache
+    const client = await getPooledClient(session);
     const peer = resolveInputPeer(chatId, chatType, accessHash);
 
     const result = await client.sendMessage(peer, {
@@ -49,13 +42,11 @@ export async function POST(request: Request) {
     });
   } catch (error: unknown) {
     const message =
-      error instanceof Error ? error.message : "Failed to send message";
-    console.error("send-message error:", error);
+      error instanceof Error ? error.message : 'Failed to send message';
+    console.error('send-message error:', error);
     return NextResponse.json(
       { success: false, error: message },
-      { status: 500 }
+      { status: 500 },
     );
-  } finally {
-    if (client) await disconnectClient(client);
   }
 }

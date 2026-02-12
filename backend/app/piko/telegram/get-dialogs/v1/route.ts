@@ -1,9 +1,6 @@
-import { NextResponse } from "next/server";
-import { Api } from "telegram";
-import {
-  createAuthenticatedClient,
-  disconnectClient,
-} from "@/lib/telegram";
+import { NextResponse } from 'next/server';
+import { Api } from 'telegram';
+import { getPooledClient } from '@/lib/telegram';
 
 /**
  * POST /piko/telegram/get-dialogs/v1
@@ -13,9 +10,12 @@ import {
  * Returns: { success: true, dialogs: Array<Dialog> }
  */
 export async function POST(request: Request) {
-  let client;
   try {
-    const { session, limit = 30, offsetDate } = (await request.json()) as {
+    const {
+      session,
+      limit = 30,
+      offsetDate,
+    } = (await request.json()) as {
       session: string;
       limit?: number;
       offsetDate?: number;
@@ -23,12 +23,12 @@ export async function POST(request: Request) {
 
     if (!session) {
       return NextResponse.json(
-        { success: false, error: "session is required" },
-        { status: 400 }
+        { success: false, error: 'session is required' },
+        { status: 400 },
       );
     }
 
-    client = await createAuthenticatedClient(session);
+    const client = await getPooledClient(session);
 
     const dialogs = await client.getDialogs({
       limit,
@@ -37,35 +37,33 @@ export async function POST(request: Request) {
 
     const formattedDialogs = dialogs.map((dialog) => {
       const entity = dialog.entity;
-      let title = dialog.title ?? "Unknown";
-      let type: "user" | "group" | "channel" = "user";
-      let username = "";
-
-      let accessHash = "";
+      let title = dialog.title ?? 'Unknown';
+      let type: 'user' | 'group' | 'channel' = 'user';
+      let username = '';
+      let accessHash = '';
 
       if (entity instanceof Api.User) {
         title =
-          [entity.firstName, entity.lastName].filter(Boolean).join(" ") ||
-          "Unknown";
-        username = entity.username ?? "";
-        type = "user";
-        accessHash = entity.accessHash?.toString() ?? "";
+          [entity.firstName, entity.lastName].filter(Boolean).join(' ') ||
+          'Unknown';
+        username = entity.username ?? '';
+        type = 'user';
+        accessHash = entity.accessHash?.toString() ?? '';
       } else if (entity instanceof Api.Chat) {
         title = entity.title;
-        type = "group";
+        type = 'group';
       } else if (entity instanceof Api.Channel) {
         title = entity.title;
-        username = entity.username ?? "";
-        type = entity.megagroup ? "group" : "channel";
-        accessHash = entity.accessHash?.toString() ?? "";
+        username = entity.username ?? '';
+        type = entity.megagroup ? 'group' : 'channel';
+        accessHash = entity.accessHash?.toString() ?? '';
       }
 
-      // Extract last message info
-      let lastMessage = "";
+      let lastMessage = '';
       let lastMessageDate: number | null = null;
       const msg = dialog.message;
       if (msg) {
-        lastMessage = msg.message ?? "";
+        lastMessage = msg.message ?? '';
         lastMessageDate = msg.date ?? null;
       }
 
@@ -88,13 +86,11 @@ export async function POST(request: Request) {
     });
   } catch (error: unknown) {
     const message =
-      error instanceof Error ? error.message : "Failed to get dialogs";
-    console.error("get-dialogs error:", error);
+      error instanceof Error ? error.message : 'Failed to get dialogs';
+    console.error('get-dialogs error:', error);
     return NextResponse.json(
       { success: false, error: message },
-      { status: 500 }
+      { status: 500 },
     );
-  } finally {
-    if (client) await disconnectClient(client);
   }
 }

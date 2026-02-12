@@ -3,9 +3,14 @@ import { YStack, XStack, Text, View } from 'tamagui';
 import { Image } from 'expo-image';
 import { API_HOST } from '@/services/api-client';
 import type { MessageItem } from '@/types/chat';
+import Avatar from '@/components/shared/avatar';
 
 interface MessageBubbleProps {
   message: MessageItem;
+  /** Called when the user selects "reply" from the context menu. */
+  onReply?: (message: MessageItem) => void;
+  /** Whether to show the sender avatar (typically in group chats). */
+  showAvatar?: boolean;
 }
 
 function ReplyPreview({
@@ -53,6 +58,24 @@ function ReplyPreview({
 
 function MediaImage({ url, isMe }: { url: string; isMe: boolean }) {
   const [aspectRatio, setAspectRatio] = useState(1.5);
+  const [error, setError] = useState(false);
+
+  if (error) {
+    return (
+      <View
+        borderRadius="$3"
+        bg={isMe ? '$blue8' : '$gray5'}
+        mb="$1"
+        px="$3"
+        py="$2"
+        alignItems="center"
+      >
+        <Text fontSize="$1" color={isMe ? '$blue3' : '$gray10'}>
+          [图片加载失败]
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View
@@ -63,7 +86,7 @@ function MediaImage({ url, isMe }: { url: string; isMe: boolean }) {
     >
       <Image
         source={{ uri: `${API_HOST}${url}` }}
-        className="w-full h-full rounded-lg"
+        style={{ width: '100%', height: '100%', borderRadius: 12 }}
         contentFit="cover"
         transition={200}
         onLoad={(e) => {
@@ -72,6 +95,7 @@ function MediaImage({ url, isMe }: { url: string; isMe: boolean }) {
             setAspectRatio(Math.min(Math.max(width / height, 0.5), 2.5));
           }
         }}
+        onError={() => setError(true)}
         placeholder={isMe ? '#1a6dcc' : '#d4d4d8'}
         placeholderContentFit="cover"
       />
@@ -79,73 +103,95 @@ function MediaImage({ url, isMe }: { url: string; isMe: boolean }) {
   );
 }
 
-export default function MessageBubble({ message }: MessageBubbleProps) {
+export default function MessageBubble({
+  message,
+  showAvatar = false,
+}: MessageBubbleProps) {
   const { isMe } = message;
   const hasReply =
     message.replyToMsgId != null &&
     (message.replyToText != null || message.replyToSenderName != null);
   const hasImage = message.hasMedia && !!message.mediaUrl;
 
+  const bubbleContent = (
+    <YStack
+      maxWidth="80%"
+      bg={isMe ? '$blue9' : '$gray4'}
+      borderRadius="$4"
+      px="$3"
+      py="$2"
+      borderBottomRightRadius={isMe ? '$1' : '$4'}
+      borderBottomLeftRadius={isMe ? '$4' : '$1'}
+    >
+      {/* Sender name (only for other people) */}
+      {!isMe && message.senderName ? (
+        <Text fontSize="$1" fontWeight="600" color="$blue10" mb="$1">
+          {message.senderName}
+        </Text>
+      ) : null}
+
+      {/* Reply preview */}
+      {hasReply ? (
+        <ReplyPreview
+          senderName={message.replyToSenderName}
+          text={message.replyToText}
+          isMe={isMe}
+        />
+      ) : null}
+
+      {/* Image media */}
+      {hasImage ? <MediaImage url={message.mediaUrl!} isMe={isMe} /> : null}
+
+      {/* Text body */}
+      {message.text ? (
+        <Text
+          fontSize="$3"
+          color={isMe ? 'white' : '$color'}
+          lineHeight={20}
+          selectable
+        >
+          {message.text}
+        </Text>
+      ) : message.hasMedia && !hasImage ? (
+        <Text
+          fontSize="$2"
+          color={isMe ? '$blue3' : '$gray10'}
+          fontStyle="italic"
+        >
+          [{message.mediaType ?? '媒体'}]
+        </Text>
+      ) : null}
+
+      {/* Timestamp */}
+      <Text
+        fontSize={10}
+        color={isMe ? '$blue4' : '$gray10'}
+        textAlign="right"
+        mt="$1"
+      >
+        {message.time}
+      </Text>
+    </YStack>
+  );
+
+  // For non-self messages with avatar display enabled, show avatar beside bubble
+  if (!isMe && showAvatar) {
+    return (
+      <XStack px="$3" py="$1" alignItems="flex-end" gap="$2">
+        <Avatar
+          url={message.senderAvatarUrl}
+          text={message.senderName?.charAt(0)?.toUpperCase() ?? '?'}
+          color="#4ECDC4"
+          size={32}
+        />
+        {bubbleContent}
+      </XStack>
+    );
+  }
+
   return (
     <YStack alignItems={isMe ? 'flex-end' : 'flex-start'} px="$3" py="$1">
-      <YStack
-        maxWidth="80%"
-        bg={isMe ? '$blue9' : '$gray4'}
-        borderRadius="$4"
-        px="$3"
-        py="$2"
-        borderBottomRightRadius={isMe ? '$1' : '$4'}
-        borderBottomLeftRadius={isMe ? '$4' : '$1'}
-      >
-        {/* Sender name (only for other people) */}
-        {!isMe && message.senderName ? (
-          <Text fontSize="$1" fontWeight="600" color="$blue10" mb="$1">
-            {message.senderName}
-          </Text>
-        ) : null}
-
-        {/* Reply preview */}
-        {hasReply ? (
-          <ReplyPreview
-            senderName={message.replyToSenderName}
-            text={message.replyToText}
-            isMe={isMe}
-          />
-        ) : null}
-
-        {/* Image media */}
-        {hasImage ? <MediaImage url={message.mediaUrl!} isMe={isMe} /> : null}
-
-        {/* Text body */}
-        {message.text ? (
-          <Text
-            fontSize="$3"
-            color={isMe ? 'white' : '$color'}
-            lineHeight={20}
-            selectable
-          >
-            {message.text}
-          </Text>
-        ) : message.hasMedia && !hasImage ? (
-          <Text
-            fontSize="$2"
-            color={isMe ? '$blue3' : '$gray10'}
-            fontStyle="italic"
-          >
-            [{message.mediaType ?? '媒体'}]
-          </Text>
-        ) : null}
-
-        {/* Timestamp */}
-        <Text
-          fontSize={10}
-          color={isMe ? '$blue4' : '$gray10'}
-          textAlign="right"
-          mt="$1"
-        >
-          {message.time}
-        </Text>
-      </YStack>
+      {bubbleContent}
     </YStack>
   );
 }
