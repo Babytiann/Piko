@@ -12,21 +12,15 @@ import {
 } from 'react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 
-import GlassTabButton from './glass-tab-button';
 import { Colors } from '@/constants/theme';
 import {
   INDICATOR_MARGIN_H,
   INDICATOR_MARGIN_V,
   TAB_BAR_HEIGHT,
 } from '@/constants';
+import GlassTabButton from './glass-tab-button';
+import GlassOverlay from './galss-overlay';
 
-/**
- * Floating capsule tab bar with iOS 26 liquid-glass material.
- *
- * - Bar background: `GlassView` with `"regular"` style
- * - Sliding indicator: `GlassView` with `"prominent"` style
- * - Graceful fallback to translucent rgba on older devices / Android
- */
 export default function GlassTabBar({
   state,
   descriptors,
@@ -38,7 +32,6 @@ export default function GlassTabBar({
   const isDark = colorScheme === 'dark';
   const hasGlass = isLiquidGlassAvailable();
 
-  // --- indicator animation state ---
   const [barWidth, setBarWidth] = useState(0);
   const translateX = useRef(new Animated.Value(0)).current;
   const indicatorScale = useRef(new Animated.Value(1)).current;
@@ -89,54 +82,58 @@ export default function GlassTabBar({
 
   const indicatorWidth = tabWidth - INDICATOR_MARGIN_H * 2;
 
-  // --- fallback colors (non-liquid-glass) ---
   const barBg = isDark ? 'rgba(28,28,30,0.95)' : 'rgba(250,250,250,0.98)';
   const indicatorBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
 
   return (
     <View
-      style={[
-        styles.tabBar,
-        {
-          bottom: insets.bottom,
-          backgroundColor: hasGlass ? 'transparent' : barBg,
-        },
-      ]}
+      className="absolute w-[70%] self-center flex-row items-center overflow-hidden rounded-[50px] border-t-0"
+      style={{
+        height: TAB_BAR_HEIGHT,
+        bottom: insets.bottom,
+        backgroundColor: hasGlass ? 'transparent' : barBg,
+        ...Platform.select({
+          ios: {
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+          },
+          android: { elevation: 8 },
+        }),
+      }}
       onLayout={(e) => setBarWidth(e.nativeEvent.layout.width)}
     >
-      {/* Liquid-glass bar background */}
-      {hasGlass && (
-        <GlassView
-          style={[StyleSheet.absoluteFill, styles.glassClip]}
-          glassEffectStyle="regular"
-        />
-      )}
+      {hasGlass && <GlassOverlay />}
 
-      {/* Sliding indicator */}
       {barWidth > 0 && (
         <Animated.View
-          style={[
-            styles.indicator,
-            {
-              width: indicatorWidth,
-              transform: [{ translateX }, { scale: indicatorScale }],
-              backgroundColor: hasGlass
-                ? isDark
-                  ? 'rgba(255,255,255,0.12)'
-                  : 'rgba(255,255,255,0.55)'
-                : indicatorBg,
-              ...(Platform.OS === 'ios' &&
-                !hasGlass && {
+          className="absolute rounded-[50px] overflow-hidden"
+          style={{
+            top: INDICATOR_MARGIN_V,
+            bottom: INDICATOR_MARGIN_V,
+            width: indicatorWidth,
+            transform: [{ translateX }, { scale: indicatorScale }],
+            backgroundColor: hasGlass
+              ? isDark
+                ? 'rgba(255,255,255,0.12)'
+                : 'rgba(255,255,255,0.55)'
+              : indicatorBg,
+            ...Platform.select({
+              ios: {
+                shadowOffset: { width: 0, height: 0 },
+                shadowRadius: 12,
+                ...(!hasGlass && {
                   shadowColor: colors.tint,
                   shadowOpacity: isDark ? 0.5 : 0.3,
                 }),
-            },
-          ]}
+              },
+              android: { elevation: 6 },
+            }),
+          }}
         >
           {hasGlass && (
-            <GlassView
-              style={[StyleSheet.absoluteFill, styles.glassClip]}
-              glassEffectStyle="regular"
+            <GlassOverlay
               tintColor={
                 isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.4)'
               }
@@ -181,44 +178,3 @@ export default function GlassTabBar({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  tabBar: {
-    position: 'absolute',
-    height: TAB_BAR_HEIGHT,
-    borderRadius: 50,
-    borderTopWidth: 0,
-    width: '70%',
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    overflow: 'hidden',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
-      },
-      android: { elevation: 8 },
-    }),
-  },
-  glassClip: {
-    borderRadius: 50,
-    overflow: 'hidden',
-  },
-  indicator: {
-    position: 'absolute',
-    borderRadius: 50,
-    top: INDICATOR_MARGIN_V,
-    bottom: INDICATOR_MARGIN_V,
-    overflow: 'hidden',
-    ...Platform.select({
-      ios: {
-        shadowOffset: { width: 0, height: 0 },
-        shadowRadius: 12,
-      },
-      android: { elevation: 6 },
-    }),
-  },
-});

@@ -1,6 +1,6 @@
 import React, { useCallback, useRef } from 'react';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Animated, Pressable, StyleSheet, Text } from 'react-native';
+import { Animated, Pressable, Text } from 'react-native';
 
 interface GlassTabButtonProps {
   route: BottomTabBarProps['state']['routes'][number];
@@ -10,7 +10,6 @@ interface GlassTabButtonProps {
   onPress: () => void;
 }
 
-/** Individual tab button with press-scale animation. */
 export default function GlassTabButton({
   route,
   isFocused,
@@ -46,34 +45,19 @@ export default function GlassTabButton({
       onPress={onPress}
       onPressIn={onPressIn}
       onPressOut={onPressOut}
-      style={styles.tabButton}
+      className="flex-1 items-center justify-center h-full"
       accessibilityRole="button"
       accessibilityState={{ selected: isFocused }}
     >
-      <Animated.View style={[styles.tabContent, { transform: [{ scale }] }]}>
+      <Animated.View
+        className="items-center justify-center"
+        style={{ transform: [{ scale }] }}
+      >
         {options.tabBarIcon?.({ focused: isFocused, color, size: 24 })}
-        <Text style={[styles.tabLabel, { color }]}>
+        <Text className="text-xs font-medium mt-0.5" style={{ color }}>
           {options.title ?? route.name}
         </Text>
       </Animated.View>
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  tabButton: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
-  },
-  tabContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginTop: 2,
-  },
-});
