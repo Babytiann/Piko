@@ -2,67 +2,46 @@ import React, { useState, useCallback, useRef } from 'react';
 import {
   TouchableOpacity,
   ScrollView,
-  StyleSheet,
   useColorScheme,
   Modal,
   View,
   Pressable,
   type LayoutRectangle,
 } from 'react-native';
-import { Check, ChevronDown } from '@tamagui/lucide-icons';
 import { Text } from 'tamagui';
+import { Check, ChevronDown } from '@tamagui/lucide-icons';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+
 import { GlassBackground } from './tl-glass-background';
+import { DROPDOWN_MAX_HEIGHT } from '@/constants';
+import type { CountryItem } from '@/types/telegram-login';
 
-const countries = [
-  { name: '中国', code: '+86' },
-  { name: '中国香港', code: '+852' },
-  { name: '中国澳门', code: '+853' },
-  { name: '中国台湾', code: '+886' },
-  { name: '美国', code: '+1' },
-  { name: '英国', code: '+44' },
-  { name: '日本', code: '+81' },
-  { name: '韩国', code: '+82' },
-  { name: '新加坡', code: '+65' },
-  { name: '马来西亚', code: '+60' },
-  { name: '泰国', code: '+66' },
-  { name: '印度', code: '+91' },
-  { name: '澳大利亚', code: '+61' },
-  { name: '加拿大', code: '+1' },
-  { name: '德国', code: '+49' },
-  { name: '法国', code: '+33' },
-  { name: '意大利', code: '+39' },
-  { name: '俄罗斯', code: '+7' },
-  { name: '巴西', code: '+55' },
-  { name: '印度尼西亚', code: '+62' },
-  { name: '菲律宾', code: '+63' },
-  { name: '越南', code: '+84' },
-  { name: '阿联酋', code: '+971' },
-  { name: '新西兰', code: '+64' },
-  { name: '荷兰', code: '+31' },
-  { name: '西班牙', code: '+34' },
-  { name: '葡萄牙', code: '+351' },
-  { name: '土耳其', code: '+90' },
-  { name: '沙特阿拉伯', code: '+966' },
-  { name: '埃及', code: '+20' },
-] as const;
+// ---------------------------------------------------------------------------
+// Utility
+// ---------------------------------------------------------------------------
 
-function getCodeByName(name: string): string {
+/** Resolve a country name to its dial code from the given list. */
+export function getCodeByName(countries: CountryItem[], name: string): string {
   return countries.find((c) => c.name === name)?.code ?? '+86';
 }
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 
 interface CountryCodeSelectProps {
   value: string;
   onValueChange: (name: string) => void;
+  /** Country list from server */
+  countries: CountryItem[];
+  /** Dropdown header text from server */
+  header: string;
 }
-
-const DROPDOWN_MAX_HEIGHT = 300;
-const ITEM_HEIGHT = 44;
 
 const springConfig = {
   damping: 20,
@@ -70,9 +49,11 @@ const springConfig = {
   stiffness: 200,
 };
 
-export function CountryCodeSelect({
+export default function CountryCodeSelect({
   value,
   onValueChange,
+  countries,
+  header,
 }: CountryCodeSelectProps) {
   const [open, setOpen] = useState(false);
   const scheme = useColorScheme();
@@ -118,22 +99,20 @@ export function CountryCodeSelect({
     [onValueChange, closeDropdown],
   );
 
-  const selectedCode = getCodeByName(value);
+  const selectedCode = getCodeByName(countries, value);
 
   return (
     <View ref={triggerRef} collapsable={false}>
       <TouchableOpacity
         onPress={openDropdown}
         activeOpacity={0.7}
-        style={[
-          styles.trigger,
-          {
-            backgroundColor: isDark
-              ? 'rgba(255,255,255,0.08)'
-              : 'rgba(0,0,0,0.05)',
-            borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
-          },
-        ]}
+        className="flex-row items-center justify-center gap-1 h-11 w-[90px] rounded-xl border"
+        style={{
+          backgroundColor: isDark
+            ? 'rgba(255,255,255,0.08)'
+            : 'rgba(0,0,0,0.05)',
+          borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+        }}
       >
         <Text fontSize={15} fontWeight="500" color="$color">
           {selectedCode}
@@ -147,14 +126,14 @@ export function CountryCodeSelect({
         animationType="none"
         onRequestClose={closeDropdown}
       >
-        <Pressable style={StyleSheet.absoluteFill} onPress={closeDropdown}>
-          <View style={StyleSheet.absoluteFill} />
+        <Pressable className="absolute inset-0" onPress={closeDropdown}>
+          <View className="absolute inset-0" />
         </Pressable>
 
         {triggerLayout && (
           <Animated.View
+            className="absolute z-[999999]"
             style={[
-              styles.dropdownPositioner,
               {
                 top: triggerLayout.y + triggerLayout.height + 6,
                 left: triggerLayout.x,
@@ -165,21 +144,19 @@ export function CountryCodeSelect({
           >
             <GlassBackground isDark={isDark}>
               <View
-                style={[
-                  styles.labelRow,
-                  {
-                    borderBottomColor: isDark
-                      ? 'rgba(255,255,255,0.08)'
-                      : 'rgba(0,0,0,0.06)',
-                  },
-                ]}
+                className="px-4 py-2.5 border-b-[0.5px]"
+                style={{
+                  borderBottomColor: isDark
+                    ? 'rgba(255,255,255,0.08)'
+                    : 'rgba(0,0,0,0.06)',
+                }}
               >
                 <Text
                   fontSize={13}
                   fontWeight="600"
                   color={isDark ? '#8E8E93' : '#8E8E93'}
                 >
-                  国家/地区
+                  {header}
                 </Text>
               </View>
 
@@ -195,10 +172,10 @@ export function CountryCodeSelect({
                       key={item.name}
                       onPress={() => handleSelect(item.name)}
                       activeOpacity={0.6}
+                      className="flex-row items-center h-11 px-4"
                       style={[
-                        styles.itemRow,
                         i < countries.length - 1 && {
-                          borderBottomWidth: StyleSheet.hairlineWidth,
+                          borderBottomWidth: 0.5,
                           borderBottomColor: isDark
                             ? 'rgba(255,255,255,0.06)'
                             : 'rgba(0,0,0,0.06)',
@@ -237,33 +214,3 @@ export function CountryCodeSelect({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  trigger: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    height: 44,
-    width: 90,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  dropdownPositioner: {
-    position: 'absolute',
-    zIndex: 999999,
-  },
-  labelRow: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: ITEM_HEIGHT,
-    paddingHorizontal: 16,
-  },
-});
-
-export { getCodeByName };

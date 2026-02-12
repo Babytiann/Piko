@@ -12,3 +12,5 @@ export const INDICATOR_MARGIN_H = 8;
 
 /** Vertical inset between indicator edge and bar edge. */
 export const INDICATOR_MARGIN_V = 10;
+
+export const DROPDOWN_MAX_HEIGHT = 300;

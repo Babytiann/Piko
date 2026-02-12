@@ -8,6 +8,11 @@ interface CodeStepProps {
   onSignIn: () => void;
   onBack: () => void;
   loading: boolean;
+  /** Server-driven text props */
+  codeSentLabel: string;
+  codePlaceholder: string;
+  verifyButtonText: string;
+  backLinkText: string;
 }
 
 export default function CodeStep({
@@ -17,15 +22,22 @@ export default function CodeStep({
   onSignIn,
   onBack,
   loading,
+  codeSentLabel,
+  codePlaceholder,
+  verifyButtonText,
+  backLinkText,
 }: CodeStepProps) {
+  // Replace {phoneNumber} placeholder in the server-provided label
+  const sentText = codeSentLabel.replace('{phoneNumber}', phoneNumber);
+
   return (
     <YStack gap="$3">
       <Text fontSize="$2" color="$gray11">
-        验证码已发送至 {phoneNumber}
+        {sentText}
       </Text>
       <TextInput
         className="h-12 rounded-xl bg-gray-500/10 px-4 text-base"
-        placeholder="输入验证码"
+        placeholder={codePlaceholder}
         value={phoneCode}
         onChangeText={onPhoneCodeChange}
         keyboardType="number-pad"
@@ -40,13 +52,13 @@ export default function CodeStep({
           <ActivityIndicator color="white" />
         ) : (
           <Text color="white" fontWeight="600" fontSize="$4">
-            验证登录
+            {verifyButtonText}
           </Text>
         )}
       </TouchableOpacity>
       <TouchableOpacity onPress={onBack} className="items-center py-2">
         <Text color="$gray11" fontSize="$2">
-          返回修改手机号
+          {backLinkText}
         </Text>
       </TouchableOpacity>
     </YStack>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -6,11 +6,14 @@ import {
   StyleSheet,
   Keyboard,
   TouchableWithoutFeedback,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { YStack, Text, Spacer } from 'tamagui';
 import { useAuth } from '@/hooks/useAuth';
 import * as telegramApi from '@/services/telegram';
+import { TelegramLoginStep } from '@/types/telegram-login';
+import type { VerifyTwoFAStepText } from '@/types/telegram-login';
 
 import TwoFAStep from '@/components/telegramLogin/tl-two-FA-step';
 import { useAppSafeArea } from '@/hooks/useSafeArea';
@@ -24,10 +27,17 @@ export default function Verify2FAScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [text, setText] = useState<VerifyTwoFAStepText | null>(null);
+
+  // Fetch page copy on mount
+  useEffect(() => {
+    telegramApi.fetchTelegramText(TelegramLoginStep.VERIFY_2FA).then(setText);
+  }, []);
 
   const handleCheckPassword = async () => {
+    if (!text) return;
     if (!password.trim()) {
-      setError('请输入两步验证密码');
+      setError(text.errors.emptyPassword);
       return;
     }
     setLoading(true);
@@ -40,11 +50,22 @@ export default function Verify2FAScreen() {
         router.back();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : '密码验证失败');
+      setError(
+        err instanceof Error ? err.message : text.errors.checkPasswordFail,
+      );
     } finally {
       setLoading(false);
     }
   };
+
+  // Show loading spinner while fetching text
+  if (!text) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -56,10 +77,10 @@ export default function Verify2FAScreen() {
           <YStack flex={1} pt={top} pb={bottom} px="$6" bg="$background">
             <View style={styles.headerCenter}>
               <Text fontSize={24} fontWeight="700" color="$color">
-                绑定 Telegram 账号
+                {text.title}
               </Text>
               <Text fontSize="$3" color="$gray11" mt="$2">
-                输入你的两步验证密码
+                {text.subtitle}
               </Text>
             </View>
 
@@ -76,6 +97,8 @@ export default function Verify2FAScreen() {
               onPasswordChange={setPassword}
               onCheckPassword={handleCheckPassword}
               loading={loading}
+              passwordPlaceholder={text.passwordPlaceholder}
+              confirmButtonText={text.confirmButton}
             />
 
             <Spacer flex={1} />
@@ -87,6 +110,11 @@ export default function Verify2FAScreen() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   headerCenter: {
     alignItems: 'center',
     marginBottom: 24,

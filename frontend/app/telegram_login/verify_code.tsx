@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -6,11 +6,14 @@ import {
   StyleSheet,
   Keyboard,
   TouchableWithoutFeedback,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { YStack, Text, Spacer } from 'tamagui';
 import { useAuth } from '@/hooks/useAuth';
 import * as telegramApi from '@/services/telegram';
+import { TelegramLoginStep } from '@/types/telegram-login';
+import type { VerifyCodeStepText } from '@/types/telegram-login';
 
 import CodeStep from '@/components/telegramLogin/tl-code-step';
 import { useAppSafeArea } from '@/hooks/useSafeArea';
@@ -27,10 +30,17 @@ export default function VerifyCodeScreen() {
   const [phoneCode, setPhoneCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [text, setText] = useState<VerifyCodeStepText | null>(null);
+
+  // Fetch page copy on mount
+  useEffect(() => {
+    telegramApi.fetchTelegramText(TelegramLoginStep.VERIFY_CODE).then(setText);
+  }, []);
 
   const handleSignIn = async () => {
+    if (!text) return;
     if (!phoneCode.trim()) {
-      setError('请输入验证码');
+      setError(text.errors.emptyCode);
       return;
     }
     setLoading(true);
@@ -56,11 +66,20 @@ export default function VerifyCodeScreen() {
         router.back();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : '登录失败');
+      setError(err instanceof Error ? err.message : text.errors.signInFail);
     } finally {
       setLoading(false);
     }
   };
+
+  // Show loading spinner while fetching text
+  if (!text) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -72,10 +91,10 @@ export default function VerifyCodeScreen() {
           <YStack flex={1} pt={top} pb={bottom} px="$6" bg="$background">
             <View style={styles.headerCenter}>
               <Text fontSize={24} fontWeight="700" color="$color">
-                绑定 Telegram 账号
+                {text.title}
               </Text>
               <Text fontSize="$3" color="$gray11" mt="$2">
-                输入你收到的验证码
+                {text.subtitle}
               </Text>
             </View>
 
@@ -94,6 +113,10 @@ export default function VerifyCodeScreen() {
               onSignIn={handleSignIn}
               onBack={() => router.back()}
               loading={loading}
+              codeSentLabel={text.codeSentLabel}
+              codePlaceholder={text.codePlaceholder}
+              verifyButtonText={text.verifyButton}
+              backLinkText={text.backLink}
             />
 
             <Spacer flex={1} />
@@ -105,6 +128,11 @@ export default function VerifyCodeScreen() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   headerCenter: {
     alignItems: 'center',
     marginBottom: 24,

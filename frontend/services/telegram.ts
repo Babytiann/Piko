@@ -1,103 +1,123 @@
 /**
- * Telegram authentication & legacy messaging APIs.
- * Auth endpoints return data at root level (no envelope),
- * so we use `postDirect` rather than the envelope-unwrapping `post`.
+ * Telegram authentication & messaging APIs.
+ *
+ * Auth calls go through the unified `/telegram/auth/v1` endpoint,
+ * dispatched by `session_tag`.
+ *
+ * Page copy is fetched via `/telegram/text_detail/v1`.
  */
-import { postDirect } from './api-client';
+import { post, postDirect } from './api-client';
+import type {
+  TelegramAuthRequest,
+  SendCodeResult,
+  SignInResult,
+  CheckPasswordResult,
+  TelegramLoginText,
+} from '@/types/telegram-login';
+import {
+  SessionTag,
+  TelegramLoginStep,
+  type PhoneStepText,
+  type VerifyCodeStepText,
+  type VerifyTwoFAStepText,
+} from '@/types/telegram-login';
 
 // ---------------------------------------------------------------------------
-// Types
+// Re-exports for convenience
 // ---------------------------------------------------------------------------
 
-export interface TelegramUser {
-  id: string;
-  firstName: string;
-  lastName: string;
-  username: string;
-  phone: string;
-}
+export { SessionTag, TelegramLoginStep };
+export type {
+  SendCodeResult,
+  SignInResult,
+  CheckPasswordResult,
+  PhoneStepText,
+  VerifyCodeStepText,
+  VerifyTwoFAStepText,
+  TelegramLoginText,
+};
 
-export interface SendCodeResponse {
-  success: boolean;
-  phoneCodeHash: string;
-  codeType: string;
-  timeout: number | null;
-}
-
-export interface SignInResponse {
-  success: boolean;
-  session?: string;
-  user?: TelegramUser;
-  require2FA?: boolean;
-  requireSignUp?: boolean;
-  error?: string;
-}
-
-export interface CheckPasswordResponse {
-  success: boolean;
-  session: string;
-  user: TelegramUser;
-}
-
-export interface SignUpResponse {
-  success: boolean;
-  session: string;
-  user: TelegramUser;
-}
-
-export interface SendMessageResponse {
-  success: boolean;
-  messageId: number;
-  date: number;
-}
+// Re-export user type so existing consumers don't break
+export type { TelegramUser } from '@/types/telegram-login';
 
 // ---------------------------------------------------------------------------
-// Auth API
+// Unified auth API
 // ---------------------------------------------------------------------------
 
-export function sendCode(phoneNumber: string): Promise<SendCodeResponse> {
-  return postDirect<SendCodeResponse>('telegram/send-code/v1', { phoneNumber });
+/**
+ * Unified Telegram authentication call.
+ * Use `session_tag` to select the operation.
+ */
+function telegramAuth<T>(params: TelegramAuthRequest): Promise<T> {
+  return postDirect<T>(
+    'telegram/auth/v1',
+    params as unknown as Record<string, unknown>,
+  );
 }
 
+/** Send verification code to a phone number. */
+export function sendCode(phoneNumber: string): Promise<SendCodeResult> {
+  return telegramAuth<SendCodeResult>({
+    session_tag: SessionTag.SEND_CODE,
+    phoneNumber,
+  });
+}
+
+/** Sign in with phone number + verification code. */
 export function signIn(
   phoneNumber: string,
   phoneCode: string,
   phoneCodeHash: string,
-): Promise<SignInResponse> {
-  return postDirect<SignInResponse>('telegram/sign-in/v1', {
+): Promise<SignInResult> {
+  return telegramAuth<SignInResult>({
+    session_tag: SessionTag.SIGN_IN,
     phoneNumber,
     phoneCode,
     phoneCodeHash,
   });
 }
 
+/** Complete 2FA login by providing the password. */
 export function checkPassword(
   session: string,
   password: string,
-): Promise<CheckPasswordResponse> {
-  return postDirect<CheckPasswordResponse>('telegram/check-password/v1', {
+): Promise<CheckPasswordResult> {
+  return telegramAuth<CheckPasswordResult>({
+    session_tag: SessionTag.CHECK_PASSWORD,
     session,
     password,
   });
 }
 
-export function signUp(
-  phoneNumber: string,
-  phoneCodeHash: string,
-  firstName: string,
-  lastName?: string,
-): Promise<SignUpResponse> {
-  return postDirect<SignUpResponse>('telegram/sign-up/v1', {
-    phoneNumber,
-    phoneCodeHash,
-    firstName,
-    lastName,
-  });
+// ---------------------------------------------------------------------------
+// Text detail API
+// ---------------------------------------------------------------------------
+
+/** Fetch page copy for a given login step. */
+export function fetchTelegramText(
+  step: TelegramLoginStep.PHONE,
+): Promise<PhoneStepText>;
+export function fetchTelegramText(
+  step: TelegramLoginStep.VERIFY_CODE,
+): Promise<VerifyCodeStepText>;
+export function fetchTelegramText(
+  step: TelegramLoginStep.VERIFY_2FA,
+): Promise<VerifyTwoFAStepText>;
+export function fetchTelegramText(
+  step: TelegramLoginStep,
+): Promise<TelegramLoginText> {
+  return post<TelegramLoginText>('telegram/text_detail/v1', { step });
 }
 
 // ---------------------------------------------------------------------------
-// Messaging API (used by chat detail for send-message)
+// Messaging API (unchanged — used by chat detail)
 // ---------------------------------------------------------------------------
+
+export interface SendMessageResponse {
+  success: boolean;
+  messageId: number;
+  date: number;
+}
 
 export function sendMessage(
   session: string,

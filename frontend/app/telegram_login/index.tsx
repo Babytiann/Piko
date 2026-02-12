@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -6,13 +6,16 @@ import {
   StyleSheet,
   Keyboard,
   TouchableWithoutFeedback,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { YStack, Text, Spacer } from 'tamagui';
 import * as telegramApi from '@/services/telegram';
+import { TelegramLoginStep } from '@/types/telegram-login';
+import type { PhoneStepText } from '@/types/telegram-login';
+import { getCodeByName } from '@/components/telegramLogin/tl-country-code-select';
 
 import PhoneStep from '@/components/telegramLogin/tl-phone-step';
-import { getCodeByName } from '@/components/telegramLogin/tl-country-code-select';
 import { useAppSafeArea } from '@/hooks/useSafeArea';
 
 export default function TelegramLoginScreen() {
@@ -21,14 +24,26 @@ export default function TelegramLoginScreen() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [countryName, setCountryName] = useState('中国');
+  const [countryName, setCountryName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [text, setText] = useState<PhoneStepText | null>(null);
 
-  const fullPhoneNumber = `${getCodeByName(countryName)} ${phoneNumber.trim()}`;
+  // Fetch page copy on mount
+  useEffect(() => {
+    telegramApi.fetchTelegramText(TelegramLoginStep.PHONE).then((data) => {
+      setText(data);
+      setCountryName(data.defaultCountry);
+    });
+  }, []);
+
+  const fullPhoneNumber = text
+    ? `${getCodeByName(text.countries, countryName)} ${phoneNumber.trim()}`
+    : '';
 
   const handleSendCode = async () => {
+    if (!text) return;
     if (!phoneNumber.trim()) {
-      setError('请输入手机号');
+      setError(text.errors.emptyPhone);
       return;
     }
     setLoading(true);
@@ -43,11 +58,20 @@ export default function TelegramLoginScreen() {
         },
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : '发送验证码失败');
+      setError(err instanceof Error ? err.message : text.errors.sendCodeFail);
     } finally {
       setLoading(false);
     }
   };
+
+  // Show loading spinner while fetching text
+  if (!text) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -59,10 +83,10 @@ export default function TelegramLoginScreen() {
           <YStack flex={1} pt={top} pb={bottom} px="$6" bg="$background">
             <View style={styles.headerCenter}>
               <Text fontSize={24} fontWeight="700" color="$color">
-                绑定 Telegram 账号
+                {text.title}
               </Text>
               <Text fontSize="$3" color="$gray11" mt="$2">
-                输入你的手机号以连接 Telegram
+                {text.subtitle}
               </Text>
             </View>
 
@@ -81,6 +105,10 @@ export default function TelegramLoginScreen() {
               onCountryChange={setCountryName}
               onSendCode={handleSendCode}
               loading={loading}
+              phonePlaceholder={text.phonePlaceholder}
+              sendCodeButtonText={text.sendCodeButton}
+              countries={text.countries}
+              countryPickerHeader={text.countryPickerHeader}
             />
 
             <Spacer flex={1} />
@@ -92,6 +120,11 @@ export default function TelegramLoginScreen() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   headerCenter: {
     alignItems: 'center',
     marginBottom: 24,

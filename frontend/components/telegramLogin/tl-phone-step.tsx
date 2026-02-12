@@ -1,7 +1,8 @@
 import { ActivityIndicator, TouchableOpacity } from 'react-native';
 import { YStack, Text, XStack, Input } from 'tamagui';
 
-import { CountryCodeSelect } from './tl-country-code-select';
+import CountryCodeSelect from './tl-country-code-select';
+import type { CountryItem } from '@/types/telegram-login';
 
 interface PhoneStepProps {
   phoneNumber: string;
@@ -10,6 +11,11 @@ interface PhoneStepProps {
   onCountryChange: (name: string) => void;
   onSendCode: () => void;
   loading: boolean;
+  /** Server-driven text props */
+  phonePlaceholder: string;
+  sendCodeButtonText: string;
+  countries: CountryItem[];
+  countryPickerHeader: string;
 }
 
 export default function PhoneStep({
@@ -19,6 +25,10 @@ export default function PhoneStep({
   onCountryChange,
   onSendCode,
   loading,
+  phonePlaceholder,
+  sendCodeButtonText,
+  countries,
+  countryPickerHeader,
 }: PhoneStepProps) {
   return (
     <YStack gap="$3">
@@ -26,11 +36,13 @@ export default function PhoneStep({
         <CountryCodeSelect
           value={countryName}
           onValueChange={onCountryChange}
+          countries={countries}
+          header={countryPickerHeader}
         />
         <Input
           flex={1}
           size="$4"
-          placeholder="手机号"
+          placeholder={phonePlaceholder}
           value={phoneNumber}
           onChangeText={onPhoneNumberChange}
           keyboardType="default"
@@ -47,7 +59,7 @@ export default function PhoneStep({
           <ActivityIndicator color="white" />
         ) : (
           <Text color="white" fontWeight="600" fontSize="$4">
-            发送验证码
+            {sendCodeButtonText}
           </Text>
         )}
       </TouchableOpacity>

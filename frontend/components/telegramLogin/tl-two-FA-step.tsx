@@ -6,6 +6,9 @@ interface TwoFAStepProps {
   onPasswordChange: (value: string) => void;
   onCheckPassword: () => void;
   loading: boolean;
+  /** Server-driven text props */
+  passwordPlaceholder: string;
+  confirmButtonText: string;
 }
 
 export default function TwoFAStep({
@@ -13,12 +16,14 @@ export default function TwoFAStep({
   onPasswordChange,
   onCheckPassword,
   loading,
+  passwordPlaceholder,
+  confirmButtonText,
 }: TwoFAStepProps) {
   return (
     <YStack gap="$3">
       <TextInput
         className="h-12 rounded-xl bg-gray-500/10 px-4 text-base"
-        placeholder="两步验证密码"
+        placeholder={passwordPlaceholder}
         value={password}
         onChangeText={onPasswordChange}
         secureTextEntry
@@ -33,7 +38,7 @@ export default function TwoFAStep({
           <ActivityIndicator color="white" />
         ) : (
           <Text color="black" fontWeight="600" fontSize="$4">
-            确认密码
+            {confirmButtonText}
           </Text>
         )}
       </TouchableOpacity>
