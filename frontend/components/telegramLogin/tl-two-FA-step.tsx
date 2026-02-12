@@ -1,5 +1,5 @@
-import { ActivityIndicator, TextInput, TouchableOpacity } from 'react-native';
-import { YStack, Text } from 'tamagui';
+import { ActivityIndicator, TouchableOpacity } from 'react-native';
+import { YStack, Text, Input } from 'tamagui';
 
 interface TwoFAStepProps {
   password: string;
@@ -21,15 +21,17 @@ export default function TwoFAStep({
 }: TwoFAStepProps) {
   return (
     <YStack gap="$3">
-      <TextInput
-        className="h-12 rounded-xl bg-gray-500/10 px-4 text-base"
+      <Input
+        height={48}
+        fontSize={16}
         placeholder={passwordPlaceholder}
         value={password}
         onChangeText={onPasswordChange}
         secureTextEntry
       />
       <TouchableOpacity
-        className={`h-12 rounded-xl bg-black justify-center items-center ${loading ? 'opacity-60' : ''}`}
+        className={`h-12 rounded-xl justify-center items-center ${loading ? 'opacity-60' : ''}`}
+        style={{ backgroundColor: '#333' }}
         onPress={onCheckPassword}
         disabled={loading}
         activeOpacity={0.8}
@@ -37,7 +39,7 @@ export default function TwoFAStep({
         {loading ? (
           <ActivityIndicator color="white" />
         ) : (
-          <Text color="black" fontWeight="600" fontSize="$4">
+          <Text color="white" fontWeight="600" fontSize="$4">
             {confirmButtonText}
           </Text>
         )}

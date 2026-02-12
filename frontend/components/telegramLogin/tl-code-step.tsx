@@ -1,5 +1,5 @@
-import { ActivityIndicator, TextInput, TouchableOpacity } from 'react-native';
-import { YStack, Text } from 'tamagui';
+import { ActivityIndicator, TouchableOpacity } from 'react-native';
+import { YStack, Text, Input } from 'tamagui';
 
 interface CodeStepProps {
   phoneNumber: string;
@@ -35,15 +35,17 @@ export default function CodeStep({
       <Text fontSize="$2" color="$gray11">
         {sentText}
       </Text>
-      <TextInput
-        className="h-12 rounded-xl bg-gray-500/10 px-4 text-base"
+      <Input
+        height={48}
+        fontSize={16}
         placeholder={codePlaceholder}
         value={phoneCode}
         onChangeText={onPhoneCodeChange}
         keyboardType="number-pad"
       />
       <TouchableOpacity
-        className={`h-12 rounded-xl bg-black justify-center items-center ${loading ? 'opacity-60' : ''}`}
+        className={`h-12 rounded-xl justify-center items-center ${loading ? 'opacity-60' : ''}`}
+        style={{ backgroundColor: '#333' }}
         onPress={onSignIn}
         disabled={loading}
         activeOpacity={0.8}

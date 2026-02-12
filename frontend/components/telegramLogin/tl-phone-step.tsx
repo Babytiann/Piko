@@ -50,7 +50,8 @@ export default function PhoneStep({
       </XStack>
 
       <TouchableOpacity
-        className={`h-12 rounded-xl bg-black justify-center items-center ${loading ? 'opacity-60' : ''}`}
+        className={`h-12 rounded-xl justify-center items-center ${loading ? 'opacity-60' : ''}`}
+        style={{ backgroundColor: '#333' }}
         onPress={onSendCode}
         disabled={loading}
         activeOpacity={0.8}
