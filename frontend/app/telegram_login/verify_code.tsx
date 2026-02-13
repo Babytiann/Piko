@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -13,10 +13,10 @@ import { YStack, Text, Spacer } from 'tamagui';
 import { useAuth } from '@/hooks/useAuth';
 import * as telegramApi from '@/services/telegram';
 import { TelegramLoginStep } from '@/types/telegram-login';
-import type { VerifyCodeStepText } from '@/types/telegram-login';
 
 import CodeStep from '@/components/telegramLogin/tl-code-step';
 import { useAppSafeArea } from '@/hooks/useSafeArea';
+import useFetchData from '@/hooks/useFetchData';
 
 export default function VerifyCodeScreen() {
   const { top, bottom } = useAppSafeArea();
@@ -30,12 +30,10 @@ export default function VerifyCodeScreen() {
   const [phoneCode, setPhoneCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [text, setText] = useState<VerifyCodeStepText | null>(null);
 
-  // Fetch page copy on mount
-  useEffect(() => {
-    telegramApi.fetchTelegramText(TelegramLoginStep.VERIFY_CODE).then(setText);
-  }, []);
+  const { data: text } = useFetchData(() =>
+    telegramApi.fetchTelegramText(TelegramLoginStep.VERIFY_CODE),
+  );
 
   const handleSignIn = async () => {
     if (!text) return;

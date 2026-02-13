@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -13,10 +13,10 @@ import { YStack, Text, Spacer } from 'tamagui';
 import { useAuth } from '@/hooks/useAuth';
 import * as telegramApi from '@/services/telegram';
 import { TelegramLoginStep } from '@/types/telegram-login';
-import type { VerifyTwoFAStepText } from '@/types/telegram-login';
 
 import TwoFAStep from '@/components/telegramLogin/tl-two-FA-step';
 import { useAppSafeArea } from '@/hooks/useSafeArea';
+import useFetchData from '@/hooks/useFetchData';
 
 export default function Verify2FAScreen() {
   const { top, bottom } = useAppSafeArea();
@@ -27,12 +27,10 @@ export default function Verify2FAScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [text, setText] = useState<VerifyTwoFAStepText | null>(null);
 
-  // Fetch page copy on mount
-  useEffect(() => {
-    telegramApi.fetchTelegramText(TelegramLoginStep.VERIFY_2FA).then(setText);
-  }, []);
+  const { data: text } = useFetchData(() =>
+    telegramApi.fetchTelegramText(TelegramLoginStep.VERIFY_2FA),
+  );
 
   const handleCheckPassword = async () => {
     if (!text) return;

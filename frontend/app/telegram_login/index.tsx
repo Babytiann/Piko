@@ -12,11 +12,11 @@ import { useRouter } from 'expo-router';
 import { YStack, Text, Spacer } from 'tamagui';
 import * as telegramApi from '@/services/telegram';
 import { TelegramLoginStep } from '@/types/telegram-login';
-import type { PhoneStepText } from '@/types/telegram-login';
 import { getCodeByName } from '@/components/telegramLogin/tl-country-code-select';
 
 import PhoneStep from '@/components/telegramLogin/tl-phone-step';
 import { useAppSafeArea } from '@/hooks/useSafeArea';
+import useFetchData from '@/hooks/useFetchData';
 
 export default function TelegramLoginScreen() {
   const { top, bottom } = useAppSafeArea();
@@ -26,15 +26,15 @@ export default function TelegramLoginScreen() {
   const [error, setError] = useState('');
   const [countryName, setCountryName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [text, setText] = useState<PhoneStepText | null>(null);
 
-  // Fetch page copy on mount
+  const { data: text } = useFetchData(() =>
+    telegramApi.fetchTelegramText(TelegramLoginStep.PHONE),
+  );
+
+  // Set default country once text data arrives
   useEffect(() => {
-    telegramApi.fetchTelegramText(TelegramLoginStep.PHONE).then((data) => {
-      setText(data);
-      setCountryName(data.defaultCountry);
-    });
-  }, []);
+    if (text) setCountryName(text.defaultCountry);
+  }, [text]);
 
   const fullPhoneNumber = text
     ? `${getCodeByName(text.countries, countryName)} ${phoneNumber.trim()}`
