@@ -8,7 +8,7 @@ import '../global.css';
 import { TamaguiProvider } from 'tamagui';
 import { PortalProvider } from '@tamagui/portal';
 import { config } from '../tamagui.config';
-import { AuthProvider, useAuthValue } from '@/hooks/useAuth';
+import { AuthProvider, useAuthValue } from '@/common/hooks';
 
 export default function RootLayout() {
   const scheme = useColorScheme();

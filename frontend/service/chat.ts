@@ -1,5 +1,8 @@
-import type { ChatListPageData, ChatDetailPageData } from '@/types/chat';
-import { post } from './api-client';
+import type {
+  ChatListPageData,
+  ChatDetailPageData,
+} from '@/common/typings/chat';
+import { post } from '@/common/services/api-client';
 
 /** Fetch all data for the Chat list (messages tab) page. */
 export function fetchChatListPage(session?: string): Promise<ChatListPageData> {

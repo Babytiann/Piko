@@ -1,7 +1,7 @@
 import { TouchableOpacity, View } from 'react-native';
 import { YStack, Text } from 'tamagui';
-import type { DialogItem as DialogItemData } from '@/types/chat';
-import Avatar from '@/components/shared/avatar';
+import type { DialogItem as DialogItemData } from '@/common/typings/chat';
+import Avatar from '@/common/components/avatar';
 
 interface DialogItemProps {
   dialog: DialogItemData;

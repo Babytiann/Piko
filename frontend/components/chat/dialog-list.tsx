@@ -1,6 +1,6 @@
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { Text } from 'tamagui';
-import type { DialogItem as DialogItemData } from '@/types/chat';
+import type { DialogItem as DialogItemData } from '@/common/typings/chat';
 import DialogItem from './dialog-item';
 
 // Telegram-style separator: left margin aligns with the text area

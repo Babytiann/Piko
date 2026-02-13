@@ -1,21 +1,21 @@
+import type { ReactNode } from 'react';
+
 import { YStack, Spacer, Text } from 'tamagui';
-import usePageData from '@/hooks/usePageData';
-import { fetchHomePage } from '@/services/home';
-import type { HomePageData } from '@/types/home';
-import PageLoading from '@/components/shared/pageLoading';
-import PageError from '@/components/shared/pageStatusView';
-import WelcomeCard from '@/components/home/welcome-card';
-import { useAppSafeArea } from '@/hooks/useSafeArea';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-export default function HomeScreen() {
-  const { top, bottom } = useAppSafeArea();
-  const { data, loading, error, refresh } = usePageData<HomePageData>(
-    () => fetchHomePage(),
-    [],
-  );
+import PageLoading from '@/common/components/page-loading';
+import PageStatusView from '@/common/components/page-status-view';
 
-  if (loading) return <PageLoading />;
-  if (error) return <PageError message={error} onRetry={refresh} />;
+import { useFetchData } from '@/pages/home/hooks';
+import HomeWelcomeCard from '@/pages/home/components/home-welcome-card';
+
+export default function HomeScreen(): ReactNode {
+  const { top, bottom } = useSafeAreaInsets();
+  const { isLoading, errorType, data, handleRetry } = useFetchData();
+
+  if (isLoading) return <PageLoading />;
+  if (errorType)
+    return <PageStatusView errorType={errorType} onRetry={handleRetry} />;
   if (!data) return null;
 
   return (
@@ -25,7 +25,7 @@ export default function HomeScreen() {
         {data.header.title}
       </Text>
       <Spacer size="$3" />
-      <WelcomeCard data={data.welcomeCard} />
+      <HomeWelcomeCard data={data.welcomeCard} />
     </YStack>
   );
 }

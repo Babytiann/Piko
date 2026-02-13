@@ -1,6 +1,6 @@
 import { YStack, Text } from 'tamagui';
 
-import type { TelegramSection as TelegramSectionData } from '@/types/profile';
+import type { TelegramSection as TelegramSectionData } from '@/common/typings/profile';
 import TelegramBound from './telegram-bound';
 import TelegramUnbound from './telegram-unbound';
 

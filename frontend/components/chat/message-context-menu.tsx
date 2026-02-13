@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import type { MessageItem } from '@/types/chat';
+import type { MessageItem } from '@/common/typings/chat';
 
 interface MessageContextMenuProps {
   message: MessageItem;

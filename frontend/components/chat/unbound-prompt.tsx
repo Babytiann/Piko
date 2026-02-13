@@ -1,6 +1,6 @@
 import { TouchableOpacity } from 'react-native';
 import { YStack, Text } from 'tamagui';
-import type { UnboundState } from '@/types/chat';
+import type { UnboundState } from '@/common/typings/chat';
 
 interface UnboundPromptProps {
   data: UnboundState;
@@ -9,11 +9,17 @@ interface UnboundPromptProps {
 
 export default function UnboundPrompt({ data, onBind }: UnboundPromptProps) {
   return (
-    <YStack flex={1} justifyContent="center" alignItems="center">
+    <YStack flex={1} style={{ justifyContent: 'center', alignItems: 'center' }}>
       <Text color="$gray11" fontSize="$4" fontWeight="600">
         {data.title}
       </Text>
-      <Text color="$gray11" fontSize="$2" mt="$2" px="$6" textAlign="center">
+      <Text
+        color="$gray11"
+        fontSize="$2"
+        mt="$2"
+        px="$6"
+        style={{ textAlign: 'center' }}
+      >
         {data.description}
       </Text>
       <TouchableOpacity

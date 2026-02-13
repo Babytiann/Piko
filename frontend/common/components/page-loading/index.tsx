@@ -1,6 +1,7 @@
+import type { ReactNode } from 'react';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 
-export default function PageLoading() {
+export default function PageLoading(): ReactNode {
   return (
     <View style={styles.container}>
       <ActivityIndicator size="large" />

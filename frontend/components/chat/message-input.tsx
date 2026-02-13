@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { XStack, YStack, Text, View } from 'tamagui';
-import type { MessageItem } from '@/types/chat';
+import type { MessageItem } from '@/common/typings/chat';
 
 interface MessageInputProps {
   placeholder: string;
@@ -50,12 +50,16 @@ export default function MessageInput({
           px="$3"
           py="$2"
           bg="$gray3"
-          alignItems="center"
           gap="$2"
           borderBottomWidth={1}
           borderColor="$gray5"
+          style={{ alignItems: 'center' }}
         >
-          <View width={3} alignSelf="stretch" borderRadius="$1" bg="$blue9" />
+          <View
+            width={3}
+            bg="$blue9"
+            style={{ alignSelf: 'stretch', borderRadius: 4 }}
+          />
           <YStack flex={1} gap={2}>
             <Text
               fontSize="$1"
@@ -77,7 +81,7 @@ export default function MessageInput({
         </XStack>
       ) : null}
 
-      <XStack px="$3" py="$2" gap="$2" alignItems="flex-end">
+      <XStack px="$3" py="$2" gap="$2" style={{ alignItems: 'flex-end' }}>
         <TextInput
           className="flex-1 min-h-9 max-h-[100px] rounded-[18px] bg-gray-500/10 px-4 py-2 text-[15px]"
           placeholder={placeholder}

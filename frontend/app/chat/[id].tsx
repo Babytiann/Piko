@@ -10,12 +10,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { YStack, Text } from 'tamagui';
 
-import { useAuth } from '@/hooks/useAuth';
-import { fetchChatDetailPage } from '@/services/chat';
-import type { ChatDetailPageData, MessageItem } from '@/types/chat';
-import * as telegramApi from '@/services/telegram';
-import PageLoading from '@/components/shared/pageLoading';
-import PageError from '@/components/shared/pageStatusView';
+import { useAuth } from '@/common/hooks';
+import { fetchChatDetailPage } from '@/service/chat';
+import type { ChatDetailPageData, MessageItem } from '@/common/typings/chat';
+import * as telegramApi from '@/service/telegram';
+import PageLoading from '@/common/components/page-loading';
+import PageError from '@/common/components/page-status-view';
 import MessageBubble from '@/components/chat/message-bubble';
 import MessageInput from '@/components/chat/message-input';
 import MessageContextMenu from '@/components/chat/message-context-menu';

@@ -1,14 +1,16 @@
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { Image, View } from 'react-native';
 import { Text } from 'tamagui';
-import { API_HOST } from '@/services/api-client';
+
+import { API_HOST } from '@/common/services/api-client';
 
 /** Resolve relative server paths (e.g. "/piko/...") to absolute URLs. */
 function resolveUrl(url: string): string {
   return url.startsWith('/') ? `${API_HOST}${url}` : url;
 }
 
-interface AvatarProps {
+interface Props {
   /** Remote image URL (optional). Falls back to initials when absent or on error. */
   url?: string;
   /** Single character shown when no image is available. */
@@ -19,29 +21,39 @@ interface AvatarProps {
   size?: number;
 }
 
-export default function Avatar({ url, text, color, size = 50 }: AvatarProps) {
-  const [failed, setFailed] = useState(false);
+export default function Avatar({
+  url,
+  text,
+  color,
+  size = 50,
+}: Props): ReactNode {
+  const [hasFailed, setHasFailed] = useState(false);
   const radius = size / 2;
 
-  if (url && !failed) {
+  if (url && !hasFailed) {
     return (
       <Image
         source={{ uri: resolveUrl(url) }}
-        className="object-cover"
-        style={{ width: size, height: size, borderRadius: radius }}
-        onError={() => setFailed(true)}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: radius,
+          objectFit: 'cover',
+        }}
+        onError={() => setHasFailed(true)}
       />
     );
   }
 
   return (
     <View
-      className="justify-center items-center"
       style={{
         width: size,
         height: size,
         borderRadius: radius,
         backgroundColor: color,
+        justifyContent: 'center',
+        alignItems: 'center',
       }}
     >
       <Text color="white" fontSize={size * 0.4} fontWeight="600">

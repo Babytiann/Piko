@@ -3,13 +3,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, Spacer } from 'tamagui';
 
-import { TAB_BAR_CONTENT_HEIGHT } from '@/constants';
-import { useAuth } from '@/hooks/useAuth';
+import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
+import { useAuth } from '@/common/hooks';
 import usePageData from '@/hooks/usePageData';
-import { fetchProfilePage } from '@/services/profile';
-import type { ProfilePageData } from '@/types/profile';
-import PageLoading from '@/components/shared/pageLoading';
-import PageError from '@/components/shared/pageStatusView';
+import { fetchProfilePage } from '@/service/profile';
+import type { ProfilePageData } from '@/common/typings/profile';
+import PageLoading from '@/common/components/page-loading';
+import PageError from '@/common/components/page-status-view';
 import TelegramSection from '@/components/profile/telegram-section';
 
 export default function ProfileScreen() {

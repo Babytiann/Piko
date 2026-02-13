@@ -1,11 +1,14 @@
-import { YStack, Text } from 'tamagui';
-import type { WelcomeCard as WelcomeCardData } from '@/types/home';
+import type { ReactNode } from 'react';
 
-interface WelcomeCardProps {
-  data: WelcomeCardData;
+import { YStack, Text } from 'tamagui';
+
+import type { WelcomeCard } from '@/common/typings/home';
+
+interface Props {
+  data: WelcomeCard;
 }
 
-export default function WelcomeCard({ data }: WelcomeCardProps) {
+export default function HomeWelcomeCard({ data }: Props): ReactNode {
   return (
     <YStack>
       <Text fontSize="$7" fontWeight="600" color="$color">

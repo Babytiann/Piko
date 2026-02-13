@@ -2,7 +2,7 @@ import { ActivityIndicator, TouchableOpacity } from 'react-native';
 import { YStack, Text, XStack, Input } from 'tamagui';
 
 import CountryCodeSelect from './tl-country-code-select';
-import type { CountryItem } from '@/types/telegram-login';
+import type { CountryItem } from '@/common/typings/telegram-login';
 
 interface PhoneStepProps {
   phoneNumber: string;

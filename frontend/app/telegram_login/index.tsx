@@ -9,17 +9,17 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { YStack, Text, Spacer } from 'tamagui';
-import * as telegramApi from '@/services/telegram';
-import { TelegramLoginStep } from '@/types/telegram-login';
+import * as telegramApi from '@/service/telegram';
+import { TelegramLoginStep } from '@/common/typings/telegram-login';
 import { getCodeByName } from '@/components/telegramLogin/tl-country-code-select';
 
 import PhoneStep from '@/components/telegramLogin/tl-phone-step';
-import { useAppSafeArea } from '@/hooks/useSafeArea';
 import usePageData from '@/hooks/usePageData';
 
 export default function TelegramLoginScreen() {
-  const { top, bottom } = useAppSafeArea();
+  const { top, bottom } = useSafeAreaInsets();
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);

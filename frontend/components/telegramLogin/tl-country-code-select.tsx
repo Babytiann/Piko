@@ -18,8 +18,8 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { GlassBackground } from './tl-glass-background';
-import { DROPDOWN_MAX_HEIGHT } from '@/constants';
-import type { CountryItem } from '@/types/telegram-login';
+import { DROPDOWN_MAX_HEIGHT } from '@/common/consts';
+import type { CountryItem } from '@/common/typings/telegram-login';
 
 // ---------------------------------------------------------------------------
 // Utility

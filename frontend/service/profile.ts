@@ -1,5 +1,5 @@
-import type { ProfilePageData } from '@/types/profile';
-import { post } from './api-client';
+import type { ProfilePageData } from '@/common/typings/profile';
+import { post } from '@/common/services/api-client';
 
 /** Fetch all data for the Profile page. */
 export function fetchProfilePage(session?: string): Promise<ProfilePageData> {

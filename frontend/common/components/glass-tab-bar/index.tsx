@@ -1,5 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import React, { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -12,20 +13,20 @@ import {
 } from 'react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 
-import { Colors } from '@/constants/theme';
+import { Colors } from '@/common/consts/theme';
 import {
   INDICATOR_MARGIN_H,
   INDICATOR_MARGIN_V,
   TAB_BAR_HEIGHT,
-} from '@/constants';
+} from '@/common/consts';
 import GlassTabButton from './glass-tab-button';
-import GlassOverlay from './galss-overlay';
+import GlassOverlay from './glass-overlay';
 
 export default function GlassTabBar({
   state,
   descriptors,
   navigation,
-}: BottomTabBarProps) {
+}: BottomTabBarProps): ReactNode {
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
   const colors = Colors[colorScheme ?? 'light'];
@@ -87,60 +88,64 @@ export default function GlassTabBar({
 
   return (
     <View
-      className="absolute w-[70%] self-center flex-row items-center overflow-hidden rounded-[50px] border-t-0"
-      style={{
-        height: TAB_BAR_HEIGHT,
-        bottom: insets.bottom,
-        backgroundColor: hasGlass ? 'transparent' : barBg,
-        ...Platform.select({
-          ios: {
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.08,
-            shadowRadius: 12,
-          },
-          android: { elevation: 8 },
-        }),
-      }}
+      style={[
+        styles.bar,
+        {
+          height: TAB_BAR_HEIGHT,
+          bottom: insets.bottom,
+          backgroundColor: hasGlass ? 'transparent' : barBg,
+          ...Platform.select({
+            ios: {
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.08,
+              shadowRadius: 12,
+            },
+            android: { elevation: 8 },
+          }),
+        },
+      ]}
       onLayout={(e) => setBarWidth(e.nativeEvent.layout.width)}
     >
-      {hasGlass && <GlassOverlay />}
+      {hasGlass ? <GlassOverlay /> : null}
 
-      {barWidth > 0 && (
+      {barWidth > 0 ? (
         <Animated.View
-          className="absolute rounded-[50px] overflow-hidden"
-          style={{
-            top: INDICATOR_MARGIN_V,
-            bottom: INDICATOR_MARGIN_V,
-            width: indicatorWidth,
-            transform: [{ translateX }, { scale: indicatorScale }],
-            backgroundColor: hasGlass
-              ? isDark
-                ? 'rgba(255,255,255,0.12)'
-                : 'rgba(255,255,255,0.55)'
-              : indicatorBg,
-            ...Platform.select({
-              ios: {
-                shadowOffset: { width: 0, height: 0 },
-                shadowRadius: 12,
-                ...(!hasGlass && {
-                  shadowColor: colors.tint,
-                  shadowOpacity: isDark ? 0.5 : 0.3,
-                }),
-              },
-              android: { elevation: 6 },
-            }),
-          }}
+          style={[
+            styles.indicator,
+            {
+              top: INDICATOR_MARGIN_V,
+              bottom: INDICATOR_MARGIN_V,
+              width: indicatorWidth,
+              transform: [{ translateX }, { scale: indicatorScale }],
+              backgroundColor: hasGlass
+                ? isDark
+                  ? 'rgba(255,255,255,0.12)'
+                  : 'rgba(255,255,255,0.55)'
+                : indicatorBg,
+              ...Platform.select({
+                ios: {
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowRadius: 12,
+                  ...(!hasGlass && {
+                    shadowColor: colors.tint,
+                    shadowOpacity: isDark ? 0.5 : 0.3,
+                  }),
+                },
+                android: { elevation: 6 },
+              }),
+            },
+          ]}
         >
-          {hasGlass && (
+          {hasGlass ? (
             <GlassOverlay
               tintColor={
                 isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.4)'
               }
             />
-          )}
+          ) : null}
         </Animated.View>
-      )}
+      ) : null}
 
       {/* Tab buttons */}
       {state.routes.map((route, index) => {
@@ -148,9 +153,9 @@ export default function GlassTabBar({
         const isFocused = state.index === index;
         const color = isFocused ? colors.text : colors.tabIconDefault;
 
-        const onPress = () => {
+        const onPress = (): void => {
           if (Platform.OS === 'ios') {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }
 
           const event = navigation.emit({
@@ -178,3 +183,21 @@ export default function GlassTabBar({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  bar: {
+    position: 'absolute',
+    width: '70%',
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    overflow: 'hidden',
+    borderRadius: 50,
+    borderTopWidth: 0,
+  },
+  indicator: {
+    position: 'absolute',
+    borderRadius: 50,
+    overflow: 'hidden',
+  },
+});

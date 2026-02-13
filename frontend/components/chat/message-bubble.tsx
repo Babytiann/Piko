@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { Image } from 'expo-image';
-import { API_HOST } from '@/services/api-client';
-import type { MessageItem } from '@/types/chat';
-import Avatar from '@/components/shared/avatar';
+import { API_HOST } from '@/common/services/api-client';
+import type { MessageItem } from '@/common/typings/chat';
+import Avatar from '@/common/components/avatar';
 
 interface MessageBubbleProps {
   message: MessageItem;
@@ -31,7 +31,7 @@ function ReplyPreview({
       borderLeftWidth={2}
       borderLeftColor={isMe ? '$blue4' : '$blue9'}
     >
-      <YStack gap={2} flexShrink={1}>
+      <YStack gap={2} style={{ flexShrink: 1 }}>
         {senderName ? (
           <Text
             fontSize="$1"
@@ -63,12 +63,11 @@ function MediaImage({ url, isMe }: { url: string; isMe: boolean }) {
   if (error) {
     return (
       <View
-        borderRadius="$3"
         bg={isMe ? '$blue8' : '$gray5'}
         mb="$1"
         px="$3"
         py="$2"
-        alignItems="center"
+        style={{ borderRadius: 12, alignItems: 'center' }}
       >
         <Text fontSize="$1" color={isMe ? '$blue3' : '$gray10'}>
           [图片加载失败]
@@ -79,10 +78,13 @@ function MediaImage({ url, isMe }: { url: string; isMe: boolean }) {
 
   return (
     <View
-      borderRadius="$3"
-      overflow="hidden"
       mb="$1"
-      style={{ aspectRatio, maxHeight: 260 }}
+      style={{
+        borderRadius: 12,
+        overflow: 'hidden',
+        aspectRatio,
+        maxHeight: 260,
+      }}
     >
       <Image
         source={{ uri: `${API_HOST}${url}` }}
@@ -115,13 +117,15 @@ export default function MessageBubble({
 
   const bubbleContent = (
     <YStack
-      maxWidth="80%"
       bg={isMe ? '$blue9' : '$gray4'}
-      borderRadius="$4"
       px="$3"
       py="$2"
-      borderBottomRightRadius={isMe ? '$1' : '$4'}
-      borderBottomLeftRadius={isMe ? '$4' : '$1'}
+      style={{
+        maxWidth: '80%',
+        borderRadius: 16,
+        borderBottomRightRadius: isMe ? 4 : 16,
+        borderBottomLeftRadius: isMe ? 16 : 4,
+      }}
     >
       {/* Sender name (only for other people) */}
       {!isMe && message.senderName ? (
@@ -166,8 +170,8 @@ export default function MessageBubble({
       <Text
         fontSize={10}
         color={isMe ? '$blue4' : '$gray10'}
-        textAlign="right"
         mt="$1"
+        style={{ textAlign: 'right' }}
       >
         {message.time}
       </Text>
@@ -177,7 +181,7 @@ export default function MessageBubble({
   // For non-self messages with avatar display enabled, show avatar beside bubble
   if (!isMe && showAvatar) {
     return (
-      <XStack px="$3" py="$1" alignItems="flex-end" gap="$2">
+      <XStack px="$3" py="$1" gap="$2" style={{ alignItems: 'flex-end' }}>
         <Avatar
           url={message.senderAvatarUrl}
           text={message.senderName?.charAt(0)?.toUpperCase() ?? '?'}
@@ -190,7 +194,11 @@ export default function MessageBubble({
   }
 
   return (
-    <YStack alignItems={isMe ? 'flex-end' : 'flex-start'} px="$3" py="$1">
+    <YStack
+      px="$3"
+      py="$1"
+      style={{ alignItems: isMe ? 'flex-end' : 'flex-start' }}
+    >
       {bubbleContent}
     </YStack>
   );

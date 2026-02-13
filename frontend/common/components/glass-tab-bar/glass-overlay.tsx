@@ -1,7 +1,12 @@
+import type { ReactNode } from 'react';
 import { StyleSheet } from 'react-native';
 import { GlassView } from 'expo-glass-effect';
 
-export default function GlassOverlay({ tintColor }: { tintColor?: string }) {
+interface Props {
+  tintColor?: string;
+}
+
+export default function GlassOverlay({ tintColor }: Props): ReactNode {
   return (
     <GlassView
       style={styles.glassClip}

@@ -2,18 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
+import type { TelegramUser } from '@/common/typings/telegram-login';
 import { createSafeContext } from '@/contexts/pageBaseContext';
 
 const SESSION_KEY = 'telegram_session';
 const USER_KEY = 'telegram_user';
 
-export interface TelegramUser {
-  id: string;
-  firstName: string;
-  lastName: string;
-  username: string;
-  phone: string;
-}
+export type { TelegramUser };
 
 export interface AuthContextValue {
   session: string | null;
@@ -75,7 +70,7 @@ export function useAuthValue(): AuthContextValue {
   }, []);
 
   const login = useCallback(
-    async (newSession: string, newUser: TelegramUser) => {
+    async (newSession: string, newUser: TelegramUser): Promise<void> => {
       await setItem(SESSION_KEY, newSession);
       await setItem(USER_KEY, JSON.stringify(newUser));
       setSession(newSession);
@@ -84,7 +79,7 @@ export function useAuthValue(): AuthContextValue {
     [],
   );
 
-  const logout = useCallback(async () => {
+  const logout = useCallback(async (): Promise<void> => {
     await deleteItem(SESSION_KEY);
     await deleteItem(USER_KEY);
     setSession(null);

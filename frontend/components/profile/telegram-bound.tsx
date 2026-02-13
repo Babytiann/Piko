@@ -1,7 +1,7 @@
 import { TouchableOpacity } from 'react-native';
 import { XStack, YStack, Text } from 'tamagui';
-import type { ProfileUser } from '@/types/profile';
-import Avatar from '@/components/shared/avatar';
+import type { ProfileUser } from '@/common/typings/profile';
+import Avatar from '@/common/components/avatar';
 
 interface TelegramBoundProps {
   user: ProfileUser;

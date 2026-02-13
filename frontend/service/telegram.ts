@@ -1,18 +1,30 @@
-import { post, postDirect } from './api-client';
+/**
+ * Telegram authentication & messaging APIs.
+ *
+ * Auth calls go through the unified `/telegram/auth/v1` endpoint,
+ * dispatched by `session_tag`.
+ *
+ * Page copy is fetched via `/telegram/text_detail/v1`.
+ */
+import { post, postDirect } from '@/common/services/api-client';
 import type {
   TelegramAuthRequest,
   SendCodeResult,
   SignInResult,
   CheckPasswordResult,
   TelegramLoginText,
-} from '@/types/telegram-login';
+} from '@/common/typings/telegram-login';
 import {
   SessionTag,
   TelegramLoginStep,
   type PhoneStepText,
   type VerifyCodeStepText,
   type VerifyTwoFAStepText,
-} from '@/types/telegram-login';
+} from '@/common/typings/telegram-login';
+
+// ---------------------------------------------------------------------------
+// Re-exports for convenience
+// ---------------------------------------------------------------------------
 
 export { SessionTag, TelegramLoginStep };
 export type {
@@ -25,8 +37,17 @@ export type {
   TelegramLoginText,
 };
 
-export type { TelegramUser } from '@/types/telegram-login';
+// Re-export user type so existing consumers don't break
+export type { TelegramUser } from '@/common/typings/telegram-login';
 
+// ---------------------------------------------------------------------------
+// Unified auth API
+// ---------------------------------------------------------------------------
+
+/**
+ * Unified Telegram authentication call.
+ * Use `session_tag` to select the operation.
+ */
 function telegramAuth<T>(params: TelegramAuthRequest): Promise<T> {
   return postDirect<T>(
     'telegram/auth/v1',
@@ -34,6 +55,7 @@ function telegramAuth<T>(params: TelegramAuthRequest): Promise<T> {
   );
 }
 
+/** Send verification code to a phone number. */
 export function sendCode(phoneNumber: string): Promise<SendCodeResult> {
   return telegramAuth<SendCodeResult>({
     session_tag: SessionTag.SEND_CODE,
@@ -41,6 +63,7 @@ export function sendCode(phoneNumber: string): Promise<SendCodeResult> {
   });
 }
 
+/** Sign in with phone number + verification code. */
 export function signIn(
   phoneNumber: string,
   phoneCode: string,
@@ -54,6 +77,7 @@ export function signIn(
   });
 }
 
+/** Complete 2FA login by providing the password. */
 export function checkPassword(
   session: string,
   password: string,
@@ -65,6 +89,11 @@ export function checkPassword(
   });
 }
 
+// ---------------------------------------------------------------------------
+// Text detail API
+// ---------------------------------------------------------------------------
+
+/** Fetch page copy for a given login step. */
 export function fetchTelegramText(
   step: TelegramLoginStep.PHONE,
 ): Promise<PhoneStepText>;
@@ -79,6 +108,10 @@ export function fetchTelegramText(
 ): Promise<TelegramLoginText> {
   return post<TelegramLoginText>('telegram/text_detail/v1', { step });
 }
+
+// ---------------------------------------------------------------------------
+// Messaging API (unchanged — used by chat detail)
+// ---------------------------------------------------------------------------
 
 export interface SendMessageResponse {
   success: boolean;
