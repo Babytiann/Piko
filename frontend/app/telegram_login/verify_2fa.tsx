@@ -4,7 +4,7 @@ import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { useAuth } from '@/common/hooks';
-import * as telegramApi from '@/service/telegram';
+import * as telegramApi from '@/services/telegram';
 import { TelegramLoginStep } from '@/common/typings/telegram-login';
 import type { VerifyTwoFAStepText } from '@/common/typings/telegram-login';
 

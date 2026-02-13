@@ -52,14 +52,15 @@ frontend/
 │   │   └── product-card/          # 可复用卡片 (Slot 组合)
 │   ├── hooks/                     # 通用 hooks (useAuth, useSafeArea)
 │   │   └── index.ts              # Barrel re-export
-│   ├── services/                  # API client + 通用请求
 │   ├── typings/                   # 共享类型定义
 │   └── consts/                    # 全局常量
 │
-├── service/                       # 页面级数据获取 (一个页面一个文件)
-│   ├── home.ts
-│   ├── profile.ts
-│   └── chat.ts
+├── services/                      # API client + 页面级数据获取
+│   ├── api-client.ts             # 底层请求封装 (post, postSafe, postDirect)
+│   ├── home.ts                   # 首页数据获取
+│   ├── chat.ts                   # 聊天数据获取
+│   ├── profile.ts                # 个人资料数据获取
+│   └── telegram.ts               # Telegram 认证 & 消息 API
 │
 ├── contexts/                      # Context 定义
 └── utils/                         # 全局工具函数
@@ -70,7 +71,7 @@ frontend/
 ```
 MUST:  页面私有代码放 pages/{page}/ 下，不放 common/
 MUST:  跨 2 个以上页面复用的代码提升到 common/
-MUST:  数据获取逻辑放 service/ (按页面分文件)，不内联在组件中
+MUST:  数据获取逻辑放 services/ (按页面分文件)，不内联在组件中
 MUST:  common/hooks/index.ts barrel re-export 所有公共 hooks
 NEVER: 页面级 hooks/components 目录创建 barrel index.ts — 直接 import 具体文件
 NEVER: 页面 A 直接 import 页面 B 的私有模块
@@ -342,8 +343,8 @@ import { useAuth } from '@/common/hooks';
 import PageLoading from '@/common/components/page-loading';
 import { getPageErrorType } from '@/common/components/page-status-view';
 
-// 4. 项目 service/
-import { fetchProfilePage } from '@/service/profile';
+// 4. 项目 services/ (数据获取)
+import { fetchProfilePage } from '@/services/profile';
 
 // 5. 页面相对路径 (同页面内)
 import { POLLING_INTERVAL } from '../consts';

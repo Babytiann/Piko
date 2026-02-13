@@ -5,7 +5,7 @@ import {
   PageErrorType,
 } from '@/common/components/page-status-view';
 import type { HomePageData } from '@/common/typings/home';
-import { fetchHomePage } from '@/service/home';
+import { fetchHomePage } from '@/services/home';
 
 interface UseFetchDataReturn {
   isLoading: boolean;

@@ -5,7 +5,7 @@ import {
   PageErrorType,
 } from '@/common/components/page-status-view';
 import type { ChatDetailPageData, MessageItem } from '@/common/typings/chat';
-import { fetchChatDetailPage } from '@/service/chat';
+import { fetchChatDetailPage } from '@/services/chat';
 
 import { mergeLatestMessages } from '../utils/mergeMessages';
 

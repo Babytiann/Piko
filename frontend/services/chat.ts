@@ -3,7 +3,7 @@ import type {
   ChatListPageData,
   ChatDetailPageData,
 } from '@/common/typings/chat';
-import { postSafe } from '@/common/services/api-client';
+import { postSafe } from '@/services';
 
 /** Fetch all data for the Chat list (messages tab) page. */
 export function fetchChatListPage(

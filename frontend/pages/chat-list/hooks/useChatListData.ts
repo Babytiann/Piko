@@ -5,7 +5,7 @@ import {
   PageErrorType,
 } from '@/common/components/page-status-view';
 import type { ChatListPageData } from '@/common/typings/chat';
-import { fetchChatListPage } from '@/service/chat';
+import { fetchChatListPage } from '@/services/chat';
 
 interface UseChatListDataReturn {
   isLoading: boolean;

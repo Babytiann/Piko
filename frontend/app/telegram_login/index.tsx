@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import * as telegramApi from '@/service/telegram';
+import * as telegramApi from '@/services/telegram';
 import { TelegramLoginStep } from '@/common/typings/telegram-login';
 import type { PhoneStepText } from '@/common/typings/telegram-login';
 

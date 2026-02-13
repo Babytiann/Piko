@@ -6,7 +6,7 @@
  *
  * Page copy is fetched via `/telegram/text_detail/v1`.
  */
-import { post, postDirect } from '@/common/services/api-client';
+import { post, postDirect } from '@/services';
 import type {
   TelegramAuthRequest,
   SendCodeResult,

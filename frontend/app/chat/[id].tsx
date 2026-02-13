@@ -16,8 +16,8 @@ import PageLoading from '@/common/components/page-loading';
 import PageStatusView from '@/common/components/page-status-view';
 
 import type { MessageItem } from '@/common/typings/chat';
-import * as telegramApi from '@/service/telegram';
-import { fetchChatDetailPage } from '@/service/chat';
+import * as telegramApi from '@/services/telegram';
+import { fetchChatDetailPage } from '@/services/chat';
 import { MULTI_SENDER_TYPES } from '@/pages/chat-detail/consts';
 import { useChatDetailData } from '@/pages/chat-detail/hooks/useChatDetailData';
 import { useChatPolling } from '@/pages/chat-detail/hooks/useChatPolling';

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 import type { MessageItem } from '@/common/typings/chat';
-import { fetchChatDetailPage } from '@/service/chat';
+import { fetchChatDetailPage } from '@/services/chat';
 
 import { CHAT_POLLING_INTERVAL } from '../consts';
 

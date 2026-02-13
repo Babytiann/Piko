@@ -5,7 +5,7 @@ import {
   PageErrorType,
 } from '@/common/components/page-status-view';
 import type { ProfilePageData } from '@/common/typings/profile';
-import { fetchProfilePage } from '@/service/profile';
+import { fetchProfilePage } from '@/services/profile';
 
 interface UseProfileDataReturn {
   isLoading: boolean;
