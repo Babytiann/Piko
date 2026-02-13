@@ -1,24 +1,25 @@
-import { ActivityIndicator, TouchableOpacity } from 'react-native';
+import type { ReactNode } from 'react';
+import { ActivityIndicator, TouchableOpacity, StyleSheet } from 'react-native';
 import { YStack, Text, XStack, Input } from 'tamagui';
 
-import CountryCodeSelect from './tl-country-code-select';
 import type { CountryItem } from '@/common/typings/telegram-login';
 
-interface PhoneStepProps {
+import TgLoginCountrySelect from './tg-login-country-select';
+
+interface TgLoginPhoneStepProps {
   phoneNumber: string;
   onPhoneNumberChange: (value: string) => void;
   countryName: string;
   onCountryChange: (name: string) => void;
   onSendCode: () => void;
   loading: boolean;
-  /** Server-driven text props */
   phonePlaceholder: string;
   sendCodeButtonText: string;
   countries: CountryItem[];
   countryPickerHeader: string;
 }
 
-export default function PhoneStep({
+export default function TgLoginPhoneStep({
   phoneNumber,
   onPhoneNumberChange,
   countryName,
@@ -29,11 +30,11 @@ export default function PhoneStep({
   sendCodeButtonText,
   countries,
   countryPickerHeader,
-}: PhoneStepProps) {
+}: TgLoginPhoneStepProps): ReactNode {
   return (
     <YStack gap="$3">
-      <XStack gap="$2" items="center">
-        <CountryCodeSelect
+      <XStack gap="$2" style={{ alignItems: 'center' }}>
+        <TgLoginCountrySelect
           value={countryName}
           onValueChange={onCountryChange}
           countries={countries}
@@ -50,8 +51,7 @@ export default function PhoneStep({
       </XStack>
 
       <TouchableOpacity
-        className={`h-12 rounded-xl justify-center items-center ${loading ? 'opacity-60' : ''}`}
-        style={{ backgroundColor: '#333' }}
+        style={[styles.button, loading && styles.buttonDisabled]}
         onPress={onSendCode}
         disabled={loading}
         activeOpacity={0.8}
@@ -67,3 +67,16 @@ export default function PhoneStep({
     </YStack>
   );
 }
+
+const styles = StyleSheet.create({
+  button: {
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#333',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+});

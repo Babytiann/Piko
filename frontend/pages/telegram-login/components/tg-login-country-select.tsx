@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useRef } from 'react';
+import type { ReactNode } from 'react';
+import { useState, useRef } from 'react';
 import {
   TouchableOpacity,
   ScrollView,
@@ -6,6 +7,7 @@ import {
   Modal,
   View,
   Pressable,
+  StyleSheet,
   type LayoutRectangle,
 } from 'react-native';
 import { Text } from 'tamagui';
@@ -17,44 +19,31 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { GlassBackground } from './tl-glass-background';
 import { DROPDOWN_MAX_HEIGHT } from '@/common/consts';
 import type { CountryItem } from '@/common/typings/telegram-login';
 
-// ---------------------------------------------------------------------------
-// Utility
-// ---------------------------------------------------------------------------
+import { getCodeByName } from '../utils/getCodeByName';
+import { TgLoginGlassBackground } from './tg-login-glass-background';
 
-/** Resolve a country name to its dial code from the given list. */
-export function getCodeByName(countries: CountryItem[], name: string): string {
-  return countries.find((c) => c.name === name)?.code ?? '+86';
-}
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-
-interface CountryCodeSelectProps {
+interface TgLoginCountrySelectProps {
   value: string;
   onValueChange: (name: string) => void;
-  /** Country list from server */
   countries: CountryItem[];
-  /** Dropdown header text from server */
   header: string;
 }
 
-const springConfig = {
+const SPRING_CONFIG = {
   damping: 20,
   mass: 0.8,
   stiffness: 200,
 };
 
-export default function CountryCodeSelect({
+export default function TgLoginCountrySelect({
   value,
   onValueChange,
   countries,
   header,
-}: CountryCodeSelectProps) {
+}: TgLoginCountrySelectProps): ReactNode {
   const [open, setOpen] = useState(false);
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
@@ -72,32 +61,27 @@ export default function CountryCodeSelect({
     transform: [{ scale: scale.value }, { translateY: translateY.value }],
   }));
 
-  const openDropdown = useCallback(() => {
+  const openDropdown = (): void => {
     triggerRef.current?.measureInWindow((x, y, width, height) => {
       setTriggerLayout({ x, y, width, height });
       setOpen(true);
-      opacity.value = withSpring(1, springConfig);
-      scale.value = withSpring(1, springConfig);
-      translateY.value = withSpring(0, springConfig);
+      opacity.value = withSpring(1, SPRING_CONFIG);
+      scale.value = withSpring(1, SPRING_CONFIG);
+      translateY.value = withSpring(0, SPRING_CONFIG);
     });
-  }, [opacity, scale, translateY]);
+  };
 
-  const closeDropdown = useCallback(() => {
+  const closeDropdown = (): void => {
     opacity.value = withTiming(0, { duration: 180 });
     scale.value = withTiming(0.95, { duration: 180 });
     translateY.value = withTiming(-6, { duration: 180 });
-    setTimeout(() => {
-      setOpen(false);
-    }, 200);
-  }, [opacity, scale, translateY]);
+    setTimeout(() => setOpen(false), 200);
+  };
 
-  const handleSelect = useCallback(
-    (name: string) => {
-      onValueChange(name);
-      closeDropdown();
-    },
-    [onValueChange, closeDropdown],
-  );
+  const handleSelect = (name: string): void => {
+    onValueChange(name);
+    closeDropdown();
+  };
 
   const selectedCode = getCodeByName(countries, value);
 
@@ -106,13 +90,15 @@ export default function CountryCodeSelect({
       <TouchableOpacity
         onPress={openDropdown}
         activeOpacity={0.7}
-        className="flex-row items-center justify-center gap-1 h-11 w-[90px] rounded-xl border"
-        style={{
-          backgroundColor: isDark
-            ? 'rgba(255,255,255,0.08)'
-            : 'rgba(0,0,0,0.05)',
-          borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
-        }}
+        style={[
+          styles.trigger,
+          {
+            backgroundColor: isDark
+              ? 'rgba(255,255,255,0.08)'
+              : 'rgba(0,0,0,0.05)',
+            borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+          },
+        ]}
       >
         <Text fontSize={15} fontWeight="500" color="$color">
           {selectedCode}
@@ -126,14 +112,14 @@ export default function CountryCodeSelect({
         animationType="none"
         onRequestClose={closeDropdown}
       >
-        <Pressable className="absolute inset-0" onPress={closeDropdown}>
-          <View className="absolute inset-0" />
+        <Pressable style={StyleSheet.absoluteFill} onPress={closeDropdown}>
+          <View style={StyleSheet.absoluteFill} />
         </Pressable>
 
-        {triggerLayout && (
+        {triggerLayout ? (
           <Animated.View
-            className="absolute z-[999999]"
             style={[
+              styles.dropdown,
               {
                 top: triggerLayout.y + triggerLayout.height + 6,
                 left: triggerLayout.x,
@@ -142,20 +128,18 @@ export default function CountryCodeSelect({
               animatedDropdownStyle,
             ]}
           >
-            <GlassBackground isDark={isDark}>
+            <TgLoginGlassBackground isDark={isDark}>
               <View
-                className="px-4 py-2.5 border-b-[0.5px]"
-                style={{
-                  borderBottomColor: isDark
-                    ? 'rgba(255,255,255,0.08)'
-                    : 'rgba(0,0,0,0.06)',
-                }}
+                style={[
+                  styles.dropdownHeader,
+                  {
+                    borderBottomColor: isDark
+                      ? 'rgba(255,255,255,0.08)'
+                      : 'rgba(0,0,0,0.06)',
+                  },
+                ]}
               >
-                <Text
-                  fontSize={13}
-                  fontWeight="600"
-                  color={isDark ? '#8E8E93' : '#8E8E93'}
-                >
+                <Text fontSize={13} fontWeight="600" color="#8E8E93">
                   {header}
                 </Text>
               </View>
@@ -172,8 +156,8 @@ export default function CountryCodeSelect({
                       key={item.name}
                       onPress={() => handleSelect(item.name)}
                       activeOpacity={0.6}
-                      className="flex-row items-center h-11 px-4"
                       style={[
+                        styles.optionRow,
                         i < countries.length - 1 && {
                           borderBottomWidth: 0.5,
                           borderBottomColor: isDark
@@ -197,20 +181,48 @@ export default function CountryCodeSelect({
                       </Text>
                       <Text
                         fontSize={14}
-                        color={isDark ? '#8E8E93' : '#8E8E93'}
+                        color="#8E8E93"
                         mr={isSelected ? 8 : 0}
                       >
                         {item.code}
                       </Text>
-                      {isSelected && <Check size={16} color="#007AFF" />}
+                      {isSelected ? <Check size={16} color="#007AFF" /> : null}
                     </TouchableOpacity>
                   );
                 })}
               </ScrollView>
-            </GlassBackground>
+            </TgLoginGlassBackground>
           </Animated.View>
-        )}
+        ) : null}
       </Modal>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  trigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    height: 44,
+    width: 90,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  dropdown: {
+    position: 'absolute',
+    zIndex: 999999,
+  },
+  dropdownHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 0.5,
+  },
+  optionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 44,
+    paddingHorizontal: 16,
+  },
+});

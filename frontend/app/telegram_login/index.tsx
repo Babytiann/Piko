@@ -1,47 +1,46 @@
+import type { ReactNode } from 'react';
 import { useState, useEffect } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  View,
-  StyleSheet,
-  Keyboard,
-  TouchableWithoutFeedback,
-  ActivityIndicator,
-} from 'react-native';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { YStack, Text, Spacer } from 'tamagui';
+
 import * as telegramApi from '@/service/telegram';
 import { TelegramLoginStep } from '@/common/typings/telegram-login';
-import { getCodeByName } from '@/components/telegramLogin/tl-country-code-select';
+import type { PhoneStepText } from '@/common/typings/telegram-login';
 
-import PhoneStep from '@/components/telegramLogin/tl-phone-step';
-import usePageData from '@/hooks/usePageData';
+import { getCodeByName } from '@/pages/telegram-login/utils/getCodeByName';
+import TgLoginFormLayout from '@/pages/telegram-login/components/tg-login-form-layout';
+import TgLoginPhoneStep from '@/pages/telegram-login/components/tg-login-phone-step';
 
-export default function TelegramLoginScreen() {
-  const { top, bottom } = useSafeAreaInsets();
+export default function TelegramLoginScreen(): ReactNode {
   const router = useRouter();
 
+  const [text, setText] = useState<PhoneStepText | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [countryName, setCountryName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
 
-  const { data: text } = usePageData(
-    () => telegramApi.fetchTelegramText(TelegramLoginStep.PHONE),
-    [],
-  );
-
-  // Set default country once text data arrives
   useEffect(() => {
-    if (text) setCountryName(text.defaultCountry);
-  }, [text]);
+    let cancelled = false;
+
+    async function load(): Promise<void> {
+      const data = await telegramApi.fetchTelegramText(TelegramLoginStep.PHONE);
+      if (cancelled) return;
+      setText(data);
+      setCountryName(data.defaultCountry);
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const fullPhoneNumber = text
     ? `${getCodeByName(text.countries, countryName)} ${phoneNumber.trim()}`
     : '';
 
-  const handleSendCode = async () => {
+  const handleSendCode = async (): Promise<void> => {
     if (!text) return;
     if (!phoneNumber.trim()) {
       setError(text.errors.emptyPhone);
@@ -65,7 +64,6 @@ export default function TelegramLoginScreen() {
     }
   };
 
-  // Show loading spinner while fetching text
   if (!text) {
     return (
       <View style={styles.loadingContainer}>
@@ -74,49 +72,28 @@ export default function TelegramLoginScreen() {
     );
   }
 
+  const { phonePlaceholder, sendCodeButton, countries, countryPickerHeader } =
+    text;
+
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <View style={{ flex: 1 }}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={{ flex: 1 }}
-        >
-          <YStack flex={1} pt={top} pb={bottom} px="$6" bg="$background">
-            <View style={styles.headerCenter}>
-              <Text fontSize={24} fontWeight="700" color="$color">
-                {text.title}
-              </Text>
-              <Text fontSize="$3" color="$gray11" mt="$2">
-                {text.subtitle}
-              </Text>
-            </View>
-
-            {error ? (
-              <View style={styles.errorBox}>
-                <Text color="$red11" fontSize="$2">
-                  {error}
-                </Text>
-              </View>
-            ) : null}
-
-            <PhoneStep
-              phoneNumber={phoneNumber}
-              onPhoneNumberChange={setPhoneNumber}
-              countryName={countryName}
-              onCountryChange={setCountryName}
-              onSendCode={handleSendCode}
-              loading={loading}
-              phonePlaceholder={text.phonePlaceholder}
-              sendCodeButtonText={text.sendCodeButton}
-              countries={text.countries}
-              countryPickerHeader={text.countryPickerHeader}
-            />
-
-            <Spacer flex={1} />
-          </YStack>
-        </KeyboardAvoidingView>
-      </View>
-    </TouchableWithoutFeedback>
+    <TgLoginFormLayout
+      title={text.title}
+      subtitle={text.subtitle}
+      error={error}
+    >
+      <TgLoginPhoneStep
+        phoneNumber={phoneNumber}
+        onPhoneNumberChange={setPhoneNumber}
+        countryName={countryName}
+        onCountryChange={setCountryName}
+        onSendCode={() => void handleSendCode()}
+        loading={loading}
+        phonePlaceholder={phonePlaceholder}
+        sendCodeButtonText={sendCodeButton}
+        countries={countries}
+        countryPickerHeader={countryPickerHeader}
+      />
+    </TgLoginFormLayout>
   );
 }
 
@@ -125,16 +102,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  headerCenter: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  errorBox: {
-    backgroundColor: 'rgba(255,0,0,0.1)',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginBottom: 16,
   },
 });

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import type { ReactNode } from 'react';
 import {
   ActionSheetIOS,
   Platform,
@@ -7,26 +7,22 @@ import {
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
+
 import type { MessageItem } from '@/common/typings/chat';
 
-interface MessageContextMenuProps {
+interface ChatDetailContextMenuProps {
   message: MessageItem;
   onReply: (message: MessageItem) => void;
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
-/**
- * Wraps a message bubble and provides a long-press context menu with
- * "Copy" and "Reply" actions. Uses ActionSheetIOS on iOS and a fallback
- * Alert on Android.
- */
-export default function MessageContextMenu({
+export default function ChatDetailContextMenu({
   message,
   onReply,
   children,
-}: MessageContextMenuProps) {
-  const handleLongPress = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+}: ChatDetailContextMenuProps): ReactNode {
+  const handleLongPress = (): void => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     const hasText = !!message.text;
     const options = [...(hasText ? ['复制'] : []), '回复', '取消'];
@@ -37,20 +33,19 @@ export default function MessageContextMenu({
         { options, cancelButtonIndex: cancelIndex },
         (buttonIndex) => {
           if (hasText && buttonIndex === 0) {
-            Clipboard.setStringAsync(message.text);
+            void Clipboard.setStringAsync(message.text);
           } else if (buttonIndex === (hasText ? 1 : 0)) {
             onReply(message);
           }
         },
       );
     } else {
-      // Android fallback using Alert
       const buttons = [
         ...(hasText
           ? [
               {
                 text: '复制',
-                onPress: () => Clipboard.setStringAsync(message.text),
+                onPress: () => void Clipboard.setStringAsync(message.text),
               },
             ]
           : []),
@@ -59,7 +54,7 @@ export default function MessageContextMenu({
       ];
       Alert.alert('消息操作', undefined, buttons);
     }
-  }, [message, onReply]);
+  };
 
   return (
     <TouchableOpacity

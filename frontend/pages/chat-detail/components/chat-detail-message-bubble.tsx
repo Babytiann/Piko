@@ -1,15 +1,14 @@
+import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { Image } from 'expo-image';
+
 import { API_HOST } from '@/common/services/api-client';
 import type { MessageItem } from '@/common/typings/chat';
 import Avatar from '@/common/components/avatar';
 
-interface MessageBubbleProps {
+interface ChatDetailMessageBubbleProps {
   message: MessageItem;
-  /** Called when the user selects "reply" from the context menu. */
-  onReply?: (message: MessageItem) => void;
-  /** Whether to show the sender avatar (typically in group chats). */
   showAvatar?: boolean;
 }
 
@@ -21,7 +20,7 @@ function ReplyPreview({
   senderName: string | null;
   text: string | null;
   isMe: boolean;
-}) {
+}): ReactNode {
   if (!senderName && !text) return null;
 
   return (
@@ -56,7 +55,7 @@ function ReplyPreview({
   );
 }
 
-function MediaImage({ url, isMe }: { url: string; isMe: boolean }) {
+function MediaImage({ url, isMe }: { url: string; isMe: boolean }): ReactNode {
   const [aspectRatio, setAspectRatio] = useState(1.5);
   const [error, setError] = useState(false);
 
@@ -105,10 +104,10 @@ function MediaImage({ url, isMe }: { url: string; isMe: boolean }) {
   );
 }
 
-export default function MessageBubble({
+export default function ChatDetailMessageBubble({
   message,
   showAvatar = false,
-}: MessageBubbleProps) {
+}: ChatDetailMessageBubbleProps): ReactNode {
   const { isMe } = message;
   const hasReply =
     message.replyToMsgId != null &&
@@ -127,14 +126,12 @@ export default function MessageBubble({
         borderBottomLeftRadius: isMe ? 16 : 4,
       }}
     >
-      {/* Sender name (only for other people) */}
       {!isMe && message.senderName ? (
         <Text fontSize="$1" fontWeight="600" color="$blue10" mb="$1">
           {message.senderName}
         </Text>
       ) : null}
 
-      {/* Reply preview */}
       {hasReply ? (
         <ReplyPreview
           senderName={message.replyToSenderName}
@@ -143,10 +140,8 @@ export default function MessageBubble({
         />
       ) : null}
 
-      {/* Image media */}
       {hasImage ? <MediaImage url={message.mediaUrl!} isMe={isMe} /> : null}
 
-      {/* Text body */}
       {message.text ? (
         <Text
           fontSize="$3"
@@ -166,7 +161,6 @@ export default function MessageBubble({
         </Text>
       ) : null}
 
-      {/* Timestamp */}
       <Text
         fontSize={10}
         color={isMe ? '$blue4' : '$gray10'}
@@ -178,7 +172,6 @@ export default function MessageBubble({
     </YStack>
   );
 
-  // For non-self messages with avatar display enabled, show avatar beside bubble
   if (!isMe && showAvatar) {
     return (
       <XStack px="$3" py="$1" gap="$2" style={{ alignItems: 'flex-end' }}>

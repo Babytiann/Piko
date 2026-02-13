@@ -1,24 +1,24 @@
-import { ActivityIndicator, TouchableOpacity } from 'react-native';
+import type { ReactNode } from 'react';
+import { ActivityIndicator, TouchableOpacity, StyleSheet } from 'react-native';
 import { YStack, Text, Input } from 'tamagui';
 
-interface TwoFAStepProps {
+interface TgLoginTwoFaStepProps {
   password: string;
   onPasswordChange: (value: string) => void;
   onCheckPassword: () => void;
   loading: boolean;
-  /** Server-driven text props */
   passwordPlaceholder: string;
   confirmButtonText: string;
 }
 
-export default function TwoFAStep({
+export default function TgLoginTwoFaStep({
   password,
   onPasswordChange,
   onCheckPassword,
   loading,
   passwordPlaceholder,
   confirmButtonText,
-}: TwoFAStepProps) {
+}: TgLoginTwoFaStepProps): ReactNode {
   return (
     <YStack gap="$3">
       <Input
@@ -30,8 +30,7 @@ export default function TwoFAStep({
         secureTextEntry
       />
       <TouchableOpacity
-        className={`h-12 rounded-xl justify-center items-center ${loading ? 'opacity-60' : ''}`}
-        style={{ backgroundColor: '#333' }}
+        style={[styles.button, loading && styles.buttonDisabled]}
         onPress={onCheckPassword}
         disabled={loading}
         activeOpacity={0.8}
@@ -47,3 +46,16 @@ export default function TwoFAStep({
     </YStack>
   );
 }
+
+const styles = StyleSheet.create({
+  button: {
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#333',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+});

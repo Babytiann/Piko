@@ -3,7 +3,7 @@ import type {
   ChatListPageData,
   ChatDetailPageData,
 } from '@/common/typings/chat';
-import { post, postSafe } from '@/common/services/api-client';
+import { postSafe } from '@/common/services/api-client';
 
 /** Fetch all data for the Chat list (messages tab) page. */
 export function fetchChatListPage(
@@ -20,8 +20,8 @@ export function fetchChatDetailPage(
   accessHash: string,
   title: string,
   offsetId?: number,
-): Promise<ChatDetailPageData> {
-  return post<ChatDetailPageData>('chat/detail/v1', {
+): Promise<ApiResponse<ChatDetailPageData>> {
+  return postSafe<ChatDetailPageData>('chat/detail/v1', {
     session,
     chatId,
     chatType,

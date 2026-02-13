@@ -1,4 +1,5 @@
-import { useRef, useCallback, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -11,58 +12,20 @@ import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { YStack, Text } from 'tamagui';
 
 import { useAuth } from '@/common/hooks';
-import { fetchChatDetailPage } from '@/service/chat';
-import type { ChatDetailPageData, MessageItem } from '@/common/typings/chat';
-import * as telegramApi from '@/service/telegram';
 import PageLoading from '@/common/components/page-loading';
-import PageError from '@/common/components/page-status-view';
-import MessageBubble from '@/components/chat/message-bubble';
-import MessageInput from '@/components/chat/message-input';
-import MessageContextMenu from '@/components/chat/message-context-menu';
+import PageStatusView from '@/common/components/page-status-view';
 
-/** Poll for new messages every 3 seconds while the chat screen is active. */
-const CHAT_POLLING_INTERVAL = 3_000;
+import type { MessageItem } from '@/common/typings/chat';
+import * as telegramApi from '@/service/telegram';
+import { fetchChatDetailPage } from '@/service/chat';
+import { MULTI_SENDER_TYPES } from '@/pages/chat-detail/consts';
+import { useChatDetailData } from '@/pages/chat-detail/hooks/useChatDetailData';
+import { useChatPolling } from '@/pages/chat-detail/hooks/useChatPolling';
+import ChatDetailMessageBubble from '@/pages/chat-detail/components/chat-detail-message-bubble';
+import ChatDetailMessageInput from '@/pages/chat-detail/components/chat-detail-message-input';
+import ChatDetailContextMenu from '@/pages/chat-detail/components/chat-detail-context-menu';
 
-/** Chat types that may have multiple senders and should display avatars. */
-const MULTI_SENDER_TYPES = new Set(['group', 'channel']);
-
-/**
- * Threshold to distinguish optimistic (client-generated) message ids from real
- * Telegram message ids.  Optimistic ids are created via `Date.now()` which
- * yields values > 1e12, while Telegram ids are sequential integers.
- */
-const OPTIMISTIC_ID_THRESHOLD = 1e12;
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Merge a fresh batch of messages (newest-first, from the server) into the
- * existing local message list.  Handles de-duplication by id and removes stale
- * optimistic messages that have now been confirmed by the server.
- */
-function mergeLatestMessages(
-  prev: MessageItem[],
-  freshBatch: MessageItem[],
-): MessageItem[] {
-  // Strip optimistic messages — the fresh batch will contain the real versions
-  const realPrev = prev.filter((m) => m.id < OPTIMISTIC_ID_THRESHOLD);
-  const existingIds = new Set(realPrev.map((m) => m.id));
-  const newMsgs = freshBatch.filter((m) => !existingIds.has(m.id));
-
-  // Nothing changed — return previous reference to avoid unnecessary re-render
-  if (newMsgs.length === 0 && realPrev.length === prev.length) return prev;
-
-  // New messages are prepended (newest-first order)
-  return [...newMsgs, ...realPrev];
-}
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-
-export default function ChatScreen() {
+export default function ChatScreen(): ReactNode {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { id, title, chatType, accessHash } = useLocalSearchParams<{
@@ -75,79 +38,35 @@ export default function ChatScreen() {
   const flatListRef = useRef<FlatList>(null);
   const [replyTo, setReplyTo] = useState<MessageItem | null>(null);
 
-  const showAvatar = MULTI_SENDER_TYPES.has(chatType ?? '');
+  const chatParams = {
+    session,
+    chatId: id ?? '',
+    chatType: chatType ?? 'user',
+    accessHash: accessHash ?? '',
+    title: title ?? 'Chat',
+  };
 
-  // ---- Page-level state -------------------------------------------------
+  const showAvatar = MULTI_SENDER_TYPES.has(chatParams.chatType);
 
-  const [pageData, setPageData] = useState<ChatDetailPageData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  // ---- Data Hook: initial load + message state ----------------------------
 
-  // ---- Message list state (managed independently for merge support) ------
+  const {
+    isLoading,
+    errorType,
+    pageData,
+    messages,
+    loadingMore,
+    handleRetry,
+    handleLoadMore,
+    mergeMessages,
+    prependOptimistic,
+  } = useChatDetailData(chatParams);
 
-  /** Messages stored in newest-first order (matches server response). */
-  const [messages, setMessages] = useState<MessageItem[]>([]);
-  const [hasMore, setHasMore] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
+  // ---- Effect Hook: background polling ------------------------------------
 
-  // ---- Initial fetch ----------------------------------------------------
+  useChatPolling(chatParams, mergeMessages);
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError('');
-
-    fetchChatDetailPage(
-      session ?? '',
-      id ?? '',
-      chatType ?? 'user',
-      accessHash ?? '',
-      title ?? 'Chat',
-    )
-      .then((data) => {
-        if (cancelled) return;
-        setPageData(data);
-        setMessages(data.messages); // newest-first from server
-        setHasMore(data.hasMore);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setError(err instanceof Error ? err.message : '加载失败');
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [session, id, chatType, accessHash, title]);
-
-  // ---- Background polling — merge new messages --------------------------
-
-  useEffect(() => {
-    if (!session || !id) return;
-
-    const poll = async () => {
-      try {
-        const data = await fetchChatDetailPage(
-          session,
-          id,
-          chatType ?? 'user',
-          accessHash ?? '',
-          title ?? 'Chat',
-        );
-        setMessages((prev) => mergeLatestMessages(prev, data.messages));
-      } catch {
-        // Polling errors are swallowed to avoid flickering error UI
-      }
-    };
-
-    const intervalId = setInterval(poll, CHAT_POLLING_INTERVAL);
-    return () => clearInterval(intervalId);
-  }, [session, id, chatType, accessHash, title]);
-
-  // ---- Navigation title -------------------------------------------------
+  // ---- Navigation title ---------------------------------------------------
 
   useEffect(() => {
     navigation.setOptions({
@@ -156,167 +75,72 @@ export default function ChatScreen() {
     });
   }, [navigation, pageData?.header.title, title]);
 
-  // ---- Load more (older messages) ---------------------------------------
+  // ---- Send with optimistic update ---------------------------------------
 
-  const handleLoadMore = useCallback(async () => {
-    if (loadingMore || !hasMore || !session || !id || messages.length === 0)
-      return;
-
-    setLoadingMore(true);
-    try {
-      // The oldest message is the last item (newest-first order)
-      const oldestId = messages[messages.length - 1].id;
-      const data = await fetchChatDetailPage(
-        session,
-        id,
-        chatType ?? 'user',
-        accessHash ?? '',
-        title ?? 'Chat',
-        oldestId,
-      );
-
-      setMessages((prev) => {
-        const existingIds = new Set(prev.map((m) => m.id));
-        const olderMsgs = data.messages.filter((m) => !existingIds.has(m.id));
-        // Append older messages at the end (they are older = smaller ids)
-        return [...prev, ...olderMsgs];
-      });
-      setHasMore(data.hasMore);
-    } catch {
-      // Silently fail — user can scroll up again to retry
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [
-    loadingMore,
-    hasMore,
-    session,
-    id,
-    chatType,
-    accessHash,
-    title,
-    messages,
-  ]);
-
-  // ---- Full refresh (for error retry) -----------------------------------
-
-  const handleRefresh = useCallback(async () => {
+  const handleSend = async (text: string): Promise<void> => {
     if (!session || !id) return;
-    setLoading(true);
-    setError('');
+
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    const optimisticMsg: MessageItem = {
+      id: Date.now(),
+      text,
+      time: timeStr,
+      senderName: '',
+      isMe: true,
+      hasMedia: false,
+      mediaType: null,
+      mediaUrl: null,
+      replyToMsgId: replyTo?.id ?? null,
+      replyToText: replyTo?.text ?? null,
+      replyToSenderName: replyTo?.senderName ?? null,
+    };
+
+    prependOptimistic(optimisticMsg);
+    setReplyTo(null);
+
+    setTimeout(
+      () => flatListRef.current?.scrollToOffset({ offset: 0, animated: true }),
+      50,
+    );
+
     try {
-      const data = await fetchChatDetailPage(
+      await telegramApi.sendMessage(
         session,
         id,
-        chatType ?? 'user',
-        accessHash ?? '',
-        title ?? 'Chat',
-      );
-      setPageData(data);
-      setMessages(data.messages);
-      setHasMore(data.hasMore);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '加载失败');
-    } finally {
-      setLoading(false);
-    }
-  }, [session, id, chatType, accessHash, title]);
-
-  // ---- Send with optimistic update -------------------------------------
-
-  const handleSend = useCallback(
-    async (text: string) => {
-      if (!session || !id) return;
-
-      // Build an optimistic message to display immediately
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-      const optimisticMsg: MessageItem = {
-        id: Date.now(), // temp id — replaced on next refresh
+        chatParams.chatType,
+        chatParams.accessHash,
         text,
-        time: timeStr,
-        senderName: '',
-        isMe: true,
-        hasMedia: false,
-        mediaType: null,
-        mediaUrl: null,
-        replyToMsgId: replyTo?.id ?? null,
-        replyToText: replyTo?.text ?? null,
-        replyToSenderName: replyTo?.senderName ?? null,
-      };
-
-      // Prepend optimistic message (newest-first order)
-      setMessages((prev) => [optimisticMsg, ...prev]);
-
-      // Clear reply state
-      setReplyTo(null);
-
-      // Scroll to bottom (offset 0 in inverted list)
-      setTimeout(
-        () =>
-          flatListRef.current?.scrollToOffset({
-            offset: 0,
-            animated: true,
-          }),
-        50,
+        replyTo?.id,
       );
+    } catch {
+      // On failure the next poll will reconcile
+    }
 
-      // Fire the real API call
-      try {
-        await telegramApi.sendMessage(
-          session,
-          id,
-          chatType ?? 'user',
-          accessHash ?? '',
-          text,
-          replyTo?.id,
-        );
-      } catch {
-        // On failure the next poll will reconcile
+    try {
+      const response = await fetchChatDetailPage(
+        session,
+        id,
+        chatParams.chatType,
+        chatParams.accessHash,
+        chatParams.title,
+      );
+      if (response.success && response.data) {
+        mergeMessages(response.data.messages);
       }
+    } catch {
+      // Swallow — next poll will reconcile
+    }
+  };
 
-      // Silently refresh to get the server-confirmed message list
-      try {
-        const data = await fetchChatDetailPage(
-          session,
-          id,
-          chatType ?? 'user',
-          accessHash ?? '',
-          title ?? 'Chat',
-        );
-        setMessages((prev) => mergeLatestMessages(prev, data.messages));
-      } catch {
-        // Swallow — next poll will reconcile
-      }
-    },
-    [session, id, chatType, accessHash, title, replyTo],
-  );
+  // ---- Render -------------------------------------------------------------
 
-  // ---- Reply handler ----------------------------------------------------
-
-  const handleReply = useCallback((msg: MessageItem) => {
-    setReplyTo(msg);
-  }, []);
-
-  // ---- List footer (loading spinner for load-more) ----------------------
-  // In an inverted FlatList the "footer" renders at the visual top.
-
-  const renderFooter = useCallback(() => {
-    if (!loadingMore) return null;
-    return (
-      <View style={{ paddingVertical: 16, alignItems: 'center' }}>
-        <ActivityIndicator size="small" />
-      </View>
-    );
-  }, [loadingMore]);
-
-  // ---- Render -----------------------------------------------------------
-
-  if (loading) return <PageLoading />;
-  if (error) return <PageError message={error} onRetry={handleRefresh} />;
+  if (isLoading) return <PageLoading />;
+  if (errorType)
+    return <PageStatusView errorType={errorType} onRetry={handleRetry} />;
   if (!pageData) return null;
 
   return (
@@ -346,18 +170,30 @@ export default function ChatScreen() {
             inverted
             keyExtractor={(item) => item.id.toString()}
             renderItem={({ item }: { item: MessageItem }) => (
-              <MessageContextMenu message={item} onReply={handleReply}>
-                <MessageBubble message={item} showAvatar={showAvatar} />
-              </MessageContextMenu>
+              <ChatDetailContextMenu
+                message={item}
+                onReply={(msg) => setReplyTo(msg)}
+              >
+                <ChatDetailMessageBubble
+                  message={item}
+                  showAvatar={showAvatar}
+                />
+              </ChatDetailContextMenu>
             )}
             contentContainerStyle={{ paddingTop: 8, paddingBottom: 8 }}
             onEndReached={handleLoadMore}
             onEndReachedThreshold={0.3}
-            ListFooterComponent={renderFooter}
+            ListFooterComponent={
+              loadingMore ? (
+                <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+                  <ActivityIndicator size="small" />
+                </View>
+              ) : null
+            }
           />
         )}
 
-        <MessageInput
+        <ChatDetailMessageInput
           placeholder={pageData.inputPlaceholder}
           onSend={handleSend}
           bottomInset={insets.bottom}

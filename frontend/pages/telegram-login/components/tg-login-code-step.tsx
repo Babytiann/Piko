@@ -1,21 +1,21 @@
-import { ActivityIndicator, TouchableOpacity } from 'react-native';
+import type { ReactNode } from 'react';
+import { ActivityIndicator, TouchableOpacity, StyleSheet } from 'react-native';
 import { YStack, Text, Input } from 'tamagui';
 
-interface CodeStepProps {
+interface TgLoginCodeStepProps {
   phoneNumber: string;
   phoneCode: string;
   onPhoneCodeChange: (value: string) => void;
   onSignIn: () => void;
   onBack: () => void;
   loading: boolean;
-  /** Server-driven text props */
   codeSentLabel: string;
   codePlaceholder: string;
   verifyButtonText: string;
   backLinkText: string;
 }
 
-export default function CodeStep({
+export default function TgLoginCodeStep({
   phoneNumber,
   phoneCode,
   onPhoneCodeChange,
@@ -26,8 +26,7 @@ export default function CodeStep({
   codePlaceholder,
   verifyButtonText,
   backLinkText,
-}: CodeStepProps) {
-  // Replace {phoneNumber} placeholder in the server-provided label
+}: TgLoginCodeStepProps): ReactNode {
   const sentText = codeSentLabel.replace('{phoneNumber}', phoneNumber);
 
   return (
@@ -44,8 +43,7 @@ export default function CodeStep({
         keyboardType="number-pad"
       />
       <TouchableOpacity
-        className={`h-12 rounded-xl justify-center items-center ${loading ? 'opacity-60' : ''}`}
-        style={{ backgroundColor: '#333' }}
+        style={[styles.button, loading && styles.buttonDisabled]}
         onPress={onSignIn}
         disabled={loading}
         activeOpacity={0.8}
@@ -58,7 +56,7 @@ export default function CodeStep({
           </Text>
         )}
       </TouchableOpacity>
-      <TouchableOpacity onPress={onBack} className="items-center py-2">
+      <TouchableOpacity onPress={onBack} style={styles.backLink}>
         <Text color="$gray11" fontSize="$2">
           {backLinkText}
         </Text>
@@ -66,3 +64,20 @@ export default function CodeStep({
     </YStack>
   );
 }
+
+const styles = StyleSheet.create({
+  button: {
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#333',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  backLink: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+});

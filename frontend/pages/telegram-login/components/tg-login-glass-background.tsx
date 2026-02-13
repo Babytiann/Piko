@@ -1,13 +1,16 @@
-import React from 'react';
+import type { ReactNode } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 
-interface GlassBackgroundProps {
-  children: React.ReactNode;
+interface TgLoginGlassBackgroundProps {
+  children: ReactNode;
   isDark: boolean;
 }
 
-export function GlassBackground({ children, isDark }: GlassBackgroundProps) {
+export function TgLoginGlassBackground({
+  children,
+  isDark,
+}: TgLoginGlassBackgroundProps): ReactNode {
   const hasGlass = isLiquidGlassAvailable();
   const bgColor = isDark ? '#2C2C2E' : '#FFFFFF';
 

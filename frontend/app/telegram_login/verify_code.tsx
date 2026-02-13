@@ -1,25 +1,17 @@
-import { useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  View,
-  StyleSheet,
-  Keyboard,
-  TouchableWithoutFeedback,
-  ActivityIndicator,
-} from 'react-native';
+import type { ReactNode } from 'react';
+import { useState, useEffect } from 'react';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { YStack, Text, Spacer } from 'tamagui';
 
 import { useAuth } from '@/common/hooks';
 import * as telegramApi from '@/service/telegram';
 import { TelegramLoginStep } from '@/common/typings/telegram-login';
-import CodeStep from '@/components/telegramLogin/tl-code-step';
-import usePageData from '@/hooks/usePageData';
+import type { VerifyCodeStepText } from '@/common/typings/telegram-login';
 
-export default function VerifyCodeScreen() {
-  const { top, bottom } = useSafeAreaInsets();
+import TgLoginFormLayout from '@/pages/telegram-login/components/tg-login-form-layout';
+import TgLoginCodeStep from '@/pages/telegram-login/components/tg-login-code-step';
+
+export default function VerifyCodeScreen(): ReactNode {
   const router = useRouter();
   const { login } = useAuth();
   const { phoneNumber, phoneCodeHash } = useLocalSearchParams<{
@@ -27,16 +19,28 @@ export default function VerifyCodeScreen() {
     phoneCodeHash: string;
   }>();
 
+  const [text, setText] = useState<VerifyCodeStepText | null>(null);
   const [phoneCode, setPhoneCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { data: text } = usePageData(
-    () => telegramApi.fetchTelegramText(TelegramLoginStep.VERIFY_CODE),
-    [],
-  );
+  useEffect(() => {
+    let cancelled = false;
 
-  const handleSignIn = async () => {
+    async function load(): Promise<void> {
+      const data = await telegramApi.fetchTelegramText(
+        TelegramLoginStep.VERIFY_CODE,
+      );
+      if (!cancelled) setText(data);
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleSignIn = async (): Promise<void> => {
     if (!text) return;
     if (!phoneCode.trim()) {
       setError(text.errors.emptyCode);
@@ -46,9 +50,9 @@ export default function VerifyCodeScreen() {
     setError('');
     try {
       const result = await telegramApi.signIn(
-        phoneNumber!,
+        phoneNumber ?? '',
         phoneCode,
-        phoneCodeHash!,
+        phoneCodeHash ?? '',
       );
 
       if (result.require2FA) {
@@ -71,7 +75,6 @@ export default function VerifyCodeScreen() {
     }
   };
 
-  // Show loading spinner while fetching text
   if (!text) {
     return (
       <View style={styles.loadingContainer}>
@@ -81,48 +84,24 @@ export default function VerifyCodeScreen() {
   }
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <View style={{ flex: 1 }}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={{ flex: 1 }}
-        >
-          <YStack flex={1} pt={top} pb={bottom} px="$6" bg="$background">
-            <View style={styles.headerCenter}>
-              <Text fontSize={24} fontWeight="700" color="$color">
-                {text.title}
-              </Text>
-              <Text fontSize="$3" color="$gray11" mt="$2">
-                {text.subtitle}
-              </Text>
-            </View>
-
-            {error ? (
-              <View style={styles.errorBox}>
-                <Text color="$red11" fontSize="$2">
-                  {error}
-                </Text>
-              </View>
-            ) : null}
-
-            <CodeStep
-              phoneNumber={phoneNumber ?? ''}
-              phoneCode={phoneCode}
-              onPhoneCodeChange={setPhoneCode}
-              onSignIn={handleSignIn}
-              onBack={() => router.back()}
-              loading={loading}
-              codeSentLabel={text.codeSentLabel}
-              codePlaceholder={text.codePlaceholder}
-              verifyButtonText={text.verifyButton}
-              backLinkText={text.backLink}
-            />
-
-            <Spacer flex={1} />
-          </YStack>
-        </KeyboardAvoidingView>
-      </View>
-    </TouchableWithoutFeedback>
+    <TgLoginFormLayout
+      title={text.title}
+      subtitle={text.subtitle}
+      error={error}
+    >
+      <TgLoginCodeStep
+        phoneNumber={phoneNumber ?? ''}
+        phoneCode={phoneCode}
+        onPhoneCodeChange={setPhoneCode}
+        onSignIn={() => void handleSignIn()}
+        onBack={() => router.back()}
+        loading={loading}
+        codeSentLabel={text.codeSentLabel}
+        codePlaceholder={text.codePlaceholder}
+        verifyButtonText={text.verifyButton}
+        backLinkText={text.backLink}
+      />
+    </TgLoginFormLayout>
   );
 }
 
@@ -131,16 +110,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  headerCenter: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  errorBox: {
-    backgroundColor: 'rgba(255,0,0,0.1)',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginBottom: 16,
   },
 });
