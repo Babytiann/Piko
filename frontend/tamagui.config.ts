@@ -28,7 +28,7 @@ export const config = createTamagui({
     ...defaultConfig.themes,
     light: {
       ...defaultConfig.themes.light,
-      background: '#ffffff',
+      background: '#F5F5F5',
     },
     dark: {
       ...defaultConfig.themes.dark,
@@ -37,7 +37,6 @@ export const config = createTamagui({
   },
   media: {
     ...defaultConfig.media,
-    // add your own media queries here, if wanted
   },
 });
 

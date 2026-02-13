@@ -16,7 +16,7 @@ export default function TelegramSection({
   onUnbind,
 }: TelegramSectionProps) {
   return (
-    <YStack bg="$gray2" borderRadius="$4" p="$4" gap="$3">
+    <YStack bg="#FFFFFF" p="$4" gap="$3" style={{ borderRadius: 16 }}>
       <Text fontSize="$4" fontWeight="600" color="$color">
         {data.title}
       </Text>
