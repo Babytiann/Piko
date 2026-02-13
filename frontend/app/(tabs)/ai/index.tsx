@@ -1,35 +1,32 @@
-import { useState, useCallback } from 'react';
-import { Platform, StyleSheet } from 'react-native';
+import type { ReactNode } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
-import { YStack, XStack, Text, Spacer, View } from 'tamagui';
-import { useAuth } from '@/common/hooks';
-import usePageData from '@/hooks/usePageData';
-import { fetchChatListPage } from '@/service/chat';
-import type { ChatListPageData, DialogItem } from '@/common/typings/chat';
-import PageLoading from '@/common/components/page-loading';
-import PageError from '@/common/components/page-status-view';
-import DialogList from '@/components/chat/dialog-list';
-import UnboundPrompt from '@/components/chat/unbound-prompt';
+import { YStack, XStack, Text, Spacer } from 'tamagui';
 
-export default function MessagesScreen() {
+import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
+import PageLoading from '@/common/components/page-loading';
+import PageStatusView from '@/common/components/page-status-view';
+import { useAuth } from '@/common/hooks';
+
+import type { DialogItem } from '@/common/typings/chat';
+import { useChatListData } from '@/pages/chat-list/hooks/useChatListData';
+import ChatListDialogList from '@/pages/chat-list/components/chat-list-dialog-list';
+import ChatListUnboundPrompt from '@/pages/chat-list/components/chat-list-unbound-prompt';
+
+export default function MessagesScreen(): ReactNode {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { session } = useAuth();
-  const { data, loading, error, refresh } = usePageData<ChatListPageData>(
-    () => fetchChatListPage(session ?? undefined),
-    [session],
-  );
-  const [refreshing, setRefreshing] = useState(false);
+  const {
+    isLoading,
+    isRefreshing,
+    errorType,
+    data,
+    handleRetry,
+    handleRefresh,
+  } = useChatListData(session);
 
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await refresh();
-    setRefreshing(false);
-  }, [refresh]);
-
-  const handleDialogPress = (dialog: DialogItem) => {
+  const handleDialogPress = (dialog: DialogItem): void => {
     router.push({
       pathname: '/chat/[id]',
       params: {
@@ -41,8 +38,9 @@ export default function MessagesScreen() {
     });
   };
 
-  if (loading && !refreshing) return <PageLoading />;
-  if (error) return <PageError message={error} onRetry={refresh} />;
+  if (isLoading) return <PageLoading />;
+  if (errorType)
+    return <PageStatusView errorType={errorType} onRetry={handleRetry} />;
   if (!data) return null;
 
   return (
@@ -60,15 +58,15 @@ export default function MessagesScreen() {
       </XStack>
 
       {data.unboundState ? (
-        <UnboundPrompt
+        <ChatListUnboundPrompt
           data={data.unboundState}
           onBind={() => router.push('/telegram_login')}
         />
       ) : (
-        <DialogList
+        <ChatListDialogList
           dialogs={data.dialogs ?? []}
-          refreshing={refreshing}
-          onRefresh={onRefresh}
+          isRefreshing={isRefreshing}
+          onRefresh={handleRefresh}
           onDialogPress={handleDialogPress}
           contentPaddingBottom={insets.bottom + TAB_BAR_CONTENT_HEIGHT}
         />
@@ -76,21 +74,3 @@ export default function MessagesScreen() {
     </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  header: {
-    backgroundColor: '#ffffff',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 0.5 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
-    zIndex: 1,
-  },
-});

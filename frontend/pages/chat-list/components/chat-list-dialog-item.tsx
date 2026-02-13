@@ -1,17 +1,22 @@
-import { TouchableOpacity, View } from 'react-native';
+import type { ReactNode } from 'react';
+import { TouchableOpacity, View, StyleSheet } from 'react-native';
 import { YStack, Text } from 'tamagui';
-import type { DialogItem as DialogItemData } from '@/common/typings/chat';
-import Avatar from '@/common/components/avatar';
 
-interface DialogItemProps {
+import Avatar from '@/common/components/avatar';
+import type { DialogItem as DialogItemData } from '@/common/typings/chat';
+
+interface ChatListDialogItemProps {
   dialog: DialogItemData;
   onPress: () => void;
 }
 
-export default function DialogItem({ dialog, onPress }: DialogItemProps) {
+export default function ChatListDialogItem({
+  dialog,
+  onPress,
+}: ChatListDialogItemProps): ReactNode {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-      <View className="flex-row px-4 py-3 gap-3 items-center">
+      <View style={styles.row}>
         <Avatar
           url={dialog.avatarUrl}
           text={dialog.avatarText}
@@ -19,7 +24,7 @@ export default function DialogItem({ dialog, onPress }: DialogItemProps) {
         />
 
         <YStack flex={1} gap="$1">
-          <View className="flex-row justify-between items-center">
+          <View style={styles.rowBetween}>
             <Text
               fontSize="$4"
               fontWeight="600"
@@ -35,7 +40,7 @@ export default function DialogItem({ dialog, onPress }: DialogItemProps) {
             </Text>
           </View>
 
-          <View className="flex-row justify-between items-center">
+          <View style={styles.rowBetween}>
             <Text
               fontSize="$2"
               color="$gray11"
@@ -46,7 +51,7 @@ export default function DialogItem({ dialog, onPress }: DialogItemProps) {
               {dialog.lastMessage}
             </Text>
             {dialog.unreadCount > 0 ? (
-              <View className="min-w-5 h-5 rounded-[10px] bg-[#007AFF] justify-center items-center px-1">
+              <View style={styles.badge}>
                 <Text color="white" fontSize={11} fontWeight="700">
                   {dialog.unreadCount > 99 ? '99+' : dialog.unreadCount}
                 </Text>
@@ -58,3 +63,27 @@ export default function DialogItem({ dialog, onPress }: DialogItemProps) {
     </TouchableOpacity>
   );
 }
+
+const styles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+    alignItems: 'center',
+  },
+  rowBetween: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  badge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+});

@@ -1,12 +1,15 @@
+import type { ApiResponse } from '@/common/typings/api';
 import type {
   ChatListPageData,
   ChatDetailPageData,
 } from '@/common/typings/chat';
-import { post } from '@/common/services/api-client';
+import { post, postSafe } from '@/common/services/api-client';
 
 /** Fetch all data for the Chat list (messages tab) page. */
-export function fetchChatListPage(session?: string): Promise<ChatListPageData> {
-  return post<ChatListPageData>('chat/list/v1', { session });
+export function fetchChatListPage(
+  session?: string,
+): Promise<ApiResponse<ChatListPageData>> {
+  return postSafe<ChatListPageData>('chat/list/v1', { session });
 }
 
 /** Fetch all data for a single Chat detail page. */

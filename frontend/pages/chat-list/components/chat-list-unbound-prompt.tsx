@@ -1,13 +1,18 @@
+import type { ReactNode } from 'react';
 import { TouchableOpacity } from 'react-native';
 import { YStack, Text } from 'tamagui';
+
 import type { UnboundState } from '@/common/typings/chat';
 
-interface UnboundPromptProps {
+interface ChatListUnboundPromptProps {
   data: UnboundState;
   onBind: () => void;
 }
 
-export default function UnboundPrompt({ data, onBind }: UnboundPromptProps) {
+export default function ChatListUnboundPrompt({
+  data,
+  onBind,
+}: ChatListUnboundPromptProps): ReactNode {
   return (
     <YStack flex={1} style={{ justifyContent: 'center', alignItems: 'center' }}>
       <Text color="$gray11" fontSize="$4" fontWeight="600">
@@ -23,9 +28,17 @@ export default function UnboundPrompt({ data, onBind }: UnboundPromptProps) {
         {data.description}
       </Text>
       <TouchableOpacity
-        className="mt-5 h-11 px-6 rounded-xl bg-black justify-center items-center"
         onPress={onBind}
         activeOpacity={0.8}
+        style={{
+          marginTop: 20,
+          height: 44,
+          paddingHorizontal: 24,
+          borderRadius: 12,
+          backgroundColor: '#000000',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
       >
         <Text color="white" fontWeight="600" fontSize="$3">
           {data.bindButtonText}

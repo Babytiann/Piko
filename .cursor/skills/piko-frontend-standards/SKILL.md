@@ -149,6 +149,51 @@ MUST:  返回命名字段: { isLoading, errorType, data, handleRetry, handleRefr
 MUST:  错误映射使用纯函数 getPageErrorType()，不在 hook 中硬编码
 MUST:  最多 1 个 useEffect (初始加载)
 MUST:  返回类型显式定义为 interface
+MUST:  使用 state trigger (fetchKey) + useEffect 重新触发请求，不用 useCallback 包裹请求逻辑
+MUST:  useEffect cleanup 设置 cancelled 标记防止竞态更新
+NEVER: useCallback 包裹网络请求函数 — 请求只在 useEffect 内发起
+```
+
+#### 标准 Data Hook 模式
+
+```typescript
+// 简单模式: 加载 + 重试
+const [fetchKey, setFetchKey] = useState<number>(0);
+
+useEffect(() => {
+  let cancelled = false;
+  setIsLoading(true);
+  setErrorType(undefined);
+
+  async function load(): Promise<void> {
+    try {
+      const response = await fetchXxxPage();
+      if (cancelled) return;
+      const mappedError = getPageErrorType(response);
+      if (mappedError) {
+        setErrorType(mappedError);
+        setData(null);
+      } else {
+        setData(response.data ?? null);
+      }
+    } catch {
+      if (cancelled) return;
+      setErrorType(PageErrorType.NETWORK);
+      setData(null);
+    } finally {
+      if (!cancelled) setIsLoading(false);
+    }
+  }
+
+  void load();
+  return () => {
+    cancelled = true;
+  };
+}, [fetchKey]); // + 其他依赖如 session
+
+const handleRetry = (): void => {
+  setFetchKey((k) => k + 1);
+};
 ```
 
 ### ② 派生 Hook (Derived Hook)

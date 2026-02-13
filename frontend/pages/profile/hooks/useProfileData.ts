@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
 import {
   getPageErrorType,
@@ -20,36 +20,43 @@ export function useProfileData(session: string | null): UseProfileDataReturn {
     undefined,
   );
   const [data, setData] = useState<ProfilePageData | null>(null);
+  const [fetchKey, setFetchKey] = useState<number>(0);
 
-  const load = useCallback(async (): Promise<void> => {
+  useEffect(() => {
+    let cancelled = false;
     setIsLoading(true);
     setErrorType(undefined);
 
-    try {
-      const response = await fetchProfilePage(session ?? undefined);
-      const mappedError = getPageErrorType(response);
+    async function load(): Promise<void> {
+      try {
+        const response = await fetchProfilePage(session ?? undefined);
+        if (cancelled) return;
 
-      if (mappedError) {
-        setErrorType(mappedError);
+        const mappedError = getPageErrorType(response);
+        if (mappedError) {
+          setErrorType(mappedError);
+          setData(null);
+        } else {
+          setData(response.data ?? null);
+        }
+      } catch {
+        if (cancelled) return;
+        setErrorType(PageErrorType.NETWORK);
         setData(null);
-      } else {
-        setData(response.data ?? null);
+      } finally {
+        if (!cancelled) setIsLoading(false);
       }
-    } catch {
-      setErrorType(PageErrorType.NETWORK);
-      setData(null);
-    } finally {
-      setIsLoading(false);
     }
-  }, [session]);
 
-  useEffect(() => {
     void load();
-  }, [load]);
+    return () => {
+      cancelled = true;
+    };
+  }, [session, fetchKey]);
 
-  const handleRetry = useCallback((): void => {
-    void load();
-  }, [load]);
+  const handleRetry = (): void => {
+    setFetchKey((k) => k + 1);
+  };
 
   return { isLoading, errorType, data, handleRetry };
 }

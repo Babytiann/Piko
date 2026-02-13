@@ -1,51 +1,62 @@
 import { useState, useEffect } from 'react';
 
+import {
+  getPageErrorType,
+  PageErrorType,
+} from '@/common/components/page-status-view';
 import type { HomePageData } from '@/common/typings/home';
-import { PageErrorType } from '@/common/components/page-status-view/utils';
-import { getPageErrorType } from '@/common/components/page-status-view/utils';
 import { fetchHomePage } from '@/service/home';
 
-interface UseFetchDataResult {
+interface UseFetchDataReturn {
   isLoading: boolean;
-  errorType?: PageErrorType;
-  data?: HomePageData;
+  errorType: PageErrorType | undefined;
+  data: HomePageData | null;
   handleRetry: () => void;
 }
 
-const useFetchData = (): UseFetchDataResult => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorType, setErrorType] = useState<PageErrorType>();
-  const [data, setData] = useState<HomePageData>();
-
-  const fetcher = async (): Promise<void> => {
-    setIsLoading(true);
-    setErrorType(undefined);
-    try {
-      const response = await fetchHomePage();
-      const error = getPageErrorType(response);
-      if (error !== undefined) {
-        setErrorType(error);
-        return;
-      }
-      if (response.success) {
-        setData(response.data);
-      }
-    } catch {
-      setErrorType(PageErrorType.NETWORK);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+export function useFetchData(): UseFetchDataReturn {
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [errorType, setErrorType] = useState<PageErrorType | undefined>(
+    undefined,
+  );
+  const [data, setData] = useState<HomePageData | null>(null);
+  const [fetchKey, setFetchKey] = useState<number>(0);
 
   useEffect(() => {
-    void fetcher();
-  }, []);
+    let cancelled = false;
+    setIsLoading(true);
+    setErrorType(undefined);
+
+    async function load(): Promise<void> {
+      try {
+        const response = await fetchHomePage();
+        if (cancelled) return;
+
+        const mappedError = getPageErrorType(response);
+        if (mappedError) {
+          setErrorType(mappedError);
+          setData(null);
+        } else {
+          setData(response.data ?? null);
+        }
+      } catch {
+        if (cancelled) return;
+        setErrorType(PageErrorType.NETWORK);
+        setData(null);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchKey]);
 
   const handleRetry = (): void => {
-    void fetcher();
+    setFetchKey((k) => k + 1);
   };
 
   return { isLoading, errorType, data, handleRetry };
-};
-
-export default useFetchData;
+}

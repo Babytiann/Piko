@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PageLoading from '@/common/components/page-loading';
 import PageStatusView from '@/common/components/page-status-view';
 
-import useFetchData from '@/pages/home/hooks/useFetchData';
+import { useFetchData } from '@/pages/home/hooks/useFetchData';
 import HomeWelcomeCard from '@/pages/home/components/home-welcome-card';
 
 export default function HomeScreen(): ReactNode {
