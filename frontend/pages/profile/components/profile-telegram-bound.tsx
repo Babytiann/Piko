@@ -1,22 +1,24 @@
+import type { ReactNode } from 'react';
 import { TouchableOpacity } from 'react-native';
 import { XStack, YStack, Text } from 'tamagui';
-import type { ProfileUser } from '@/common/typings/profile';
-import Avatar from '@/common/components/avatar';
 
-interface TelegramBoundProps {
+import Avatar from '@/common/components/avatar';
+import type { ProfileUser } from '@/common/typings/profile';
+
+interface ProfileTelegramBoundProps {
   user: ProfileUser;
   unbindButtonText: string;
   onUnbind: () => void;
 }
 
-export default function TelegramBound({
+export default function ProfileTelegramBound({
   user,
   unbindButtonText,
   onUnbind,
-}: TelegramBoundProps) {
+}: ProfileTelegramBoundProps): ReactNode {
   return (
     <>
-      <XStack gap="$3" items="center">
+      <XStack gap="$3" style={{ alignItems: 'center' }}>
         <Avatar
           url={user.avatarUrl}
           text={user.avatarText}
@@ -40,9 +42,15 @@ export default function TelegramBound({
       </XStack>
 
       <TouchableOpacity
-        className="h-11 rounded-xl bg-red-500/10 justify-center items-center"
         onPress={onUnbind}
         activeOpacity={0.8}
+        style={{
+          height: 44,
+          borderRadius: 12,
+          backgroundColor: 'rgba(255, 59, 48, 0.1)',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
       >
         <Text color="#FF3B30" fontWeight="600" fontSize="$3">
           {unbindButtonText}

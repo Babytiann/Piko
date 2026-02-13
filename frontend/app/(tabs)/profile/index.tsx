@@ -1,29 +1,28 @@
+import type { ReactNode } from 'react';
 import { Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, Spacer } from 'tamagui';
 
 import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
-import { useAuth } from '@/common/hooks';
-import usePageData from '@/hooks/usePageData';
-import { fetchProfilePage } from '@/service/profile';
-import type { ProfilePageData } from '@/common/typings/profile';
 import PageLoading from '@/common/components/page-loading';
-import PageError from '@/common/components/page-status-view';
-import TelegramSection from '@/components/profile/telegram-section';
+import PageStatusView from '@/common/components/page-status-view';
+import { useAuth } from '@/common/hooks';
 
-export default function ProfileScreen() {
+import { useProfileData } from '@/pages/profile/hooks/useProfileData';
+import ProfileTelegramSection from '@/pages/profile/components/profile-telegram-section';
+
+export default function ProfileScreen(): ReactNode {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { session, logout } = useAuth();
-  const { data, loading, error, refresh } = usePageData<ProfilePageData>(
-    () => fetchProfilePage(session ?? undefined),
-    [session],
-  );
+  const { isLoading, errorType, data, handleRetry } = useProfileData(session);
 
-  const handleBind = () => router.push('/telegram_login');
+  const handleBind = (): void => {
+    router.push('/telegram_login');
+  };
 
-  const handleUnbind = () => {
+  const handleUnbind = (): void => {
     Alert.alert('解除绑定', '确定要解除 Telegram 账号绑定吗？', [
       { text: '取消', style: 'cancel' },
       {
@@ -36,8 +35,9 @@ export default function ProfileScreen() {
     ]);
   };
 
-  if (loading) return <PageLoading />;
-  if (error) return <PageError message={error} onRetry={refresh} />;
+  if (isLoading) return <PageLoading />;
+  if (errorType)
+    return <PageStatusView errorType={errorType} onRetry={handleRetry} />;
   if (!data) return <></>;
 
   return (
@@ -60,7 +60,7 @@ export default function ProfileScreen() {
       </XStack>
 
       <YStack px="$4" gap="$4" flex={1}>
-        <TelegramSection
+        <ProfileTelegramSection
           data={data.telegramSection}
           onBind={handleBind}
           onUnbind={handleUnbind}
