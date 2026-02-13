@@ -51,4 +51,8 @@ export interface ChatDetailPageData {
   header: { title: string };
   messages: MessageItem[];
   inputPlaceholder: string;
+  /** Whether there are more (older) messages available to load. */
+  hasMore: boolean;
+  /** The id of the oldest message in the current batch, used as offsetId for pagination. */
+  oldestMessageId?: number;
 }

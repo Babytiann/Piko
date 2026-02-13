@@ -13,6 +13,7 @@ export function fetchChatDetailPage(
   chatType: string,
   accessHash: string,
   title: string,
+  offsetId?: number,
 ): Promise<ChatDetailPageData> {
   return post<ChatDetailPageData>('chat/detail/v1', {
     session,
@@ -20,5 +21,6 @@ export function fetchChatDetailPage(
     chatType,
     accessHash,
     title,
+    offsetId,
   });
 }

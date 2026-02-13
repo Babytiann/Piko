@@ -5,17 +5,18 @@ import { getChatDetailPageData } from '@/lib/services/chat';
  * POST /piko/chat/detail/v1
  * Returns all data needed to render a single Chat detail page.
  *
- * Body: { session: string, chatId: string, chatType: string, accessHash: string, title: string }
+ * Body: { session: string, chatId: string, chatType: string, accessHash: string, title: string, offsetId?: number }
  */
 export async function POST(request: Request) {
   try {
-    const { session, chatId, chatType, accessHash, title } =
+    const { session, chatId, chatType, accessHash, title, offsetId } =
       (await request.json()) as {
         session: string;
         chatId: string;
         chatType: string;
         accessHash: string;
         title: string;
+        offsetId?: number;
       };
 
     if (!session || !chatId) {
@@ -31,6 +32,8 @@ export async function POST(request: Request) {
       chatType ?? 'user',
       accessHash ?? '',
       title ?? 'Chat',
+      50,
+      offsetId,
     );
     return NextResponse.json({ success: true, data });
   } catch (error: unknown) {

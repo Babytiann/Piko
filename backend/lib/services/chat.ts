@@ -147,6 +147,7 @@ export async function getChatDetailPageData(
   accessHash: string,
   title: string,
   limit = 50,
+  offsetId?: number,
 ): Promise<ChatDetailPageData> {
   const rawMessages = await getMessageList(
     session,
@@ -154,6 +155,7 @@ export async function getChatDetailPageData(
     chatType,
     accessHash,
     limit,
+    offsetId,
   );
 
   // Build a lookup map so we can resolve reply references cheaply.
@@ -205,9 +207,16 @@ export async function getChatDetailPageData(
     };
   });
 
+  // Determine pagination info
+  const hasMore = rawMessages.length >= limit;
+  const oldestMessageId =
+    rawMessages.length > 0 ? rawMessages[rawMessages.length - 1].id : undefined;
+
   return {
     header: { title },
     messages,
     inputPlaceholder: '输入消息...',
+    hasMore,
+    oldestMessageId,
   };
 }
