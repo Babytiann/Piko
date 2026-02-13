@@ -1,6 +1,6 @@
 import type { ApiResponse } from '@/common/typings/api';
+import { API_HOST } from '@/common/config';
 
-export const API_HOST = 'http://192.168.6.180:3000';
 const API_BASE = `${API_HOST}/piko`;
 
 export async function post<T>(
