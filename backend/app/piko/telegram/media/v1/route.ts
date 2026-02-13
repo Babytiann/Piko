@@ -1,18 +1,6 @@
 import { NextResponse } from 'next/server';
 import { downloadMessageMedia } from '@/lib/services/telegram';
 
-/**
- * GET /piko/telegram/media/v1
- * Proxy endpoint that downloads a message's media from Telegram and streams
- * it back to the client as a binary response.
- *
- * Query params:
- *   session     – Telegram session string
- *   chatId      – Numeric chat ID
- *   chatType    – "user" | "group" | "channel"
- *   accessHash  – Access hash for the chat (may be empty for basic groups)
- *   messageId   – ID of the message containing the media
- */
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
