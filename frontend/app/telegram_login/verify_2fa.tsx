@@ -16,7 +16,7 @@ import { TelegramLoginStep } from '@/types/telegram-login';
 
 import TwoFAStep from '@/components/telegramLogin/tl-two-FA-step';
 import { useAppSafeArea } from '@/hooks/useSafeArea';
-import useFetchData from '@/hooks/useFetchData';
+import usePageData from '@/hooks/usePageData';
 
 export default function Verify2FAScreen() {
   const { top, bottom } = useAppSafeArea();
@@ -28,8 +28,9 @@ export default function Verify2FAScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { data: text } = useFetchData(() =>
-    telegramApi.fetchTelegramText(TelegramLoginStep.VERIFY_2FA),
+  const { data: text } = usePageData(
+    () => telegramApi.fetchTelegramText(TelegramLoginStep.VERIFY_2FA),
+    [],
   );
 
   const handleCheckPassword = async () => {

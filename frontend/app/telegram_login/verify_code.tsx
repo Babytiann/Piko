@@ -16,7 +16,7 @@ import { TelegramLoginStep } from '@/types/telegram-login';
 
 import CodeStep from '@/components/telegramLogin/tl-code-step';
 import { useAppSafeArea } from '@/hooks/useSafeArea';
-import useFetchData from '@/hooks/useFetchData';
+import usePageData from '@/hooks/usePageData';
 
 export default function VerifyCodeScreen() {
   const { top, bottom } = useAppSafeArea();
@@ -31,8 +31,9 @@ export default function VerifyCodeScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { data: text } = useFetchData(() =>
-    telegramApi.fetchTelegramText(TelegramLoginStep.VERIFY_CODE),
+  const { data: text } = usePageData(
+    () => telegramApi.fetchTelegramText(TelegramLoginStep.VERIFY_CODE),
+    [],
   );
 
   const handleSignIn = async () => {

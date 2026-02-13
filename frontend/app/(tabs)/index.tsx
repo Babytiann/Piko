@@ -1,5 +1,5 @@
 import { YStack, Spacer, Text } from 'tamagui';
-import { usePageData } from '@/hooks/usePageData';
+import usePageData from '@/hooks/usePageData';
 import { fetchHomePage } from '@/services/home';
 import type { HomePageData } from '@/types/home';
 import PageLoading from '@/components/shared/pageLoading';

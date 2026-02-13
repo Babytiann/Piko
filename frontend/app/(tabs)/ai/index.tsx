@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { TAB_BAR_CONTENT_HEIGHT } from '@/constants';
 import { YStack, XStack, Text, Spacer, View } from 'tamagui';
 import { useAuth } from '@/hooks/useAuth';
-import { usePageData } from '@/hooks/usePageData';
+import usePageData from '@/hooks/usePageData';
 import { fetchChatListPage } from '@/services/chat';
 import type { ChatListPageData, DialogItem } from '@/types/chat';
 import PageLoading from '@/components/shared/pageLoading';

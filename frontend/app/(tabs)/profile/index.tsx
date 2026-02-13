@@ -5,7 +5,7 @@ import { YStack, XStack, Text, Spacer } from 'tamagui';
 
 import { TAB_BAR_CONTENT_HEIGHT } from '@/constants';
 import { useAuth } from '@/hooks/useAuth';
-import { usePageData } from '@/hooks/usePageData';
+import usePageData from '@/hooks/usePageData';
 import { fetchProfilePage } from '@/services/profile';
 import type { ProfilePageData } from '@/types/profile';
 import PageLoading from '@/components/shared/pageLoading';

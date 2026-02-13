@@ -16,7 +16,7 @@ import { getCodeByName } from '@/components/telegramLogin/tl-country-code-select
 
 import PhoneStep from '@/components/telegramLogin/tl-phone-step';
 import { useAppSafeArea } from '@/hooks/useSafeArea';
-import useFetchData from '@/hooks/useFetchData';
+import usePageData from '@/hooks/usePageData';
 
 export default function TelegramLoginScreen() {
   const { top, bottom } = useAppSafeArea();
@@ -27,8 +27,9 @@ export default function TelegramLoginScreen() {
   const [countryName, setCountryName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
 
-  const { data: text } = useFetchData(() =>
-    telegramApi.fetchTelegramText(TelegramLoginStep.PHONE),
+  const { data: text } = usePageData(
+    () => telegramApi.fetchTelegramText(TelegramLoginStep.PHONE),
+    [],
   );
 
   // Set default country once text data arrives
