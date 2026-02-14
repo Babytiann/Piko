@@ -138,6 +138,19 @@ export async function getPooledClient(
 }
 
 /**
+ * Remove and disconnect a pooled client by session string.
+ * Used when the session is intentionally invalidated (e.g. unbind / logout).
+ */
+export async function removePooledClient(sessionString: string): Promise<void> {
+  const key = poolKey(sessionString);
+  const entry = clientPool.get(key);
+  if (entry) {
+    clientPool.delete(key);
+    await entry.client.disconnect().catch(() => {});
+  }
+}
+
+/**
  * Create a new TelegramClient with an optional existing session string.
  */
 export function createClient(sessionString = ''): TelegramClient {

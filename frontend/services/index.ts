@@ -37,13 +37,18 @@ export async function postSafe<T>(
       body: JSON.stringify(body),
     });
 
-    const json: ApiResponse<T> = await response.json();
+    const json = await response.json();
 
     if (!response.ok && json.success) {
       return { success: false, error: `Request failed (${response.status})` };
     }
 
-    return json;
+    // 透传后端返回的 errorCode（如 AUTH_EXPIRED）
+    if (!json.success && json.errorCode) {
+      return { success: false, error: json.error, errorCode: json.errorCode };
+    }
+
+    return json as ApiResponse<T>;
   } catch {
     return { success: false, error: 'Network error' };
   }

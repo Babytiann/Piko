@@ -109,9 +109,10 @@ export function fetchTelegramText(
   return post<TelegramLoginText>('telegram/text_detail/v1', { step });
 }
 
-// ---------------------------------------------------------------------------
-// Messaging API (unchanged — used by chat detail)
-// ---------------------------------------------------------------------------
+/** 正式注销 Telegram 会话，在 Telegram 服务端使 session 失效。 */
+export function unbindTelegram(session: string): Promise<{ success: boolean }> {
+  return postDirect<{ success: boolean }>('telegram/unbind/v1', { session });
+}
 
 export interface SendMessageResponse {
   success: boolean;

@@ -2,18 +2,21 @@ import type { ReactNode } from 'react';
 import { useRef, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   KeyboardAvoidingView,
   Platform,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { YStack, Text } from 'tamagui';
 
 import { useAuth } from '@/common/hooks';
 import PageLoading from '@/common/components/page-loading';
-import PageStatusView from '@/common/components/page-status-view';
+import PageStatusView, {
+  PageErrorType,
+} from '@/common/components/page-status-view';
 
 import type { MessageItem } from '@/common/typings/chat';
 import * as telegramApi from '@/services/telegram';
@@ -28,13 +31,14 @@ import ChatDetailContextMenu from '@/pages/chat-detail/components/chat-detail-co
 export default function ChatScreen(): ReactNode {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+  const router = useRouter();
   const { id, title, chatType, accessHash } = useLocalSearchParams<{
     id: string;
     title?: string;
     chatType?: string;
     accessHash?: string;
   }>();
-  const { session } = useAuth();
+  const { session, logout } = useAuth();
   const flatListRef = useRef<FlatList>(null);
   const [replyTo, setReplyTo] = useState<MessageItem | null>(null);
 
@@ -65,6 +69,27 @@ export default function ChatScreen(): ReactNode {
   // ---- Effect Hook: background polling ------------------------------------
 
   useChatPolling(chatParams, mergeMessages);
+
+  // ---- Auth expired detection ---------------------------------------------
+
+  useEffect(() => {
+    if (errorType !== PageErrorType.AUTH) return;
+
+    Alert.alert(
+      '登录已失效',
+      'Telegram 登录已失效，请重新绑定账号。',
+      [
+        {
+          text: '确定',
+          onPress: async () => {
+            await logout();
+            router.back();
+          },
+        },
+      ],
+      { cancelable: false },
+    );
+  }, [errorType, logout, router]);
 
   // ---- Navigation title ---------------------------------------------------
 
@@ -139,7 +164,7 @@ export default function ChatScreen(): ReactNode {
   // ---- Render -------------------------------------------------------------
 
   if (isLoading) return <PageLoading />;
-  if (errorType)
+  if (errorType && errorType !== PageErrorType.AUTH)
     return <PageStatusView errorType={errorType} onRetry={handleRetry} />;
   if (!pageData) return null;
 

@@ -1,12 +1,14 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, Spacer } from 'tamagui';
-import { Pressable } from 'react-native';
+import { Alert, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import PageLoading from '@/common/components/page-loading';
-import PageStatusView from '@/common/components/page-status-view';
+import PageStatusView, {
+  PageErrorType,
+} from '@/common/components/page-status-view';
 import { useAuth } from '@/common/hooks';
 import type { DialogItem } from '@/common/typings/chat';
 import { useChatListData } from '@/pages/chat-list/hooks/useChatListData';
@@ -16,7 +18,7 @@ import ChatListUnboundPrompt from '@/pages/chat-list/components/chat-list-unboun
 export default function TelegramDialogsScreen(): ReactNode {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { session } = useAuth();
+  const { session, logout } = useAuth();
   const {
     isLoading,
     isRefreshing,
@@ -25,6 +27,25 @@ export default function TelegramDialogsScreen(): ReactNode {
     handleRetry,
     handleRefresh,
   } = useChatListData(session);
+
+  useEffect(() => {
+    if (errorType !== PageErrorType.AUTH) return;
+
+    Alert.alert(
+      '登录已失效',
+      'Telegram 登录已失效，请重新绑定账号。',
+      [
+        {
+          text: '确定',
+          onPress: async () => {
+            await logout();
+            router.back();
+          },
+        },
+      ],
+      { cancelable: false },
+    );
+  }, [errorType, logout, router]);
 
   const handleDialogPress = (dialog: DialogItem): void => {
     router.push({
@@ -39,7 +60,7 @@ export default function TelegramDialogsScreen(): ReactNode {
   };
 
   if (isLoading) return <PageLoading />;
-  if (errorType)
+  if (errorType && errorType !== PageErrorType.AUTH)
     return <PageStatusView errorType={errorType} onRetry={handleRetry} />;
   if (!data) return null;
 

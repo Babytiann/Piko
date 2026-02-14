@@ -17,6 +17,7 @@ const ERROR_TITLE: Record<PageErrorType, string> = {
   [PageErrorType.NETWORK]: '网络连接异常',
   [PageErrorType.EMPTY]: '暂无数据',
   [PageErrorType.UNAVAILABLE]: '服务不可用',
+  [PageErrorType.AUTH]: '登录已失效',
 };
 
 export default function PageStatusView({

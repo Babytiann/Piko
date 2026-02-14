@@ -40,6 +40,18 @@ export async function POST(request: Request) {
     const message =
       error instanceof Error ? error.message : 'Failed to load chat detail';
     console.error('chat/detail error:', error);
+
+    if (message.includes('AUTH_KEY_UNREGISTERED')) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Telegram 登录已失效，请重新绑定',
+          errorCode: 'AUTH_EXPIRED',
+        },
+        { status: 401 },
+      );
+    }
+
     return NextResponse.json(
       { success: false, error: message },
       { status: 500 },
