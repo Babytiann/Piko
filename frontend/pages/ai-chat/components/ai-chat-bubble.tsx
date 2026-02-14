@@ -1,22 +1,41 @@
+import React from 'react';
 import type { ReactNode } from 'react';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
+
 import type { AiMessage } from '../types';
+import AiChatMarkdown from './ai-chat-markdown';
 
 interface Props {
   message: AiMessage;
 }
 
-/** Animated dots shown while the model is still streaming. */
 function StreamingIndicator(): ReactNode {
+  const opacity = useSharedValue(1);
+  opacity.value = withRepeat(
+    withTiming(0.25, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+    -1,
+    true,
+  );
+
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+
   return (
-    <Text fontSize="$3" color="$gray10" ml="$1">
-      ●
-    </Text>
+    <Animated.View style={animatedStyle}>
+      <Text fontSize="$3" color="$blue9" ml="$1">
+        ●
+      </Text>
+    </Animated.View>
   );
 }
 
-/** Sparkle avatar for AI messages. */
 function AiAvatar(): ReactNode {
   return (
     <View
@@ -34,11 +53,10 @@ function AiAvatar(): ReactNode {
   );
 }
 
-export default function AiChatBubble({ message }: Props): ReactNode {
+function AiChatBubble({ message }: Props): ReactNode {
   const isUser = message.role === 'user';
   const isEmpty = !message.content && message.isStreaming;
 
-  // ── User bubble ────────────────────────────────────────────────────
   if (isUser) {
     return (
       <YStack px="$3" py="$1" style={{ alignItems: 'flex-end' }}>
@@ -60,9 +78,8 @@ export default function AiChatBubble({ message }: Props): ReactNode {
     );
   }
 
-  // ── AI bubble ──────────────────────────────────────────────────────
   return (
-    <XStack px="$3" py="$1" gap="$2" style={{ alignItems: 'flex-end' }}>
+    <XStack px="$3" py="$1" gap="$2" style={{ alignItems: 'flex-start' }}>
       <AiAvatar />
       <YStack
         bg="$gray4"
@@ -73,20 +90,21 @@ export default function AiChatBubble({ message }: Props): ReactNode {
         {isEmpty ? (
           <StreamingIndicator />
         ) : (
-          <XStack style={{ alignItems: 'center' }}>
-            <Text
-              fontSize="$3"
-              color="$color"
-              lineHeight={22}
-              selectable
-              style={{ flexShrink: 1 }}
-            >
-              {message.content}
-            </Text>
+          <YStack>
+            <AiChatMarkdown
+              content={message.content}
+              isStreaming={message.isStreaming}
+            />
             {message.isStreaming ? <StreamingIndicator /> : null}
-          </XStack>
+          </YStack>
         )}
       </YStack>
     </XStack>
   );
 }
+
+export default React.memo(AiChatBubble, (prev, next) => {
+  const p = prev.message;
+  const n = next.message;
+  return p.content === n.content && p.isStreaming === n.isStreaming;
+});

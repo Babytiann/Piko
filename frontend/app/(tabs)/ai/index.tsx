@@ -1,11 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import {
-  Keyboard,
-  type KeyboardEvent,
-  Platform,
-  Pressable,
-} from 'react-native';
+import { Keyboard, type KeyboardEvent, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { YStack, XStack, Text } from 'tamagui';
@@ -90,21 +85,19 @@ export default function AiScreen(): ReactNode {
         </XStack>
       </XStack>
 
-      <Pressable style={{ flex: 1 }} onPress={Keyboard.dismiss}>
-        <YStack flex={1} pb={bottomInset}>
-          <AiChatMessageList
-            messages={messages}
-            contentPaddingBottom={16}
-            emptyTitle={copy.emptyTitle}
-            emptySubtitle={copy.emptySubtitle}
-          />
-          <AiChatInput
-            onSend={sendMessage}
-            disabled={isStreaming}
-            placeholder={copy.inputPlaceholder}
-          />
-        </YStack>
-      </Pressable>
+      <YStack flex={1} pb={bottomInset}>
+        <AiChatMessageList
+          messages={messages}
+          contentPaddingBottom={16}
+          emptyTitle={copy.emptyTitle}
+          emptySubtitle={copy.emptySubtitle}
+        />
+        <AiChatInput
+          onSend={sendMessage}
+          disabled={isStreaming}
+          placeholder={copy.inputPlaceholder}
+        />
+      </YStack>
     </YStack>
   );
 }

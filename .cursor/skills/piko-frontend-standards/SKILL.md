@@ -9,12 +9,25 @@ description: Enforces strict frontend code standards for the Piko Expo/React Nat
 
 ## Core Philosophy
 
-1. **Page Autonomy** — 每个页面是自包含单元，拥有自己的 components/hooks/types/consts/utils
-2. **Single Responsibility** — 一个函数/组件/hook 只做一件事
-3. **Composition over Complexity** — Slot 组合 > 巨型组件，Hook 组合 > 万能 Hook
-4. **Explicit over Implicit** — 所有返回类型显式标注，所有 Promise 要么 await 要么 void
-5. **Type as Contract** — 类型系统是模块间的契约，用判别联合而非松散可选字段
-6. **Fail Fast, Fail Loud** — 纯函数映射错误类型，不在 hook 里硬编码错误逻辑
+1. **Code as Documentation** — 代码即文档，命名自解释，拒绝冗余注释
+2. **Page Autonomy** — 每个页面是自包含单元，拥有自己的 components/hooks/types/consts/utils
+3. **Single Responsibility** — 一个函数/组件/hook 只做一件事
+4. **Composition over Complexity** — Slot 组合 > 巨型组件，Hook 组合 > 万能 Hook
+5. **Explicit over Implicit** — 所有返回类型显式标注，所有 Promise 要么 await 要么 void
+6. **Type as Contract** — 类型系统是模块间的契约，用判别联合而非松散可选字段
+7. **Fail Fast, Fail Loud** — 纯函数映射错误类型，不在 hook 里硬编码错误逻辑
+
+## Comments: Less is More
+
+```
+MUST:  用清晰的函数名/变量名/类型名替代注释
+MUST:  复杂算法或非直觉的业务规则才需要注释
+MUST:  注释解释 WHY，不解释 WHAT (代码本身说明 what)
+NEVER: 函数签名上方加 JSDoc 复述参数名和类型 — TypeScript 已经表达了
+NEVER: 注释掉的代码 — 直接删除，git 有历史
+NEVER: 分隔线注释 (// ────────) — 用空行和函数拆分表达结构
+NEVER: "显而易见"的注释 (// 设置 loading 为 true → setIsLoading(true))
+```
 
 ## Architecture: Page-Autonomous Structure
 
