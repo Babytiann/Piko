@@ -8,11 +8,13 @@ import * as Haptics from 'expo-haptics';
 interface Props {
   onSend: (text: string) => void;
   disabled?: boolean;
+  placeholder?: string;
 }
 
 export default function AiChatInput({
   onSend,
   disabled = false,
+  placeholder = '问我任何问题...',
 }: Props): ReactNode {
   const [text, setText] = useState('');
   const canSend = text.trim().length > 0 && !disabled;
@@ -49,7 +51,7 @@ export default function AiChatInput({
         <TextInput
           value={text}
           onChangeText={setText}
-          placeholder="问我任何问题..."
+          placeholder={placeholder}
           placeholderTextColor="#9BA1A6"
           multiline
           maxLength={2000}

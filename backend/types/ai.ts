@@ -30,3 +30,15 @@ export interface SseErrorEvent {
 }
 
 export type SseEvent = SseChunkEvent | SseDoneEvent | SseErrorEvent;
+
+/** Copywriting / text content for the AI chat page. */
+export interface AiCopywriting {
+  /** Page header title, e.g. "AI 助手" */
+  headerTitle: string;
+  /** Empty-state greeting title, e.g. "Hi，我是 Piko AI" */
+  emptyTitle: string;
+  /** Empty-state subtitle, e.g. "问我任何问题，我会尽力帮你解答。" */
+  emptySubtitle: string;
+  /** Input placeholder, e.g. "问我任何问题..." */
+  inputPlaceholder: string;
+}

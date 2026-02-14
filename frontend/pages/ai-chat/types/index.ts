@@ -27,3 +27,11 @@ export interface SseErrorEvent {
 }
 
 export type SseEvent = SseChunkEvent | SseDoneEvent | SseErrorEvent;
+
+/** Copywriting / text content for the AI chat page (from backend). */
+export interface AiCopywriting {
+  headerTitle: string;
+  emptyTitle: string;
+  emptySubtitle: string;
+  inputPlaceholder: string;
+}

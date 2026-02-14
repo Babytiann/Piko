@@ -12,7 +12,7 @@ import { YStack, XStack, Text } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
 
 import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
-import { useAiChat } from '@/pages/ai-chat/hooks';
+import { useAiChat, useAiCopywriting } from '@/pages/ai-chat/hooks';
 import AiChatMessageList from '@/pages/ai-chat/components/ai-chat-message-list';
 import AiChatInput from '@/pages/ai-chat/components/ai-chat-input';
 
@@ -50,6 +50,7 @@ export default function AiScreen(): ReactNode {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { messages, isStreaming, sendMessage, clearMessages } = useAiChat();
+  const { copy } = useAiCopywriting();
   const bottomInset = useKeyboardBottomInset();
 
   return (
@@ -66,7 +67,7 @@ export default function AiScreen(): ReactNode {
           color="$color"
           letterSpacing={-0.5}
         >
-          AI 助手
+          {copy.headerTitle}
         </Text>
 
         <XStack gap="$3" style={{ alignItems: 'center' }}>
@@ -91,8 +92,17 @@ export default function AiScreen(): ReactNode {
 
       <Pressable style={{ flex: 1 }} onPress={Keyboard.dismiss}>
         <YStack flex={1} pb={bottomInset}>
-          <AiChatMessageList messages={messages} contentPaddingBottom={16} />
-          <AiChatInput onSend={sendMessage} disabled={isStreaming} />
+          <AiChatMessageList
+            messages={messages}
+            contentPaddingBottom={16}
+            emptyTitle={copy.emptyTitle}
+            emptySubtitle={copy.emptySubtitle}
+          />
+          <AiChatInput
+            onSend={sendMessage}
+            disabled={isStreaming}
+            placeholder={copy.inputPlaceholder}
+          />
         </YStack>
       </Pressable>
     </YStack>

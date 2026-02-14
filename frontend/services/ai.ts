@@ -1,7 +1,15 @@
 import { API_HOST } from '@/common/config';
-import type { SseEvent } from '@/pages/ai-chat/types';
+import { post } from '@/services';
+import type { SseEvent, AiCopywriting } from '@/pages/ai-chat/types';
 
 const SSE_URL = `${API_HOST}/piko/ai/chat/v1`;
+
+/**
+ * Fetch all user-facing copywriting for the AI chat page.
+ */
+export function fetchAiCopywriting(): Promise<AiCopywriting> {
+  return post<AiCopywriting>('ai/copywriting/v1');
+}
 
 /** Message shape sent to the backend. */
 interface ChatPayload {

@@ -2,8 +2,13 @@ import type { ReactElement } from 'react';
 import { YStack, Text } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
 
+interface Props {
+  title: string;
+  subtitle: string;
+}
+
 /** Empty state shown when there are no messages yet. */
-export default function AiChatEmpty(): ReactElement {
+export default function AiChatEmpty({ title, subtitle }: Props): ReactElement {
   return (
     <YStack
       flex={1}
@@ -18,7 +23,7 @@ export default function AiChatEmpty(): ReactElement {
         color="$color"
         style={{ textAlign: 'center' }}
       >
-        Hi，我是 Piko AI
+        {title}
       </Text>
       <Text
         fontSize="$3"
@@ -26,7 +31,7 @@ export default function AiChatEmpty(): ReactElement {
         lineHeight={22}
         style={{ textAlign: 'center' }}
       >
-        问我任何问题，我会尽力帮你解答。
+        {subtitle}
       </Text>
     </YStack>
   );

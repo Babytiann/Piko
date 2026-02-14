@@ -9,11 +9,15 @@ import AiChatEmpty from './ai-chat-empty';
 interface Props {
   messages: AiMessage[];
   contentPaddingBottom: number;
+  emptyTitle: string;
+  emptySubtitle: string;
 }
 
 export default function AiChatMessageList({
   messages,
   contentPaddingBottom,
+  emptyTitle,
+  emptySubtitle,
 }: Props): ReactElement {
   const listRef = useRef<FlatList<AiMessage>>(null);
 
@@ -36,7 +40,7 @@ export default function AiChatMessageList({
   const keyExtractor = useCallback((item: AiMessage) => item.id, []);
 
   if (messages.length === 0) {
-    return <AiChatEmpty />;
+    return <AiChatEmpty title={emptyTitle} subtitle={emptySubtitle} />;
   }
 
   return (
