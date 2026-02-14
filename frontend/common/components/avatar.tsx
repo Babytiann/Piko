@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Image, View } from 'react-native';
 import { Text } from 'tamagui';
 
-import { API_HOST } from '@/services';
+import { API_HOST } from '@/common/config';
 
 /** Resolve relative server paths (e.g. "/piko/...") to absolute URLs. */
 function resolveUrl(url: string): string {

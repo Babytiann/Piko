@@ -1,0 +1,80 @@
+import type { ReactNode } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { YStack, XStack, Text, Spacer } from 'tamagui';
+import { Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+
+import PageLoading from '@/common/components/page-loading';
+import PageStatusView from '@/common/components/page-status-view';
+import { useAuth } from '@/common/hooks';
+import type { DialogItem } from '@/common/typings/chat';
+import { useChatListData } from '@/pages/chat-list/hooks/useChatListData';
+import ChatListDialogList from '@/pages/chat-list/components/chat-list-dialog-list';
+import ChatListUnboundPrompt from '@/pages/chat-list/components/chat-list-unbound-prompt';
+
+export default function TelegramDialogsScreen(): ReactNode {
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { session } = useAuth();
+  const {
+    isLoading,
+    isRefreshing,
+    errorType,
+    data,
+    handleRetry,
+    handleRefresh,
+  } = useChatListData(session);
+
+  const handleDialogPress = (dialog: DialogItem): void => {
+    router.push({
+      pathname: '/chat/[id]',
+      params: {
+        id: dialog.id,
+        title: dialog.title,
+        chatType: dialog.type,
+        accessHash: dialog.accessHash,
+      },
+    });
+  };
+
+  if (isLoading) return <PageLoading />;
+  if (errorType)
+    return <PageStatusView errorType={errorType} onRetry={handleRetry} />;
+  if (!data) return null;
+
+  return (
+    <YStack flex={1} pt={insets.top} bg="$background">
+      <XStack px="$4" py="$3" style={{ alignItems: 'center' }}>
+        <Pressable onPress={() => router.back()} hitSlop={8}>
+          <Ionicons name="arrow-back" size={24} color="$color" />
+        </Pressable>
+        <Text
+          fontSize="$7"
+          fontWeight="700"
+          color="$color"
+          letterSpacing={-0.5}
+          ml="$3"
+        >
+          {data.header.title}
+        </Text>
+        <Spacer flex={1} />
+      </XStack>
+
+      {data.unboundState ? (
+        <ChatListUnboundPrompt
+          data={data.unboundState}
+          onBind={() => router.push('/telegram_login')}
+        />
+      ) : (
+        <ChatListDialogList
+          dialogs={data.dialogs ?? []}
+          isRefreshing={isRefreshing}
+          onRefresh={handleRefresh}
+          onDialogPress={handleDialogPress}
+          contentPaddingBottom={insets.bottom + 24}
+        />
+      )}
+    </YStack>
+  );
+}

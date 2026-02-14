@@ -22,18 +22,27 @@ export default function TabLayout() {
       <Tabs.Screen
         name="ai/index"
         options={{
-          title: '消息',
+          title: 'AI',
           tabBarIcon: ({ color }) => (
-            <Ionicons size={24} name="chatbubbles-outline" color={color} />
+            <Ionicons size={24} name="sparkles-outline" color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="profile/index"
         options={{
-          title: '个人中心',
+          title: '我的',
           tabBarIcon: ({ color }) => (
             <Ionicons size={24} name="person-outline" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="scan/index"
+        options={{
+          title: '',
+          tabBarIcon: ({ color }) => (
+            <Ionicons size={22} name="camera-outline" color={color} />
           ),
         }}
       />

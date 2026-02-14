@@ -11,7 +11,7 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
-import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import { isLiquidGlassAvailable } from 'expo-glass-effect';
 
 import { Colors } from '@/common/consts/theme';
 import {
@@ -21,6 +21,13 @@ import {
 } from '@/common/consts';
 import GlassTabButton from './glass-tab-button';
 import GlassOverlay from './glass-overlay';
+
+/** Route name of the action button (scan/camera tab). */
+const ACTION_ROUTE = 'scan/index';
+
+function isActionTab(routeName: string): boolean {
+  return routeName === ACTION_ROUTE;
+}
 
 export default function GlassTabBar({
   state,
@@ -38,9 +45,19 @@ export default function GlassTabBar({
   const indicatorScale = useRef(new Animated.Value(1)).current;
   const prevBarWidth = useRef(0);
 
+  // Track the last selected normal (non-action) tab for indicator position.
+  const lastNormalIndex = useRef(0);
+  const currentIsAction = isActionTab(state.routes[state.index]?.name ?? '');
+  if (!currentIsAction) {
+    lastNormalIndex.current = state.index;
+  }
+
   const tabCount = state.routes.length;
   const tabWidth = barWidth > 0 ? barWidth / tabCount : 0;
-  const targetX = state.index * tabWidth + INDICATOR_MARGIN_H;
+  const indicatorIndex = currentIsAction
+    ? lastNormalIndex.current
+    : state.index;
+  const targetX = indicatorIndex * tabWidth + INDICATOR_MARGIN_H;
 
   useEffect(() => {
     if (barWidth <= 0) return;
@@ -52,6 +69,9 @@ export default function GlassTabBar({
       translateX.setValue(targetX);
       return;
     }
+
+    // Skip bounce animation when switching to action tab.
+    if (currentIsAction) return;
 
     const SPRING_DURATION = 300;
     const HALF = SPRING_DURATION / 2;
@@ -79,7 +99,14 @@ export default function GlassTabBar({
         }),
       ]),
     ]).start();
-  }, [state.index, barWidth, targetX, translateX, indicatorScale]);
+  }, [
+    state.index,
+    barWidth,
+    targetX,
+    translateX,
+    indicatorScale,
+    currentIsAction,
+  ]);
 
   const indicatorWidth = tabWidth - INDICATOR_MARGIN_H * 2;
 
@@ -151,11 +178,16 @@ export default function GlassTabBar({
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
         const isFocused = state.index === index;
+        const isAction = isActionTab(route.name);
         const color = isFocused ? colors.text : colors.tabIconDefault;
 
         const onPress = (): void => {
           if (Platform.OS === 'ios') {
-            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            void Haptics.impactAsync(
+              isAction
+                ? Haptics.ImpactFeedbackStyle.Medium
+                : Haptics.ImpactFeedbackStyle.Light,
+            );
           }
 
           const event = navigation.emit({
@@ -174,6 +206,7 @@ export default function GlassTabBar({
             key={route.key}
             route={route}
             isFocused={isFocused}
+            isActionButton={isAction}
             options={options}
             color={color}
             onPress={onPress}
@@ -187,7 +220,7 @@ export default function GlassTabBar({
 const styles = StyleSheet.create({
   bar: {
     position: 'absolute',
-    width: '70%',
+    width: '85%',
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',

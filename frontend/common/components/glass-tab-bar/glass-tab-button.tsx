@@ -1,11 +1,26 @@
 import React, { useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Animated, Pressable, StyleSheet, Text } from 'react-native';
+import {
+  Animated,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  useColorScheme,
+  View,
+} from 'react-native';
+
+const ACTION_SIZE = 44;
+const ACTION_BG_LIGHT = '#1C1C1E';
+const ACTION_BG_DARK = '#3A3A3C';
+const ACTION_ICON_COLOR = '#FFFFFF';
 
 interface Props {
   route: BottomTabBarProps['state']['routes'][number];
   isFocused: boolean;
+  /** Whether this tab renders as a filled circle action button. */
+  isActionButton?: boolean;
   options: BottomTabBarProps['descriptors'][string]['options'];
   color: string;
   onPress: () => void;
@@ -14,21 +29,24 @@ interface Props {
 export default function GlassTabButton({
   route,
   isFocused,
+  isActionButton = false,
   options,
   color,
   onPress,
 }: Props): ReactNode {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const scale = useRef(new Animated.Value(1)).current;
 
   const onPressIn = useCallback((): void => {
     Animated.spring(scale, {
-      toValue: 0.9,
+      toValue: isActionButton ? 0.85 : 0.9,
       damping: 15,
       stiffness: 300,
       mass: 0.6,
       useNativeDriver: true,
     }).start();
-  }, [scale]);
+  }, [scale, isActionButton]);
 
   const onPressOut = useCallback((): void => {
     Animated.spring(scale, {
@@ -39,6 +57,48 @@ export default function GlassTabButton({
       useNativeDriver: true,
     }).start();
   }, [scale]);
+
+  if (isActionButton) {
+    const bg = isDark ? ACTION_BG_DARK : ACTION_BG_LIGHT;
+
+    return (
+      <Pressable
+        onPress={onPress}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        style={styles.button}
+        accessibilityRole="button"
+        accessibilityState={{ selected: isFocused }}
+        accessibilityLabel="记账"
+      >
+        <Animated.View style={{ transform: [{ scale }] }}>
+          <View
+            style={[
+              styles.actionCircle,
+              {
+                backgroundColor: bg,
+                ...Platform.select({
+                  ios: {
+                    shadowColor: bg,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 6,
+                  },
+                  android: { elevation: 4 },
+                }),
+              },
+            ]}
+          >
+            {options.tabBarIcon?.({
+              focused: isFocused,
+              color: ACTION_ICON_COLOR,
+              size: 22,
+            })}
+          </View>
+        </Animated.View>
+      </Pressable>
+    );
+  }
 
   return (
     <Pressable
@@ -75,5 +135,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     marginTop: 2,
+  },
+  actionCircle: {
+    width: ACTION_SIZE,
+    height: ACTION_SIZE,
+    borderRadius: ACTION_SIZE / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

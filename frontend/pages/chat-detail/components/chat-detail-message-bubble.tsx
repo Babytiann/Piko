@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { Image } from 'expo-image';
 
-import { API_HOST } from '@/services';
+import { API_HOST } from '@/common/config';
 import type { MessageItem } from '@/common/typings/chat';
 import Avatar from '@/common/components/avatar';
 

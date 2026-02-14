@@ -1,76 +1,100 @@
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import {
+  Keyboard,
+  type KeyboardEvent,
+  Platform,
+  Pressable,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { YStack, XStack, Text, Spacer } from 'tamagui';
+import { YStack, XStack, Text } from 'tamagui';
+import { Ionicons } from '@expo/vector-icons';
 
 import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
-import PageLoading from '@/common/components/page-loading';
-import PageStatusView from '@/common/components/page-status-view';
-import { useAuth } from '@/common/hooks';
+import { useAiChat } from '@/pages/ai-chat/hooks';
+import AiChatMessageList from '@/pages/ai-chat/components/ai-chat-message-list';
+import AiChatInput from '@/pages/ai-chat/components/ai-chat-input';
 
-import type { DialogItem } from '@/common/typings/chat';
-import { useChatListData } from '@/pages/chat-list/hooks/useChatListData';
-import ChatListDialogList from '@/pages/chat-list/components/chat-list-dialog-list';
-import ChatListUnboundPrompt from '@/pages/chat-list/components/chat-list-unbound-prompt';
+function useKeyboardBottomInset(): number {
+  const insets = useSafeAreaInsets();
+  const idleInset = insets.bottom + TAB_BAR_CONTENT_HEIGHT;
+  const [bottomInset, setBottomInset] = useState(idleInset);
 
-export default function MessagesScreen(): ReactNode {
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent =
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const onShow = (e: KeyboardEvent) => {
+      setBottomInset(e.endCoordinates.height);
+    };
+    const onHide = () => {
+      setBottomInset(idleInset);
+    };
+
+    const showSub = Keyboard.addListener(showEvent, onShow);
+    const hideSub = Keyboard.addListener(hideEvent, onHide);
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [idleInset]);
+
+  return bottomInset;
+}
+
+export default function AiScreen(): ReactNode {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { session } = useAuth();
-  const {
-    isLoading,
-    isRefreshing,
-    errorType,
-    data,
-    handleRetry,
-    handleRefresh,
-  } = useChatListData(session);
-
-  const handleDialogPress = (dialog: DialogItem): void => {
-    router.push({
-      pathname: '/chat/[id]',
-      params: {
-        id: dialog.id,
-        title: dialog.title,
-        chatType: dialog.type,
-        accessHash: dialog.accessHash,
-      },
-    });
-  };
-
-  if (isLoading) return <PageLoading />;
-  if (errorType)
-    return <PageStatusView errorType={errorType} onRetry={handleRetry} />;
-  if (!data) return null;
+  const { messages, isStreaming, sendMessage, clearMessages } = useAiChat();
+  const bottomInset = useKeyboardBottomInset();
 
   return (
     <YStack flex={1} pt={insets.top} bg="$background">
-      <XStack px="$4" py="$3">
+      {/* ── Header ─────────────────────────────────────────────── */}
+      <XStack
+        px="$4"
+        py="$3"
+        style={{ alignItems: 'center', justifyContent: 'space-between' }}
+      >
         <Text
           fontSize="$7"
           fontWeight="700"
           color="$color"
           letterSpacing={-0.5}
         >
-          {data.header.title}
+          AI 助手
         </Text>
-        <Spacer flex={1} />
+
+        <XStack gap="$3" style={{ alignItems: 'center' }}>
+          {messages.length > 0 ? (
+            <YStack
+              pressStyle={{ opacity: 0.6 }}
+              onPress={clearMessages}
+              hitSlop={8}
+            >
+              <Ionicons name="trash-outline" size={20} color="#9BA1A6" />
+            </YStack>
+          ) : null}
+          <YStack
+            pressStyle={{ opacity: 0.6 }}
+            onPress={() => router.push('/telegram-dialog')}
+            hitSlop={8}
+          >
+            <Ionicons name="chatbubbles-outline" size={22} color="#9BA1A6" />
+          </YStack>
+        </XStack>
       </XStack>
 
-      {data.unboundState ? (
-        <ChatListUnboundPrompt
-          data={data.unboundState}
-          onBind={() => router.push('/telegram_login')}
-        />
-      ) : (
-        <ChatListDialogList
-          dialogs={data.dialogs ?? []}
-          isRefreshing={isRefreshing}
-          onRefresh={handleRefresh}
-          onDialogPress={handleDialogPress}
-          contentPaddingBottom={insets.bottom + TAB_BAR_CONTENT_HEIGHT}
-        />
-      )}
+      <Pressable style={{ flex: 1 }} onPress={Keyboard.dismiss}>
+        <YStack flex={1} pb={bottomInset}>
+          <AiChatMessageList messages={messages} contentPaddingBottom={16} />
+          <AiChatInput onSend={sendMessage} disabled={isStreaming} />
+        </YStack>
+      </Pressable>
     </YStack>
   );
 }

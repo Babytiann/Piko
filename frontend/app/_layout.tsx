@@ -45,6 +45,13 @@ export default function RootLayout() {
                   headerShown: false,
                 }}
               />
+              <Stack.Screen
+                name="telegram-dialog"
+                options={{
+                  headerShown: false,
+                  animation: 'slide_from_right',
+                }}
+              />
             </Stack>
           </AuthProvider>
         </PortalProvider>

@@ -103,16 +103,10 @@ backend/
 │       │   ├── media/v1/route.ts
 │       │   └── text_detail/v1/route.ts
 │       ├── ai/                   # AI 相关 (新增)
-│       │   ├── chat/v1/route.ts      # AI 聊天 (SSE)
-│       │   ├── recognize/v1/route.ts  # 图片识别
-│       │   ├── advice/v1/route.ts     # 消费建议
-│       │   └── search/v1/route.ts     # RAG 搜索
-│       ├── budget/               # 预算 (新增)
-│       │   └── summary/v1/route.ts
-│       ├── weather/              # 天气 (新增)
-│       │   └── current/v1/route.ts
-│       └── push/                 # 推送 (新增)
-│           └── register/v1/route.ts
+│       │   ├── chat/v1/route.ts      # AI 流式聊天 (SSE)
+│       │   └── action/v1/route.ts    # 统一 AI 动作 (recognize/advice/search)
+│       └── expense/              # 消费/预算 (新增)
+│           └── v1/route.ts           # CRUD (add/list/set_budget/summary)
 │
 ├── lib/
 │   ├── telegram.ts               # Telegram Client 池
@@ -173,17 +167,15 @@ backend/
 | `/piko/telegram/avatar/v1`       | GET  | 头像代理      |
 | `/piko/telegram/media/v1`        | GET  | 媒体下载      |
 
-### 新增端点（Agent 功能）
+### 新增端点（Agent 功能，收敛为 3 个新端点 + 2 个扩展）
 
-| 端点                       | 方法       | 用途               |
-| -------------------------- | ---------- | ------------------ |
-| `/piko/ai/chat/v1`         | POST (SSE) | AI 聊天（流式）    |
-| `/piko/ai/recognize/v1`    | POST       | 图片识别（多模态） |
-| `/piko/ai/advice/v1`       | POST       | AI 消费建议        |
-| `/piko/ai/search/v1`       | POST       | RAG 语义搜索       |
-| `/piko/budget/summary/v1`  | POST       | 预算概览           |
-| `/piko/weather/current/v1` | POST       | 天气查询           |
-| `/piko/push/register/v1`   | POST       | Push Token 注册    |
+| 端点                        | 方法       | 用途                                                                       |
+| --------------------------- | ---------- | -------------------------------------------------------------------------- |
+| `/piko/ai/chat/v1`          | POST (SSE) | AI 流式聊天（独立，因为 SSE 协议特殊）                                     |
+| `/piko/ai/action/v1`        | POST       | 统一 AI 动作：`{ action: "recognize" \| "advice" \| "search", payload }`   |
+| `/piko/expense/v1`          | POST       | 消费/预算 CRUD：`{ action: "add" \| "list" \| "set_budget" \| "summary" }` |
+| `/piko/homepage/summary/v1` | POST       | **扩展已有**：聚合返回预算 + 天气 + AI 建议 + 今日消费                     |
+| `/piko/profile/detail/v1`   | POST       | **扩展已有**：支持 pushToken 注册（body 中加 pushToken 字段）              |
 
 ---
 
