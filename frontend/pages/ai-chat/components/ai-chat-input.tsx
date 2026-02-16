@@ -56,7 +56,6 @@ export default function AiChatInput({
           multiline
           maxLength={2000}
           style={styles.input}
-          editable={!disabled}
           returnKeyType="default"
           blurOnSubmit={false}
         />

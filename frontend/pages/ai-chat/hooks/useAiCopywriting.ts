@@ -22,16 +22,15 @@ export function useAiCopywriting(): UseAiCopywritingReturn {
   useEffect(() => {
     let cancelled = false;
 
-    fetchAiCopywriting()
-      .then((data) => {
-        if (!cancelled) setCopy(data);
-      })
-      .catch(() => {
-        // Keep default copy on error — silent fallback.
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+    const load = async () => {
+      const data = await fetchAiCopywriting();
+      if (!cancelled) {
+        setCopy(data);
+        setLoading(false);
+      }
+    };
+
+    load();
 
     return () => {
       cancelled = true;

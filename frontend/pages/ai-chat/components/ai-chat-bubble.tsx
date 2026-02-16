@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
+import { Platform, View as RNView } from 'react-native';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -10,11 +12,13 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 
-import type { AiMessage } from '../types';
+import type { AiMessage, BubbleLayout } from '../types';
 import AiChatMarkdown from './ai-chat-markdown';
 
 interface Props {
   message: AiMessage;
+  isTooltipTarget?: boolean;
+  onLongPress?: (message: AiMessage, layout: BubbleLayout) => void;
 }
 
 function StreamingIndicator(): ReactNode {
@@ -53,58 +57,87 @@ function AiAvatar(): ReactNode {
   );
 }
 
-function AiChatBubble({ message }: Props): ReactNode {
+function AiChatBubble({
+  message,
+  isTooltipTarget,
+  onLongPress,
+}: Props): ReactNode {
   const isUser = message.role === 'user';
   const isEmpty = !message.content && message.isStreaming;
+  const bubbleRef = useRef<RNView>(null);
 
-  if (isUser) {
-    return (
-      <YStack px="$3" py="$1" style={{ alignItems: 'flex-end' }}>
-        <YStack
-          bg="$blue9"
-          px="$3.5"
-          py="$2.5"
-          style={{
-            maxWidth: '80%',
-            borderRadius: 18,
-            borderBottomRightRadius: 4,
-          }}
-        >
-          <Text fontSize="$3" color="white" lineHeight={22} selectable>
-            {message.content}
-          </Text>
-        </YStack>
-      </YStack>
-    );
-  }
+  const handleLongPress = useCallback(() => {
+    if (!onLongPress || message.isStreaming || !message.content) return;
+
+    if (Platform.OS === 'ios') {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
+    bubbleRef.current?.measureInWindow((x, y, width, height) => {
+      onLongPress(message, { pageX: x, pageY: y, width, height });
+    });
+  }, [message, onLongPress]);
+
+  const canInteract = isUser || !isEmpty;
+
+  const Wrapper = isUser ? YStack : XStack;
 
   return (
-    <XStack px="$3" py="$1" gap="$2" style={{ alignItems: 'flex-start' }}>
-      <AiAvatar />
-      <YStack
-        bg="$gray4"
-        px="$3.5"
-        py="$2.5"
-        style={{ maxWidth: '78%', borderRadius: 18, borderBottomLeftRadius: 4 }}
+    <Wrapper
+      px="$3"
+      py="$1"
+      {...(!isUser && { gap: '$2' })}
+      style={{ alignItems: isUser ? 'flex-end' : 'flex-start' }}
+    >
+      {!isUser && <AiAvatar />}
+      <RNView
+        ref={bubbleRef}
+        collapsable={false}
+        style={[
+          { maxWidth: isUser ? '80%' : '78%' },
+          isTooltipTarget && { opacity: 0 },
+        ]}
       >
-        {isEmpty ? (
-          <StreamingIndicator />
-        ) : (
-          <YStack>
-            <AiChatMarkdown
-              content={message.content}
-              isStreaming={message.isStreaming}
-            />
-            {message.isStreaming ? <StreamingIndicator /> : null}
-          </YStack>
-        )}
-      </YStack>
-    </XStack>
+        <YStack
+          bg={isUser ? '$blue9' : '$gray4'}
+          px="$3.5"
+          py="$2.5"
+          pressStyle={canInteract ? { opacity: 0.85 } : undefined}
+          onLongPress={canInteract ? handleLongPress : undefined}
+          style={{
+            borderRadius: 18,
+            borderBottomRightRadius: isUser ? 4 : 18,
+            borderBottomLeftRadius: isUser ? 18 : 4,
+          }}
+        >
+          {isUser ? (
+            <Text fontSize="$3" color="white" lineHeight={22}>
+              {message.content}
+            </Text>
+          ) : isEmpty ? (
+            <StreamingIndicator />
+          ) : (
+            <YStack>
+              <AiChatMarkdown
+                content={message.content}
+                isStreaming={message.isStreaming}
+              />
+              {message.isStreaming ? <StreamingIndicator /> : null}
+            </YStack>
+          )}
+        </YStack>
+      </RNView>
+    </Wrapper>
   );
 }
 
 export default React.memo(AiChatBubble, (prev, next) => {
   const p = prev.message;
   const n = next.message;
-  return p.content === n.content && p.isStreaming === n.isStreaming;
+  return (
+    p.content === n.content &&
+    p.isStreaming === n.isStreaming &&
+    prev.onLongPress === next.onLongPress &&
+    prev.isTooltipTarget === next.isTooltipTarget
+  );
 });

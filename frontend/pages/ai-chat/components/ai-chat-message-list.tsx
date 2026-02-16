@@ -2,22 +2,24 @@ import React, { useCallback, useRef, useEffect } from 'react';
 import type { ReactElement } from 'react';
 import {
   FlatList,
+  type LayoutChangeEvent,
   type ListRenderItemInfo,
   type NativeSyntheticEvent,
   type NativeScrollEvent,
 } from 'react-native';
 
-import type { AiMessage } from '../types';
+import type { AiMessage, BubbleLayout } from '../types';
+import { NEAR_BOTTOM_THRESHOLD, SCROLL_DELAY_MS } from '../consts';
 import AiChatBubble from './ai-chat-bubble';
 import AiChatEmpty from './ai-chat-empty';
-
-const NEAR_BOTTOM_THRESHOLD = 80;
 
 interface Props {
   messages: AiMessage[];
   contentPaddingBottom: number;
   emptyTitle: string;
   emptySubtitle: string;
+  tooltipMessageId?: string;
+  onMessageLongPress?: (message: AiMessage, layout: BubbleLayout) => void;
 }
 
 export default function AiChatMessageList({
@@ -25,9 +27,12 @@ export default function AiChatMessageList({
   contentPaddingBottom,
   emptyTitle,
   emptySubtitle,
+  tooltipMessageId,
+  onMessageLongPress,
 }: Props): ReactElement {
   const listRef = useRef<FlatList<AiMessage>>(null);
   const isNearBottomRef = useRef(true);
+  const prevHeightRef = useRef(0);
 
   const lastContentLen = messages[messages.length - 1]?.content.length ?? 0;
 
@@ -35,7 +40,7 @@ export default function AiChatMessageList({
     if (messages.length === 0 || !isNearBottomRef.current) return;
     const timer = setTimeout(() => {
       listRef.current?.scrollToEnd({ animated: false });
-    }, 16);
+    }, SCROLL_DELAY_MS);
     return () => clearTimeout(timer);
   }, [messages.length, lastContentLen]);
 
@@ -49,11 +54,29 @@ export default function AiChatMessageList({
     [],
   );
 
+  // 键盘弹出时 FlatList 高度缩小，自动滚到底部保持最新消息可见
+  const handleKeyBoardLayout = useCallback((e: LayoutChangeEvent) => {
+    const newHeight = e.nativeEvent.layout.height;
+    const heightDecreased =
+      prevHeightRef.current > 0 && newHeight < prevHeightRef.current;
+    prevHeightRef.current = newHeight;
+
+    if (heightDecreased && isNearBottomRef.current) {
+      setTimeout(() => {
+        listRef.current?.scrollToEnd({ animated: true });
+      }, SCROLL_DELAY_MS);
+    }
+  }, []);
+
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<AiMessage>): ReactElement => (
-      <AiChatBubble message={item} />
+      <AiChatBubble
+        message={item}
+        isTooltipTarget={item.id === tooltipMessageId}
+        onLongPress={onMessageLongPress}
+      />
     ),
-    [],
+    [tooltipMessageId, onMessageLongPress],
   );
 
   const keyExtractor = useCallback((item: AiMessage) => item.id, []);
@@ -65,10 +88,12 @@ export default function AiChatMessageList({
   return (
     <FlatList
       ref={listRef}
+      style={{ flex: 1 }}
       data={messages}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
       onScroll={handleScroll}
+      onLayout={handleKeyBoardLayout}
       scrollEventThrottle={100}
       contentContainerStyle={{
         paddingTop: 12,

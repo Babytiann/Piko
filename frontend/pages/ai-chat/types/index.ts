@@ -11,6 +11,20 @@ export interface AiMessage {
   isStreaming?: boolean;
 }
 
+/** 长按消息时通过 measureInWindow 测量的屏幕坐标 */
+export interface BubbleLayout {
+  pageX: number;
+  pageY: number;
+  width: number;
+  height: number;
+}
+
+/** Tooltip 弹出时需要的完整信息 */
+export interface TooltipTarget {
+  message: AiMessage;
+  layout: BubbleLayout;
+}
+
 /** SSE event shapes sent by the backend. */
 export interface SseChunkEvent {
   type: 'chunk';

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Keyboard, type KeyboardEvent, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,8 +8,14 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
 import { useAiChat, useAiCopywriting } from '@/pages/ai-chat/hooks';
+import type {
+  AiMessage,
+  BubbleLayout,
+  TooltipTarget,
+} from '@/pages/ai-chat/types';
 import AiChatMessageList from '@/pages/ai-chat/components/ai-chat-message-list';
 import AiChatInput from '@/pages/ai-chat/components/ai-chat-input';
+import AiChatTooltip from '@/pages/ai-chat/components/ai-chat-tooltip';
 
 function useKeyboardBottomInset(): number {
   const insets = useSafeAreaInsets();
@@ -48,9 +54,23 @@ export default function AiScreen(): ReactNode {
   const { copy } = useAiCopywriting();
   const bottomInset = useKeyboardBottomInset();
 
+  const [tooltipTarget, setTooltipTarget] = useState<TooltipTarget | null>(
+    null,
+  );
+
+  const handleMessageLongPress = useCallback(
+    (message: AiMessage, layout: BubbleLayout) => {
+      setTooltipTarget({ message, layout });
+    },
+    [],
+  );
+
+  const handleTooltipClose = useCallback(() => {
+    setTooltipTarget(null);
+  }, []);
+
   return (
     <YStack flex={1} pt={insets.top} bg="$background">
-      {/* ── Header ─────────────────────────────────────────────── */}
       <XStack
         px="$4"
         py="$3"
@@ -91,6 +111,8 @@ export default function AiScreen(): ReactNode {
           contentPaddingBottom={16}
           emptyTitle={copy.emptyTitle}
           emptySubtitle={copy.emptySubtitle}
+          tooltipMessageId={tooltipTarget?.message.id}
+          onMessageLongPress={handleMessageLongPress}
         />
         <AiChatInput
           onSend={sendMessage}
@@ -98,6 +120,8 @@ export default function AiScreen(): ReactNode {
           placeholder={copy.inputPlaceholder}
         />
       </YStack>
+
+      <AiChatTooltip target={tooltipTarget} onClose={handleTooltipClose} />
     </YStack>
   );
 }
