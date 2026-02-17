@@ -25,7 +25,6 @@ import {
   TOOLTIP_GAP,
   TOOLTIP_HEIGHT,
 } from '../consts';
-import AiChatMarkdown from './ai-chat-markdown';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -124,7 +123,6 @@ export default function AiChatTooltip({ target, onClose }: Props): ReactNode {
   if (!target) return null;
 
   const { layout, message } = target;
-  const isUser = message.role === 'user';
 
   const spaceAbove = layout.pageY - insets.top;
   const showAbove = spaceAbove >= TOOLTIP_HEIGHT + TOOLTIP_GAP;
@@ -164,22 +162,14 @@ export default function AiChatTooltip({ target, onClose }: Props): ReactNode {
         ]}
       >
         <YStack
-          bg={isUser ? '$blue9' : '$gray4'}
+          bg="$blue9"
           px="$3.5"
           py="$2.5"
-          style={{
-            borderRadius: 18,
-            borderBottomRightRadius: isUser ? 4 : 18,
-            borderBottomLeftRadius: isUser ? 18 : 4,
-          }}
+          style={{ borderRadius: 18, borderBottomRightRadius: 4 }}
         >
-          {isUser ? (
-            <Text fontSize="$3" color="white" lineHeight={22}>
-              {message.content}
-            </Text>
-          ) : (
-            <AiChatMarkdown content={message.content} isStreaming={false} />
-          )}
+          <Text fontSize="$3" color="white" lineHeight={22}>
+            {message.content}
+          </Text>
         </YStack>
       </Animated.View>
 

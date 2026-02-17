@@ -152,6 +152,16 @@ NEVER: 创建只做 re-export 的 hook 文件 (如 export { useX } from 'lib')
 ONLY:  当你封装了自定义逻辑时，才值得创建 hook 文件
 ```
 
+### useCallback / useMemo 使用规则
+
+```
+NEVER: 默认给事件处理函数套 useCallback，给计算结果套 useMemo — 大多数场景没有收益
+ONLY:  useCallback: 回调传给 React.memo 子组件，或作为 useEffect/useMemo 的依赖
+ONLY:  useMemo: 计算确实昂贵 (大数组遍历、复杂格式化)，或结果作为 useEffect 的依赖需要稳定引用
+MUST:  简单赋值/三元/条件判断直接写，不套 useMemo
+MUST:  组件内部的事件处理函数直接写普通函数，不套 useCallback
+```
+
 Hooks 严格分三类，每类有明确的约束：
 
 ### ① 数据 Hook (Data Hook)
