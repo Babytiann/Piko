@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Platform, StyleSheet, TextInput } from 'react-native';
-import { XStack, View } from 'tamagui';
+import { XStack, View, useTheme } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -17,6 +17,7 @@ export default function AiChatInput({
   placeholder = '问我任何问题...',
 }: Props): ReactNode {
   const [text, setText] = useState('');
+  const theme = useTheme();
   const canSend = text.trim().length > 0 && !disabled;
 
   const handleSend = useCallback(() => {
@@ -30,6 +31,10 @@ export default function AiChatInput({
     onSend(trimmed);
     setText('');
   }, [text, disabled, onSend]);
+
+  const textColor = theme.color.val;
+  const placeholderColor = theme.gray9.val;
+  const sendIconColor = canSend ? '#FFFFFF' : theme.gray9.val;
 
   return (
     <XStack
@@ -52,10 +57,10 @@ export default function AiChatInput({
           value={text}
           onChangeText={setText}
           placeholder={placeholder}
-          placeholderTextColor="#9BA1A6"
+          placeholderTextColor={placeholderColor}
           multiline
           maxLength={2000}
-          style={styles.input}
+          style={[styles.input, { color: textColor }]}
           returnKeyType="default"
           blurOnSubmit={false}
         />
@@ -75,11 +80,7 @@ export default function AiChatInput({
           justifyContent: 'center',
         }}
       >
-        <Ionicons
-          name="arrow-up"
-          size={20}
-          color={canSend ? '#FFFFFF' : '#9BA1A6'}
-        />
+        <Ionicons name="arrow-up" size={20} color={sendIconColor} />
       </View>
     </XStack>
   );
@@ -89,7 +90,6 @@ const styles = StyleSheet.create({
   input: {
     fontSize: 16,
     lineHeight: 22,
-    color: '#11181C',
     maxHeight: 120,
     paddingTop: 0,
     paddingBottom: 0,

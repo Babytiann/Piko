@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { YStack, Text } from 'tamagui';
+import { YStack, Text, useTheme } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
 
 interface Props {
@@ -7,8 +7,9 @@ interface Props {
   subtitle: string;
 }
 
-/** Empty state shown when there are no messages yet. */
 export default function AiChatEmpty({ title, subtitle }: Props): ReactElement {
+  const theme = useTheme();
+
   return (
     <YStack
       flex={1}
@@ -16,7 +17,7 @@ export default function AiChatEmpty({ title, subtitle }: Props): ReactElement {
       px="$6"
       style={{ alignItems: 'center', justifyContent: 'center' }}
     >
-      <Ionicons name="sparkles-outline" size={48} color="#9BA1A6" />
+      <Ionicons name="sparkles-outline" size={48} color={theme.gray9.val} />
       <Text
         fontSize="$5"
         fontWeight="600"

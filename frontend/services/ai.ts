@@ -53,25 +53,21 @@ export function streamAiChat({
       const dataLine = part.split('\n').find((l) => l.startsWith('data: '));
       if (!dataLine) continue;
 
-      try {
-        const parsed: SseEvent = JSON.parse(dataLine.slice(6));
-        switch (parsed.type) {
-          case 'chunk':
-            onChunk(parsed.content);
-            break;
-          case 'done':
-            finished = true;
-            onDone();
-            xhr.abort();
-            return;
-          case 'error':
-            finished = true;
-            onError(parsed.message);
-            xhr.abort();
-            return;
-        }
-      } catch {
-        // Skip malformed SSE events.
+      const parsed: SseEvent = JSON.parse(dataLine.slice(6));
+      switch (parsed.type) {
+        case 'chunk':
+          onChunk(parsed.content);
+          break;
+        case 'done':
+          finished = true;
+          onDone();
+          xhr.abort();
+          return;
+        case 'error':
+          finished = true;
+          onError(parsed.message);
+          xhr.abort();
+          return;
       }
     }
   }

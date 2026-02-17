@@ -1,7 +1,7 @@
 import React, { useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { Platform, View as RNView } from 'react-native';
-import { YStack, XStack, Text, View } from 'tamagui';
+import { YStack, XStack, Text, View, useTheme } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, {
@@ -41,6 +41,8 @@ function StreamingIndicator(): ReactNode {
 }
 
 function AiAvatar(): ReactNode {
+  const theme = useTheme();
+
   return (
     <View
       width={32}
@@ -52,7 +54,7 @@ function AiAvatar(): ReactNode {
         justifyContent: 'center',
       }}
     >
-      <Ionicons name="sparkles" size={16} color="#0a7ea4" />
+      <Ionicons name="sparkles" size={16} color={theme.blue10.val} />
     </View>
   );
 }

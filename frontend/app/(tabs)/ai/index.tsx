@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Keyboard, type KeyboardEvent, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { YStack, XStack, Text } from 'tamagui';
+import { YStack, XStack, Text, useTheme } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
 
 import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
@@ -50,6 +50,7 @@ function useKeyboardBottomInset(): number {
 export default function AiScreen(): ReactNode {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const theme = useTheme();
   const { messages, isStreaming, sendMessage, clearMessages } = useAiChat();
   const { copy } = useAiCopywriting();
   const bottomInset = useKeyboardBottomInset();
@@ -92,7 +93,11 @@ export default function AiScreen(): ReactNode {
               onPress={clearMessages}
               hitSlop={8}
             >
-              <Ionicons name="trash-outline" size={20} color="#9BA1A6" />
+              <Ionicons
+                name="trash-outline"
+                size={20}
+                color={theme.gray10.val}
+              />
             </YStack>
           ) : null}
           <YStack
@@ -100,7 +105,11 @@ export default function AiScreen(): ReactNode {
             onPress={() => router.push('/telegram-dialog')}
             hitSlop={8}
           >
-            <Ionicons name="chatbubbles-outline" size={22} color="#9BA1A6" />
+            <Ionicons
+              name="chatbubbles-outline"
+              size={22}
+              color={theme.gray10.val}
+            />
           </YStack>
         </XStack>
       </XStack>

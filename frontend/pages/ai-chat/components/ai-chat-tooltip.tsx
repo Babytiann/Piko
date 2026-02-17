@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import { XStack, YStack, Text } from 'tamagui';
+import { XStack, YStack, Text, useTheme, useThemeName } from 'tamagui';
 import { Portal } from '@tamagui/portal';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -35,6 +35,8 @@ interface Props {
 
 export default function AiChatTooltip({ target, onClose }: Props): ReactNode {
   const insets = useSafeAreaInsets();
+  const theme = useTheme();
+  const themeName = useThemeName();
 
   const backdropOpacity = useSharedValue(0);
   const messageScale = useSharedValue(1);
@@ -141,7 +143,7 @@ export default function AiChatTooltip({ target, onClose }: Props): ReactNode {
       <Animated.View style={[StyleSheet.absoluteFill, backdropStyle]}>
         <BlurView
           intensity={BACKDROP_INTENSITY}
-          tint="dark"
+          tint={themeName === 'dark' ? 'dark' : 'light'}
           style={StyleSheet.absoluteFill}
         />
         <Pressable style={StyleSheet.absoluteFill} onPress={animateClose} />
@@ -183,17 +185,19 @@ export default function AiChatTooltip({ target, onClose }: Props): ReactNode {
       >
         <Pressable onPress={() => void handleCopy()}>
           <XStack
-            bg="$gray12"
+            bg="$gray3"
             px="$4"
             py="$2.5"
             gap="$2"
+            borderWidth={1}
+            borderColor="$gray5"
             style={{
               borderRadius: 12,
               alignItems: 'center',
             }}
           >
-            <Ionicons name="copy-outline" size={16} color="#FFFFFF" />
-            <Text fontSize="$2" fontWeight="600" color="white">
+            <Ionicons name="copy-outline" size={16} color={theme.gray11.val} />
+            <Text fontSize="$2" fontWeight="600" color="$color">
               复制
             </Text>
           </XStack>
