@@ -1,69 +1,115 @@
 import { useMemo } from 'react';
 import type { ReactNode } from 'react';
-import { Platform, ScrollView, View as RNView } from 'react-native';
+import { ScrollView, Text as RNText, View as RNView } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { useTheme, useThemeName } from 'tamagui';
+
+import { MONO_FONT, TABLE_FONT_SIZE, CELL_PAD_H } from '../consts';
+import type { MarkdownSegment } from '../types';
+import type { MergeCell } from '../utils';
+import {
+  calcColumnWidths,
+  computeMergeMap,
+  renderInlineMarkdown,
+  sanitizeStreamingMarkdown,
+  splitMarkdownSegments,
+} from '../utils';
 
 interface Props {
   content: string;
   isStreaming?: boolean;
 }
 
-const MONO_FONT = Platform.select({
-  ios: 'Menlo',
-  android: 'monospace',
-  default: 'monospace',
-});
+function MarkdownTable({
+  headers,
+  rows,
+}: {
+  headers: string[];
+  rows: string[][];
+}): ReactNode {
+  const theme = useTheme();
+  const borderColor = theme.gray6.val;
+  const headerBg = theme.gray3.val;
+  const textColor = theme.color.val;
+  const codeBg = theme.gray4.val;
 
-/**
- * 流式输出时，文本可能在 Markdown 语法标记中间被截断，
- * 导致 react-native-markdown-display 解析失败或渲染异常。
- * 这个函数修复所有常见的未闭合语法。
- */
-function sanitizeStreamingMarkdown(text: string): string {
-  let result = text;
+  const colWidths = useMemo(
+    () => calcColumnWidths(headers, rows),
+    [headers, rows],
+  );
 
-  // 1. 未闭合的代码块 ```
-  const fenceCount = (result.match(/```/g) || []).length;
-  if (fenceCount % 2 !== 0) {
-    result += '\n```';
-  }
+  const mergeMap = useMemo(() => computeMergeMap(rows), [rows]);
 
-  // 2. 未闭合的行内代码 `
-  //    排除已闭合的 `` 对和 ``` 块后，检查剩余的孤立 `
-  const withoutFences = result.replace(/```[\s\S]*?```/g, '');
-  const backtickCount = (withoutFences.match(/`/g) || []).length;
-  if (backtickCount % 2 !== 0) {
-    result += '`';
-  }
+  const renderCell = (
+    text: string,
+    ri: number,
+    ci: number,
+    isHeader: boolean,
+    merge?: MergeCell,
+  ): ReactNode => {
+    const isStart = merge && merge.rowspan > 1;
+    const isMid = merge?.hidden ?? false;
+    const isLast =
+      isMid && (ri === rows.length - 1 || !mergeMap[ri + 1]?.[ci]?.hidden);
+    const hideBottom = isStart || (isMid && !isLast);
 
-  // 3. 未闭合的粗体 ** （检查最后一行，避免跨段落误判）
-  const lastLine = result.split('\n').pop() ?? '';
-  const boldCount = (lastLine.match(/\*\*/g) || []).length;
-  if (boldCount % 2 !== 0) {
-    result += '**';
-  }
+    return (
+      <RNView
+        key={ci}
+        style={{
+          width: colWidths[ci],
+          paddingHorizontal: CELL_PAD_H,
+          paddingVertical: 8,
+          borderWidth: 0.5,
+          borderColor,
+          borderBottomColor: hideBottom ? 'transparent' : borderColor,
+          borderTopColor: isMid ? 'transparent' : borderColor,
+          justifyContent: 'center',
+        }}
+      >
+        {isMid ? null : (
+          <RNText
+            style={{
+              fontSize: TABLE_FONT_SIZE,
+              lineHeight: 20,
+              color: textColor,
+              fontWeight: isHeader ? '600' : '400',
+            }}
+          >
+            {renderInlineMarkdown(text, codeBg)}
+          </RNText>
+        )}
+      </RNView>
+    );
+  };
 
-  // 4. 未闭合的斜体 *（排除 ** 之后，检查孤立的 *）
-  const lastLineNoBold = lastLine.replace(/\*\*/g, '');
-  const italicCount = (lastLineNoBold.match(/\*/g) || []).length;
-  if (italicCount % 2 !== 0) {
-    result += '*';
-  }
-
-  // 5. 未闭合的删除线 ~~
-  const strikeCount = (lastLine.match(/~~/g) || []).length;
-  if (strikeCount % 2 !== 0) {
-    result += '~~';
-  }
-
-  // 6. 末尾截断的链接语法 [text](url — 移除不完整的链接标记
-  //    匹配 "[已有文字](" 但没有闭合的 ")" 的情况
-  result = result.replace(/\[([^\]]*)\]\([^)]*$/, '$1');
-  //    匹配只有 "[文字" 没有闭合 "]" 的情况
-  result = result.replace(/\[([^\]]*)$/, '$1');
-
-  return result;
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator
+      style={{ marginVertical: 8 }}
+    >
+      <RNView
+        style={{
+          borderWidth: 1,
+          borderColor,
+          borderRadius: 4,
+          overflow: 'hidden',
+        }}
+      >
+        <RNView style={{ flexDirection: 'row', backgroundColor: headerBg }}>
+          {headers.map((h, ci) => renderCell(h, -1, ci, true))}
+        </RNView>
+        {rows.map((row, ri) => (
+          <RNView key={ri} style={{ flexDirection: 'row' }}>
+            {headers.map((_, ci) =>
+              renderCell(row[ci] ?? '', ri, ci, false, mergeMap[ri]?.[ci]),
+            )}
+          </RNView>
+        ))}
+      </RNView>
+    </ScrollView>
+  );
 }
 
 export default function AiChatMarkdown({
@@ -148,20 +194,6 @@ export default function AiChatMarkdown({
       list_item: { marginVertical: 2 },
       hr: { backgroundColor: borderColor, height: 1, marginVertical: 12 },
       link: { color: accentColor, textDecorationLine: 'underline' as const },
-      table: {
-        borderWidth: 1,
-        borderColor: borderColor,
-        borderRadius: 4,
-        marginVertical: 8,
-      },
-      thead: { backgroundColor: subtleBg },
-      th: {
-        padding: 8,
-        fontWeight: '600' as const,
-        borderWidth: 0.5,
-        borderColor: borderColor,
-      },
-      td: { padding: 8, borderWidth: 0.5, borderColor: borderColor },
     };
   }, [themeName]);
 
@@ -169,32 +201,22 @@ export default function AiChatMarkdown({
     ? sanitizeStreamingMarkdown(content)
     : content;
 
-  const rules = useMemo(
-    () => ({
-      table: (
-        node: { key?: string },
-        children: ReactNode,
-        _parent: unknown,
-        styles: Record<string, object>,
-      ) => (
-        <ScrollView
-          key={node.key}
-          horizontal
-          showsHorizontalScrollIndicator
-          style={{ marginVertical: 8 }}
-        >
-          <RNView style={[styles.table, { marginVertical: 0 }]}>
-            {children}
-          </RNView>
-        </ScrollView>
-      ),
-    }),
-    [],
+  const segments = useMemo(
+    () => splitMarkdownSegments(displayContent),
+    [displayContent],
   );
 
   return (
-    <Markdown style={markdownStyles} rules={rules}>
-      {displayContent}
-    </Markdown>
+    <>
+      {segments.map((seg, idx) =>
+        seg.type === 'table' ? (
+          <MarkdownTable key={idx} headers={seg.headers} rows={seg.rows} />
+        ) : (
+          <Markdown key={idx} style={markdownStyles}>
+            {seg.content}
+          </Markdown>
+        ),
+      )}
+    </>
   );
 }

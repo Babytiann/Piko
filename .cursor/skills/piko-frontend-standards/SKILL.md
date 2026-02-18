@@ -86,6 +86,11 @@ MUST:  页面私有代码放 pages/{page}/ 下，不放 common/
 MUST:  跨 2 个以上页面复用的代码提升到 common/
 MUST:  数据获取逻辑放 services/ (按页面分文件)，不内联在组件中
 MUST:  common/hooks/index.ts barrel re-export 所有公共 hooks
+MUST:  页面私有工具函数放 pages/{page}/utils/，一个文件一个主函数
+MUST:  utils/ 文件名 = 主函数名 (kebab-case)，如 calc-column-widths.ts
+MUST:  utils/index.ts barrel re-export 所有工具函数
+MUST:  utils/ 仅含纯函数 — 不含 hooks / 组件 / 副作用
+NEVER: 工具函数内联在组件文件中 — 提取到 utils/
 NEVER: 页面级 hooks/components 目录创建 barrel index.ts — 直接 import 具体文件
 NEVER: 页面 A 直接 import 页面 B 的私有模块
 NEVER: common/ 下的代码 import pages/ 下的代码 (依赖方向: pages → common)
@@ -331,8 +336,9 @@ Hook:     camelCase.ts       (useFetchData.ts, usePolling.ts)
 Service:  camelCase.ts       (chatService.ts, profileService.ts)
 Type:     index.ts (在 types/ 目录下)
 常量:     index.ts (在 consts/ 目录下)
+工具函数: kebab-case.ts      (calc-column-widths.ts, sanitize-streaming-markdown.ts)
 目录:     kebab-case/        (page-status-view/, operation-button/)
-Barrel:   仅 common/hooks/index.ts 需要 barrel re-export，页面级 hooks 直接 import 具体文件
+Barrel:   common/hooks/index.ts 和 pages/{page}/utils/index.ts 需要 barrel re-export
 ```
 
 ### 代码

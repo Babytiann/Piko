@@ -81,6 +81,10 @@ export type SseEvent =
   | SseToolStartEvent
   | SseToolEndEvent;
 
+export type MarkdownSegment =
+  | { type: 'markdown'; content: string }
+  | { type: 'table'; headers: string[]; rows: string[][] };
+
 /** Copywriting / text content for the AI chat page (from backend). */
 export interface AiCopywriting {
   headerTitle: string;
