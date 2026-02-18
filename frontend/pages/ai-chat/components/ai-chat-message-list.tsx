@@ -44,14 +44,14 @@ export default function AiChatMessageList({
     return () => clearTimeout(timer);
   }, [messages.length, lastContentLen]);
 
-  function handleScroll(e: NativeSyntheticEvent<NativeScrollEvent>): void {
+  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>): void => {
     const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
     isNearBottomRef.current =
       contentOffset.y + layoutMeasurement.height >=
       contentSize.height - NEAR_BOTTOM_THRESHOLD;
-  }
+  };
 
-  function handleKeyBoardLayout(e: LayoutChangeEvent): void {
+  const handleKeyBoardLayout = (e: LayoutChangeEvent): void => {
     const newHeight = e.nativeEvent.layout.height;
     const heightDecreased =
       prevHeightRef.current > 0 && newHeight < prevHeightRef.current;
@@ -62,7 +62,7 @@ export default function AiChatMessageList({
         listRef.current?.scrollToEnd({ animated: true });
       }, SCROLL_DELAY_MS);
     }
-  }
+  };
 
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<AiMessage>): ReactElement => (
