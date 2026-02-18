@@ -31,15 +31,15 @@ const ACTIVE_KINDS = new Set<StatusKind>([
   'replying',
 ]);
 
-function deriveActiveKind(message: AiMessage): StatusKind {
+const deriveActiveKind = (message: AiMessage): StatusKind => {
   const activeTool = (message.toolCalls ?? []).find((tc) => tc.loading);
   if (activeTool) return 'tool_loading';
   if (message.isStreaming && !message.content) return 'thinking';
   if (message.isStreaming) return 'replying';
   return 'idle';
-}
+};
 
-function getStatusText(message: AiMessage, kind: StatusKind): string {
+const getStatusText = (message: AiMessage, kind: StatusKind): string => {
   switch (kind) {
     case 'tool_loading': {
       const active = (message.toolCalls ?? []).find((tc) => tc.loading);
@@ -60,7 +60,7 @@ function getStatusText(message: AiMessage, kind: StatusKind): string {
     default:
       return '';
   }
-}
+};
 
 export default function AiThinkingStatus({ message }: Props): ReactNode {
   const theme = useTheme();
