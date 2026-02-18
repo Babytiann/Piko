@@ -1,71 +1,18 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useRef } from 'react';
 import type { ReactNode } from 'react';
 import { Platform, View as RNView } from 'react-native';
-import { YStack, XStack, Text, View, useTheme } from 'tamagui';
-import { Ionicons } from '@expo/vector-icons';
+import { YStack, XStack, Text } from 'tamagui';
 import * as Haptics from 'expo-haptics';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
 
-import type { AiMessage, BubbleLayout } from '../types';
-import AiChatMarkdown from './ai-chat-markdown';
+import type { AiMessage, BubbleLayout } from '../../types';
+import AiChatMarkdown from '../ai-chat-markdown';
+import WaitingIndicator from './waiting-indicator';
+import AiAvatar from './ai-avatar';
 
 interface Props {
   message: AiMessage;
   isTooltipTarget?: boolean;
   onLongPress?: (message: AiMessage, layout: BubbleLayout) => void;
-}
-
-function WaitingIndicator({ text }: { text?: string }): ReactNode {
-  const opacity = useSharedValue(1);
-  opacity.value = withRepeat(
-    withTiming(text ? 0.4 : 0.25, {
-      duration: 800,
-      easing: Easing.inOut(Easing.ease),
-    }),
-    -1,
-    true,
-  );
-
-  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
-
-  return (
-    <Animated.View style={animatedStyle}>
-      {text ? (
-        <Text fontSize="$3" color="$gray10" lineHeight={22}>
-          {text}
-        </Text>
-      ) : (
-        <Text fontSize="$3" color="$blue9" ml="$1">
-          ●
-        </Text>
-      )}
-    </Animated.View>
-  );
-}
-
-function AiAvatar(): ReactNode {
-  const theme = useTheme();
-
-  return (
-    <View
-      width={32}
-      height={32}
-      bg="$blue4"
-      style={{
-        borderRadius: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Ionicons name="sparkles" size={16} color={theme.blue10.val} />
-    </View>
-  );
 }
 
 function AiChatBubble({
@@ -76,7 +23,7 @@ function AiChatBubble({
   const isUser = message.role === 'user';
   const bubbleRef = useRef<RNView>(null);
 
-  const handleLongPress = useCallback(() => {
+  function handleLongPress(): void {
     if (!onLongPress || message.isStreaming || !message.content) return;
 
     if (Platform.OS === 'ios') {
@@ -86,7 +33,7 @@ function AiChatBubble({
     bubbleRef.current?.measureInWindow((x, y, width, height) => {
       onLongPress(message, { pageX: x, pageY: y, width, height });
     });
-  }, [message, onLongPress]);
+  }
 
   if (!isUser) {
     const hasContent = !!message.content;

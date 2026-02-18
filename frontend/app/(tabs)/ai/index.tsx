@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { Keyboard, type KeyboardEvent, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -66,9 +66,9 @@ export default function AiScreen(): ReactNode {
     [],
   );
 
-  const handleTooltipClose = useCallback(() => {
+  function handleTooltipClose(): void {
     setTooltipTarget(null);
-  }, []);
+  }
 
   return (
     <YStack flex={1} pt={insets.top} bg="$background">

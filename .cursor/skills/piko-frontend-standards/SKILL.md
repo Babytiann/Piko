@@ -116,8 +116,11 @@ MUST:  页面内组件用页面前缀: Chat 页的组件用 Chat 前缀 (ChatBub
 MUST:  条件渲染统一三元: {condition ? <X /> : null}
 MUST:  空状态统一 return null
 MUST:  Slot 组合: 通过 leftArea/title/footer 等 ReactNode props 组合复杂布局
-NEVER: 同文件定义多个组件 — 拆分为独立文件
-NEVER: 超过 150 行的组件 — 拆分
+MUST:  多组件文件 — 主组件 index.tsx + 子组件各自独立文件，放同名文件夹下
+MUST:  子组件文件名 = 组件名 (kebab-case)，如 waiting-indicator.tsx
+ALLOW: 极简渲染辅助 (无 hooks、1-3 行 JSX) — 可用箭头函数常量留在同文件
+NEVER: function 声明式定义多个组件在同一文件
+NEVER: 超过 150 行的组件 — 拆分,依据具体情况拆分，如果真的要这么多，那就不拆了
 NEVER: Props 透传超过 2 层 — 用 Context
 ```
 

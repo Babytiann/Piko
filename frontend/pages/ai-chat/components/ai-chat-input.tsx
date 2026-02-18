@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Platform, StyleSheet, TextInput } from 'react-native';
 import { XStack, View, useTheme } from 'tamagui';
@@ -20,7 +20,7 @@ export default function AiChatInput({
   const theme = useTheme();
   const canSend = text.trim().length > 0 && !disabled;
 
-  const handleSend = useCallback(() => {
+  function handleSend(): void {
     const trimmed = text.trim();
     if (!trimmed || disabled) return;
 
@@ -30,7 +30,7 @@ export default function AiChatInput({
 
     onSend(trimmed);
     setText('');
-  }, [text, disabled, onSend]);
+  }
 
   const textColor = theme.color.val;
   const placeholderColor = theme.gray9.val;

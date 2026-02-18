@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { Dimensions, Platform, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -84,7 +84,7 @@ export default function AiChatTooltip({ target, onClose }: Props): ReactNode {
     }
   }, [target]);
 
-  const animateClose = useCallback(() => {
+  function animateClose(): void {
     const { backdropOpacity, messageScale, tooltipOpacity, tooltipTranslateY } =
       allParamsRef.current;
 
@@ -98,16 +98,16 @@ export default function AiChatTooltip({ target, onClose }: Props): ReactNode {
         if (finished) runOnJS(onClose)();
       },
     );
-  }, [onClose]);
+  }
 
-  const handleCopy = useCallback(async () => {
+  async function handleCopy(): Promise<void> {
     if (!target) return;
     await Clipboard.setStringAsync(target.message.content);
     if (Platform.OS === 'ios') {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
     animateClose();
-  }, [target, animateClose]);
+  }
 
   const backdropStyle = useAnimatedStyle(() => ({
     opacity: backdropOpacity.value,

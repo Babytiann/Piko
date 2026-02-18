@@ -44,18 +44,14 @@ export default function AiChatMessageList({
     return () => clearTimeout(timer);
   }, [messages.length, lastContentLen]);
 
-  const handleScroll = useCallback(
-    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
-      isNearBottomRef.current =
-        contentOffset.y + layoutMeasurement.height >=
-        contentSize.height - NEAR_BOTTOM_THRESHOLD;
-    },
-    [],
-  );
+  function handleScroll(e: NativeSyntheticEvent<NativeScrollEvent>): void {
+    const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
+    isNearBottomRef.current =
+      contentOffset.y + layoutMeasurement.height >=
+      contentSize.height - NEAR_BOTTOM_THRESHOLD;
+  }
 
-  // 键盘弹出时 FlatList 高度缩小，自动滚到底部保持最新消息可见
-  const handleKeyBoardLayout = useCallback((e: LayoutChangeEvent) => {
+  function handleKeyBoardLayout(e: LayoutChangeEvent): void {
     const newHeight = e.nativeEvent.layout.height;
     const heightDecreased =
       prevHeightRef.current > 0 && newHeight < prevHeightRef.current;
@@ -66,7 +62,7 @@ export default function AiChatMessageList({
         listRef.current?.scrollToEnd({ animated: true });
       }, SCROLL_DELAY_MS);
     }
-  }, []);
+  }
 
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<AiMessage>): ReactElement => (
@@ -79,8 +75,6 @@ export default function AiChatMessageList({
     [tooltipMessageId, onMessageLongPress],
   );
 
-  const keyExtractor = useCallback((item: AiMessage) => item.id, []);
-
   if (messages.length === 0) {
     return <AiChatEmpty title={emptyTitle} subtitle={emptySubtitle} />;
   }
@@ -91,7 +85,7 @@ export default function AiChatMessageList({
       style={{ flex: 1 }}
       data={messages}
       renderItem={renderItem}
-      keyExtractor={keyExtractor}
+      keyExtractor={(item: AiMessage) => item.id}
       onScroll={handleScroll}
       onLayout={handleKeyBoardLayout}
       scrollEventThrottle={100}

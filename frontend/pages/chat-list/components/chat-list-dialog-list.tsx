@@ -8,9 +8,7 @@ import ChatListDialogItem from './chat-list-dialog-item';
 
 const SEPARATOR_LEFT_MARGIN = 78;
 
-function ItemSeparator(): ReactNode {
-  return <View style={styles.separator} />;
-}
+const ItemSeparator = (): ReactNode => <View style={styles.separator} />;
 
 interface ChatListDialogListProps {
   dialogs: DialogItemData[];

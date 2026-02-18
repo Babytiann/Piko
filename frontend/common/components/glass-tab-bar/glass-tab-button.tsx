@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import {
@@ -38,7 +38,7 @@ export default function GlassTabButton({
   const isDark = colorScheme === 'dark';
   const scale = useRef(new Animated.Value(1)).current;
 
-  const onPressIn = useCallback((): void => {
+  function handlePressIn(): void {
     Animated.spring(scale, {
       toValue: isActionButton ? 0.85 : 0.9,
       damping: 15,
@@ -46,9 +46,9 @@ export default function GlassTabButton({
       mass: 0.6,
       useNativeDriver: true,
     }).start();
-  }, [scale, isActionButton]);
+  }
 
-  const onPressOut = useCallback((): void => {
+  function handlePressOut(): void {
     Animated.spring(scale, {
       toValue: 1,
       damping: 14,
@@ -56,7 +56,7 @@ export default function GlassTabButton({
       mass: 0.6,
       useNativeDriver: true,
     }).start();
-  }, [scale]);
+  }
 
   if (isActionButton) {
     const bg = isDark ? ACTION_BG_DARK : ACTION_BG_LIGHT;
@@ -64,8 +64,8 @@ export default function GlassTabButton({
     return (
       <Pressable
         onPress={onPress}
-        onPressIn={onPressIn}
-        onPressOut={onPressOut}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         style={styles.button}
         accessibilityRole="button"
         accessibilityState={{ selected: isFocused }}
@@ -104,8 +104,8 @@ export default function GlassTabButton({
     <Pressable
       key={route.key}
       onPress={onPress}
-      onPressIn={onPressIn}
-      onPressOut={onPressOut}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       style={styles.button}
       accessibilityRole="button"
       accessibilityState={{ selected: isFocused }}
