@@ -91,7 +91,7 @@ export function streamAiChat({
   xhr.open('POST', SSE_URL);
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.setRequestHeader('Accept', 'text/event-stream');
-  xhr.timeout = 60_000;
+  xhr.timeout = 120_000;
 
   xhr.onprogress = processNewData;
 

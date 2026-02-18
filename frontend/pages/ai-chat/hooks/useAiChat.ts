@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 
 import { streamAiChat } from '@/services/ai';
@@ -12,7 +12,6 @@ function genId(): string {
   return `msg_${Date.now()}_${nextId}`;
 }
 
-/** 后台中断时保存的重试信息 */
 interface RetryPayload {
   history: { role: 'user' | 'model'; content: string }[];
   aiMsgId: string;
@@ -34,142 +33,131 @@ export function useAiChat(): UseAiChatReturn {
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retryRef = useRef<RetryPayload | null>(null);
 
-  const clearFlushTimer = useCallback((): void => {
+  const clearFlushTimer = (): void => {
     if (flushTimerRef.current) {
       clearTimeout(flushTimerRef.current);
       flushTimerRef.current = null;
     }
-  }, []);
+  };
 
-  // ── [模块 2] 工具调用状态管理 ───────────────────────────────────────
-  //
-  // 思路：tool_start 和 tool_end 事件会在 chunk 事件之前到达。
-  // 我们把工具调用信息挂在 AI 消息的 toolCalls 数组上，
-  // 这样 UI 层可以在气泡上方/下方渲染工具状态卡片。
+  const handleToolStart = (
+    aiMsgId: string,
+    tool: string,
+    args: Record<string, unknown>,
+    message: string,
+  ): void => {
+    const toolCall: ToolCallInfo = { tool, args, message, loading: true };
 
-  const handleToolStart = useCallback(
-    (
-      aiMsgId: string,
-      tool: string,
-      args: Record<string, unknown>,
-      message: string,
-    ) => {
-      const toolCall: ToolCallInfo = { tool, args, message, loading: true };
+    setMessages((prev) =>
+      prev.map((m) => {
+        if (m.id !== aiMsgId) return m;
+        const existing = m.toolCalls ?? [];
+        return {
+          ...m,
+          toolCalls: [...existing, toolCall],
+          statusText: message,
+        };
+      }),
+    );
+  };
 
-      setMessages((prev) =>
-        prev.map((m) => {
-          if (m.id !== aiMsgId) return m;
-          const existing = m.toolCalls ?? [];
-          return {
-            ...m,
-            toolCalls: [...existing, toolCall],
-            statusText: message,
-          };
-        }),
-      );
-    },
-    [],
-  );
+  const handleToolEnd = (
+    aiMsgId: string,
+    tool: string,
+    success: boolean,
+  ): void => {
+    setMessages((prev) =>
+      prev.map((m) => {
+        if (m.id !== aiMsgId) return m;
+        const updated = (m.toolCalls ?? []).map((tc) =>
+          tc.tool === tool && tc.loading
+            ? { ...tc, loading: false, success }
+            : tc,
+        );
+        return { ...m, toolCalls: updated };
+      }),
+    );
+  };
 
-  const handleToolEnd = useCallback(
-    (aiMsgId: string, tool: string, success: boolean) => {
-      setMessages((prev) =>
-        prev.map((m) => {
-          if (m.id !== aiMsgId) return m;
-          const updated = (m.toolCalls ?? []).map((tc) =>
-            tc.tool === tool && tc.loading
-              ? { ...tc, loading: false, success }
-              : tc,
-          );
-          return { ...m, toolCalls: updated };
-        }),
-      );
-    },
-    [],
-  );
+  const startStream = (
+    history: { role: 'user' | 'model'; content: string }[],
+    aiMsgId: string,
+  ): void => {
+    setIsStreaming(true);
+    chunkBufferRef.current = '';
 
-  // ── 核心：启动 streaming 会话 ────────────────────────────────────────
-  const startStream = useCallback(
-    (
-      history: { role: 'user' | 'model'; content: string }[],
-      aiMsgId: string,
-    ) => {
-      setIsStreaming(true);
+    const flushChunks = (): void => {
+      const buffered = chunkBufferRef.current;
+      if (!buffered) return;
       chunkBufferRef.current = '';
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === aiMsgId
+            ? { ...m, content: m.content + buffered, statusText: undefined }
+            : m,
+        ),
+      );
+    };
 
-      const flushChunks = (): void => {
-        const buffered = chunkBufferRef.current;
-        if (!buffered) return;
-        chunkBufferRef.current = '';
+    cleanupRef.current = streamAiChat({
+      messages: history,
+      onChunk(chunk) {
+        chunkBufferRef.current += chunk;
+        if (!flushTimerRef.current) {
+          flushTimerRef.current = setTimeout(() => {
+            flushTimerRef.current = null;
+            flushChunks();
+          }, FLUSH_INTERVAL_MS);
+        }
+      },
+      onToolStart(tool, args, message) {
+        handleToolStart(aiMsgId, tool, args, message);
+      },
+      onToolEnd(tool, success) {
+        handleToolEnd(aiMsgId, tool, success);
+      },
+      onDone() {
+        clearFlushTimer();
+        flushChunks();
+        retryRef.current = null;
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === aiMsgId ? { ...m, isStreaming: false } : m,
+          ),
+        );
+        setIsStreaming(false);
+        cleanupRef.current = null;
+      },
+      onError(error) {
+        clearFlushTimer();
+        flushChunks();
+
+        if (AppState.currentState !== 'active') {
+          retryRef.current = { history, aiMsgId };
+          return;
+        }
+
+        retryRef.current = null;
         setMessages((prev) =>
           prev.map((m) =>
             m.id === aiMsgId
-              ? { ...m, content: m.content + buffered, statusText: undefined }
+              ? {
+                  ...m,
+                  content: m.content || `⚠ ${error}`,
+                  isStreaming: false,
+                }
               : m,
           ),
         );
-      };
+        setIsStreaming(false);
+        cleanupRef.current = null;
+      },
+    });
+  };
 
-      cleanupRef.current = streamAiChat({
-        messages: history,
-        onChunk(chunk) {
-          chunkBufferRef.current += chunk;
-          if (!flushTimerRef.current) {
-            flushTimerRef.current = setTimeout(() => {
-              flushTimerRef.current = null;
-              flushChunks();
-            }, FLUSH_INTERVAL_MS);
-          }
-        },
-        // [模块 2] 工具调用回调 —— 把 aiMsgId 绑定进去
-        onToolStart(tool, args, message) {
-          handleToolStart(aiMsgId, tool, args, message);
-        },
-        onToolEnd(tool, success) {
-          handleToolEnd(aiMsgId, tool, success);
-        },
-        onDone() {
-          clearFlushTimer();
-          flushChunks();
-          retryRef.current = null;
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === aiMsgId ? { ...m, isStreaming: false } : m,
-            ),
-          );
-          setIsStreaming(false);
-          cleanupRef.current = null;
-        },
-        onError(error) {
-          clearFlushTimer();
-          flushChunks();
+  const startStreamRef = useRef(startStream);
+  startStreamRef.current = startStream;
 
-          if (AppState.currentState !== 'active') {
-            retryRef.current = { history, aiMsgId };
-            return;
-          }
-
-          retryRef.current = null;
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === aiMsgId
-                ? {
-                    ...m,
-                    content: m.content || `⚠ ${error}`,
-                    isStreaming: false,
-                  }
-                : m,
-            ),
-          );
-          setIsStreaming(false);
-          cleanupRef.current = null;
-        },
-      });
-    },
-    [clearFlushTimer, handleToolStart, handleToolEnd],
-  );
-
-  // ── App 前后台切换重试 ─────────────────────────────────────────────
   useEffect(() => {
     const handleAppState = (state: AppStateStatus): void => {
       if (state !== 'active' || !retryRef.current) return;
@@ -184,49 +172,44 @@ export function useAiChat(): UseAiChatReturn {
             : m,
         ),
       );
-      startStream(history, aiMsgId);
+      startStreamRef.current(history, aiMsgId);
     };
 
     const sub = AppState.addEventListener('change', handleAppState);
     return () => sub.remove();
-  }, [startStream]);
+  }, []);
 
-  // ── 发送消息 ───────────────────────────────────────────────────────
-  const sendMessage = useCallback(
-    (text: string) => {
-      const trimmed = text.trim();
-      if (!trimmed || isStreaming) return;
+  const sendMessage = (text: string): void => {
+    const trimmed = text.trim();
+    if (!trimmed || isStreaming) return;
 
-      const userMsg: AiMessage = {
-        id: genId(),
-        role: 'user',
-        content: trimmed,
-        timestamp: Date.now(),
-      };
+    const userMsg: AiMessage = {
+      id: genId(),
+      role: 'user',
+      content: trimmed,
+      timestamp: Date.now(),
+    };
 
-      const aiMsgId = genId();
-      const aiMsg: AiMessage = {
-        id: aiMsgId,
-        role: 'assistant',
-        content: '',
-        timestamp: Date.now(),
-        isStreaming: true,
-      };
+    const aiMsgId = genId();
+    const aiMsg: AiMessage = {
+      id: aiMsgId,
+      role: 'assistant',
+      content: '',
+      timestamp: Date.now(),
+      isStreaming: true,
+    };
 
-      setMessages((prev) => [...prev, userMsg, aiMsg]);
+    setMessages((prev) => [...prev, userMsg, aiMsg]);
 
-      const history = [...messages, userMsg].map((m) => ({
-        role: (m.role === 'assistant' ? 'model' : 'user') as 'user' | 'model',
-        content: m.content,
-      }));
+    const history = [...messages, userMsg].map((m) => ({
+      role: (m.role === 'assistant' ? 'model' : 'user') as 'user' | 'model',
+      content: m.content,
+    }));
 
-      startStream(history, aiMsgId);
-    },
-    [messages, isStreaming, startStream],
-  );
+    startStream(history, aiMsgId);
+  };
 
-  // ── 清空消息 ───────────────────────────────────────────────────────
-  const clearMessages = useCallback(() => {
+  const clearMessages = (): void => {
     clearFlushTimer();
     chunkBufferRef.current = '';
     retryRef.current = null;
@@ -234,7 +217,7 @@ export function useAiChat(): UseAiChatReturn {
     cleanupRef.current = null;
     setMessages([]);
     setIsStreaming(false);
-  }, [clearFlushTimer]);
+  };
 
   return { messages, isStreaming, sendMessage, clearMessages };
 }

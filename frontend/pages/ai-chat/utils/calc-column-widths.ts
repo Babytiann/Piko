@@ -8,13 +8,19 @@ function stripInlineMarkdown(text: string): string {
     .replace(/~~(.+?)~~/g, '$1');
 }
 
-function estimateTextWidth(text: string): number {
-  const plain = stripInlineMarkdown(text);
+function estimateLineWidth(line: string): number {
+  const plain = stripInlineMarkdown(line);
   let w = 0;
   for (const ch of plain) {
     w += ch.charCodeAt(0) > 0x2e80 ? TABLE_FONT_SIZE : TABLE_FONT_SIZE * 0.55;
   }
   return w;
+}
+
+function estimateTextWidth(text: string): number {
+  return text
+    .split('\n')
+    .reduce((max, line) => Math.max(max, estimateLineWidth(line)), 0);
 }
 
 export function calcColumnWidths(

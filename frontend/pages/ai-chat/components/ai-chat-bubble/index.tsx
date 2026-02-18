@@ -8,6 +8,7 @@ import type { AiMessage, BubbleLayout } from '../../types';
 import AiChatMarkdown from '../ai-chat-markdown';
 import WaitingIndicator from './waiting-indicator';
 import AiAvatar from './ai-avatar';
+import AiThinkingStatus from './ai-thinking-status';
 
 interface Props {
   message: AiMessage;
@@ -39,27 +40,22 @@ function AiChatBubble({
     const hasContent = !!message.content;
 
     return (
-      <XStack
-        px="$3"
-        py="$1"
-        gap="$2"
-        style={{ alignItems: hasContent ? 'flex-start' : 'center' }}
-      >
-        <AiAvatar />
-        <YStack flex={1} px="$1" py="$1">
-          {hasContent ? (
-            <YStack>
-              <AiChatMarkdown
-                content={message.content}
-                isStreaming={message.isStreaming}
-              />
-              {message.isStreaming ? <WaitingIndicator /> : null}
-            </YStack>
-          ) : (
-            <WaitingIndicator text={message.statusText} />
-          )}
-        </YStack>
-      </XStack>
+      <YStack px="$3" py="$2" gap="$2">
+        <XStack gap="$2" style={{ alignItems: 'center' }}>
+          <AiAvatar />
+          <AiThinkingStatus message={message} />
+        </XStack>
+
+        {hasContent && (
+          <YStack flex={1} px="$1" py="$1">
+            <AiChatMarkdown
+              content={message.content}
+              isStreaming={message.isStreaming}
+            />
+            {message.isStreaming && <WaitingIndicator />}
+          </YStack>
+        )}
+      </YStack>
     );
   }
 
