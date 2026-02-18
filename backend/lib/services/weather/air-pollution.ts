@@ -19,6 +19,8 @@ const AQI_LABELS: Record<number, string> = {
 export async function fetchAirPollution(
   city: string,
 ): Promise<AirPollutionResult> {
+  console.log(`[Weather] fetchAirPollution("${city}")`);
+  const t0 = Date.now();
   const geo = await geocodeCity(city);
 
   const url = new URL(`${BASE}/data/2.5/air_pollution`);
@@ -26,6 +28,7 @@ export async function fetchAirPollution(
   url.searchParams.set('lon', String(geo.lon));
   url.searchParams.set('appid', API_KEY);
 
+  const tApi = Date.now();
   const res = await fetch(url.toString());
   if (!res.ok) {
     const text = await res.text();
@@ -33,10 +36,12 @@ export async function fetchAirPollution(
   }
 
   const data = (await res.json()) as AirPollutionResponse;
+  console.log(`[Weather]   air_pollution API 响应 (${Date.now() - tApi}ms)`);
+
   const item = data.list[0];
   if (!item) throw new Error('空气质量数据格式异常');
 
-  return {
+  const result: AirPollutionResult = {
     type: 'air_pollution',
     city: geo.name,
     country: geo.country,
@@ -49,4 +54,9 @@ export async function fetchAirPollution(
     o3: item.components.o3,
     so2: item.components.so2,
   };
+
+  console.log(
+    `[Weather] fetchAirPollution 完成 (总 ${Date.now() - t0}ms): AQI=${result.aqi} (${result.aqiLabel})`,
+  );
+  return result;
 }

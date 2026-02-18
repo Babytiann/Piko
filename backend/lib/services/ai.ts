@@ -184,8 +184,12 @@ export async function streamChatWithTools(
 
   let currentMessage: string | Part[] = lastMessage.content;
 
+  console.log(`[AI]   ReAct 开始 (最多 ${MAX_REACT_STEPS} 步)`);
+
   for (let step = 0; step < MAX_REACT_STEPS; step++) {
-    // 非流式发送，检查是否有 tool call
+    const tStep = Date.now();
+    console.log(`[AI]   ── Step ${step + 1} ── 发送消息给 Gemini...`);
+
     const response = await chat.sendMessage(currentMessage);
     const candidate = response.response.candidates?.[0];
 
@@ -193,7 +197,6 @@ export async function streamChatWithTools(
       throw new Error('Gemini 返回空结果');
     }
 
-    // 检查是否有 function call
     const functionCalls = candidate.content.parts.filter(
       (
         part,
@@ -202,35 +205,49 @@ export async function streamChatWithTools(
       } => 'functionCall' in part,
     );
 
-    // 没有 function call = AI 认为可以直接回答了
-    if (functionCalls.length === 0) {
-      // 最后一步用流式重新生成（因为上面的 sendMessage 是非流式的）
-      // 我们需要把非流式的结果"转换"成流式
-      // 最简单的方式：提取 AI 的回答文本，直接返回一个模拟的流式结果
-      return createStreamFromText(
-        candidate.content.parts
-          .filter((p): p is Part & { text: string } => 'text' in p)
-          .map((p) => p.text)
-          .join(''),
+    const textParts = candidate.content.parts
+      .filter((p): p is Part & { text: string } => 'text' in p)
+      .map((p) => p.text);
+
+    if (textParts.length > 0) {
+      const preview = textParts.join('').slice(0, 100);
+      console.log(
+        `[AI]   Step ${step + 1}: AI 返回文本 (${Date.now() - tStep}ms) "${preview}..."`,
       );
     }
 
-    // 有 function call → 执行工具
+    if (functionCalls.length === 0) {
+      console.log(`[AI]   Step ${step + 1}: 无工具调用 → 直接输出最终回答`);
+      return createStreamFromText(textParts.join(''));
+    }
+
+    console.log(
+      `[AI]   Step ${step + 1}: AI 要求调用 ${functionCalls.length} 个工具 (${Date.now() - tStep}ms)`,
+    );
+
     const functionResponseParts: Part[] = [];
 
     for (const fc of functionCalls) {
       const { name, args } = fc.functionCall;
 
-      // 通知前端: "正在调用工具..." + 文案
+      console.log(`[AI]   🔧 调用工具: ${name}(${JSON.stringify(args)})`);
       callbacks.onToolStart(name, args, getToolStatusMessage(name));
 
-      // 执行工具
+      const tTool = Date.now();
       const result = await toolRegistry.execute(name, args);
+      const elapsed = Date.now() - tTool;
 
-      // 通知前端: "工具调用完成"
+      if (result.success) {
+        const dataPreview = JSON.stringify(result.data).slice(0, 200);
+        console.log(
+          `[AI]   ✓ ${name} 成功 (${elapsed}ms) → ${dataPreview}${JSON.stringify(result.data).length > 200 ? '...' : ''}`,
+        );
+      } else {
+        console.log(`[AI]   ✗ ${name} 失败 (${elapsed}ms) → ${result.error}`);
+      }
+
       callbacks.onToolEnd(name, result.success);
 
-      // 把工具结果加入消息，送回给 AI
       functionResponseParts.push({
         functionResponse: {
           name,
@@ -241,11 +258,11 @@ export async function streamChatWithTools(
       });
     }
 
-    // 下一轮循环的消息就是工具执行结果
     currentMessage = functionResponseParts;
+    console.log(`[AI]   Step ${step + 1} 完成，把工具结果送回 AI...`);
   }
 
-  // 达到最大步数，强制结束
+  console.log(`[AI]   ⚠ 达到最大步数 (${MAX_REACT_STEPS})，强制结束`);
   return createStreamFromText('抱歉，处理过程过于复杂，请尝试简化你的问题。');
 }
 

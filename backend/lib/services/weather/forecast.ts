@@ -11,6 +11,8 @@ export async function fetchForecast(
   city: string,
   days: number,
 ): Promise<ForecastResult> {
+  console.log(`[Weather] fetchForecast("${city}", ${days} 天)`);
+  const t0 = Date.now();
   const geo = await geocodeCity(city);
   const cnt = Math.min(Math.max(days, 1), 16);
 
@@ -22,6 +24,7 @@ export async function fetchForecast(
   url.searchParams.set('units', 'metric');
   url.searchParams.set('lang', 'zh_cn');
 
+  const tApi = Date.now();
   const res = await fetch(url.toString());
   if (!res.ok) {
     const text = await res.text();
@@ -29,8 +32,11 @@ export async function fetchForecast(
   }
 
   const data = (await res.json()) as ForecastDailyResponse;
+  console.log(
+    `[Weather]   forecast API 响应 (${Date.now() - tApi}ms), ${data.list.length} 天数据`,
+  );
 
-  return {
+  const result: ForecastResult = {
     type: 'forecast',
     city: data.city.name,
     country: data.city.country,
@@ -50,4 +56,7 @@ export async function fetchForecast(
       };
     }),
   };
+
+  console.log(`[Weather] fetchForecast 完成 (总 ${Date.now() - t0}ms)`);
+  return result;
 }

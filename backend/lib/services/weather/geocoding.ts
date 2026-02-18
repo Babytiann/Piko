@@ -7,6 +7,9 @@ const BASE = 'https://api.openweathermap.org';
 
 /** 将城市名转为经纬度坐标 */
 export async function geocodeCity(city: string): Promise<GeoLocation> {
+  console.log(`[Weather]   geocode: "${city}" → 查询坐标...`);
+  const t0 = Date.now();
+
   const url = new URL(`${BASE}/geo/1.0/direct`);
   url.searchParams.set('q', city);
   url.searchParams.set('limit', '1');
@@ -22,5 +25,8 @@ export async function geocodeCity(city: string): Promise<GeoLocation> {
     throw new Error(`找不到城市: ${city}`);
   }
 
+  console.log(
+    `[Weather]   geocode: "${city}" → (${data[0].lat}, ${data[0].lon}) ${data[0].name}, ${data[0].country} (${Date.now() - t0}ms)`,
+  );
   return data[0];
 }

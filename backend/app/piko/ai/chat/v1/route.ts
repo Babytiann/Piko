@@ -16,7 +16,8 @@ import type { AiChatRequest, SseEvent } from '@/types/ai';
  *   - error:      出错
  */
 export async function POST(request: NextRequest) {
-  // ── 解析 & 校验（和模块 1 一样） ───────────────────────────────────
+  const t0 = Date.now();
+
   let body: AiChatRequest;
   try {
     body = (await request.json()) as AiChatRequest;
@@ -33,12 +34,18 @@ export async function POST(request: NextRequest) {
     return errorResponse('Last message must be a non-empty user message', 400);
   }
 
-  // ── SSE 流 ─────────────────────────────────────────────────────────
+  const msgCount = body.messages.length;
+  const userText = lastMsg.content.slice(0, 80);
+  console.log(
+    `[AI] ← 收到请求 (${msgCount} 条历史) "${userText}${lastMsg.content.length > 80 ? '...' : ''}"`,
+  );
+
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
     async start(controller) {
       let closed = false;
+      let chunkCount = 0;
 
       const enqueue = (event: SseEvent) => {
         if (closed) return;
@@ -62,7 +69,7 @@ export async function POST(request: NextRequest) {
       };
 
       try {
-        // [模块 2] 使用带工具的版本，通过 callbacks 在工具调用时实时推送事件
+        const tReact = Date.now();
         const result = await streamChatWithTools(body.messages, {
           onToolStart(tool, args, message) {
             enqueue({ type: 'tool_start', tool, args, message });
@@ -71,20 +78,26 @@ export async function POST(request: NextRequest) {
             enqueue({ type: 'tool_end', tool, success });
           },
         });
+        console.log(
+          `[AI]   ReAct 循环完成 (+${Date.now() - tReact}ms)，开始流式输出`,
+        );
 
-        // 流式输出最终回答（和模块 1 一样）
         for await (const chunk of result.stream) {
           const text = chunk.text();
           if (text) {
+            chunkCount++;
             enqueue({ type: 'chunk', content: text });
           }
         }
 
         enqueue({ type: 'done' });
+        console.log(
+          `[AI] → 完成 (${chunkCount} chunks, 总耗时 ${Date.now() - t0}ms)`,
+        );
       } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : 'AI service unavailable';
-        console.error('[AI Chat] Stream error:', err);
+        console.error(`[AI] ✗ 错误 (${Date.now() - t0}ms):`, err);
         enqueue({ type: 'error', message });
       } finally {
         close();
