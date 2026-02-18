@@ -22,6 +22,14 @@ interface StreamOptions {
   onChunk: (text: string) => void;
   onDone: () => void;
   onError: (error: string) => void;
+  /** [模块 2] 工具开始调用，message 是后端下发的状态文案 */
+  onToolStart?: (
+    tool: string,
+    args: Record<string, unknown>,
+    message: string,
+  ) => void;
+  /** [模块 2] 工具调用结束 */
+  onToolEnd?: (tool: string, success: boolean) => void;
 }
 
 export function streamAiChat({
@@ -29,6 +37,8 @@ export function streamAiChat({
   onChunk,
   onDone,
   onError,
+  onToolStart,
+  onToolEnd,
 }: StreamOptions): () => void {
   const xhr = new XMLHttpRequest();
   let lastIndex = 0;
@@ -57,6 +67,12 @@ export function streamAiChat({
       switch (parsed.type) {
         case 'chunk':
           onChunk(parsed.content);
+          break;
+        case 'tool_start':
+          onToolStart?.(parsed.tool, parsed.args, parsed.message);
+          break;
+        case 'tool_end':
+          onToolEnd?.(parsed.tool, parsed.success);
           break;
         case 'done':
           finished = true;

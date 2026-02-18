@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 
 import { streamAiChat } from '@/services/ai';
-import type { AiMessage } from '../types';
+import type { AiMessage, ToolCallInfo } from '../types';
 
 const FLUSH_INTERVAL_MS = 48;
 
@@ -41,7 +41,54 @@ export function useAiChat(): UseAiChatReturn {
     }
   }, []);
 
-  // 核心：启动一个 streaming 会话，可被 sendMessage 和 AppState 重试共用
+  // ── [模块 2] 工具调用状态管理 ───────────────────────────────────────
+  //
+  // 思路：tool_start 和 tool_end 事件会在 chunk 事件之前到达。
+  // 我们把工具调用信息挂在 AI 消息的 toolCalls 数组上，
+  // 这样 UI 层可以在气泡上方/下方渲染工具状态卡片。
+
+  const handleToolStart = useCallback(
+    (
+      aiMsgId: string,
+      tool: string,
+      args: Record<string, unknown>,
+      message: string,
+    ) => {
+      const toolCall: ToolCallInfo = { tool, args, message, loading: true };
+
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== aiMsgId) return m;
+          const existing = m.toolCalls ?? [];
+          return {
+            ...m,
+            toolCalls: [...existing, toolCall],
+            statusText: message,
+          };
+        }),
+      );
+    },
+    [],
+  );
+
+  const handleToolEnd = useCallback(
+    (aiMsgId: string, tool: string, success: boolean) => {
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== aiMsgId) return m;
+          const updated = (m.toolCalls ?? []).map((tc) =>
+            tc.tool === tool && tc.loading
+              ? { ...tc, loading: false, success }
+              : tc,
+          );
+          return { ...m, toolCalls: updated };
+        }),
+      );
+    },
+    [],
+  );
+
+  // ── 核心：启动 streaming 会话 ────────────────────────────────────────
   const startStream = useCallback(
     (
       history: { role: 'user' | 'model'; content: string }[],
@@ -56,7 +103,9 @@ export function useAiChat(): UseAiChatReturn {
         chunkBufferRef.current = '';
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === aiMsgId ? { ...m, content: m.content + buffered } : m,
+            m.id === aiMsgId
+              ? { ...m, content: m.content + buffered, statusText: undefined }
+              : m,
           ),
         );
       };
@@ -71,6 +120,13 @@ export function useAiChat(): UseAiChatReturn {
               flushChunks();
             }, FLUSH_INTERVAL_MS);
           }
+        },
+        // [模块 2] 工具调用回调 —— 把 aiMsgId 绑定进去
+        onToolStart(tool, args, message) {
+          handleToolStart(aiMsgId, tool, args, message);
+        },
+        onToolEnd(tool, success) {
+          handleToolEnd(aiMsgId, tool, success);
         },
         onDone() {
           clearFlushTimer();
@@ -88,7 +144,6 @@ export function useAiChat(): UseAiChatReturn {
           clearFlushTimer();
           flushChunks();
 
-          // iOS 会在后台挂起网络 —— 如果此刻不在前台，标记重试而非报错
           if (AppState.currentState !== 'active') {
             retryRef.current = { history, aiMsgId };
             return;
@@ -111,10 +166,10 @@ export function useAiChat(): UseAiChatReturn {
         },
       });
     },
-    [clearFlushTimer],
+    [clearFlushTimer, handleToolStart, handleToolEnd],
   );
 
-  // 监听 App 前后台切换，回到前台时自动重试被中断的请求
+  // ── App 前后台切换重试 ─────────────────────────────────────────────
   useEffect(() => {
     const handleAppState = (state: AppStateStatus): void => {
       if (state !== 'active' || !retryRef.current) return;
@@ -122,10 +177,11 @@ export function useAiChat(): UseAiChatReturn {
       const { history, aiMsgId } = retryRef.current;
       retryRef.current = null;
 
-      // 清空已收到的部分内容，重新请求完整响应
       setMessages((prev) =>
         prev.map((m) =>
-          m.id === aiMsgId ? { ...m, content: '', isStreaming: true } : m,
+          m.id === aiMsgId
+            ? { ...m, content: '', isStreaming: true, toolCalls: undefined }
+            : m,
         ),
       );
       startStream(history, aiMsgId);
@@ -135,6 +191,7 @@ export function useAiChat(): UseAiChatReturn {
     return () => sub.remove();
   }, [startStream]);
 
+  // ── 发送消息 ───────────────────────────────────────────────────────
   const sendMessage = useCallback(
     (text: string) => {
       const trimmed = text.trim();
@@ -168,6 +225,7 @@ export function useAiChat(): UseAiChatReturn {
     [messages, isStreaming, startStream],
   );
 
+  // ── 清空消息 ───────────────────────────────────────────────────────
   const clearMessages = useCallback(() => {
     clearFlushTimer();
     chunkBufferRef.current = '';

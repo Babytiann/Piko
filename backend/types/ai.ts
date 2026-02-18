@@ -29,7 +29,28 @@ export interface SseErrorEvent {
   message: string;
 }
 
-export type SseEvent = SseChunkEvent | SseDoneEvent | SseErrorEvent;
+/** [模块 2] Agent 开始调用工具 */
+export interface SseToolStartEvent {
+  type: 'tool_start';
+  tool: string;
+  args: Record<string, unknown>;
+  /** 前端展示的状态文案，如 "正在查询天气..." */
+  message: string;
+}
+
+/** [模块 2] Agent 工具调用结束 */
+export interface SseToolEndEvent {
+  type: 'tool_end';
+  tool: string;
+  success: boolean;
+}
+
+export type SseEvent =
+  | SseChunkEvent
+  | SseDoneEvent
+  | SseErrorEvent
+  | SseToolStartEvent
+  | SseToolEndEvent;
 
 /** Copywriting / text content for the AI chat page. */
 export interface AiCopywriting {

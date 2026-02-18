@@ -21,10 +21,13 @@ interface Props {
   onLongPress?: (message: AiMessage, layout: BubbleLayout) => void;
 }
 
-function StreamingIndicator(): ReactNode {
+function WaitingIndicator({ text }: { text?: string }): ReactNode {
   const opacity = useSharedValue(1);
   opacity.value = withRepeat(
-    withTiming(0.25, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+    withTiming(text ? 0.4 : 0.25, {
+      duration: 800,
+      easing: Easing.inOut(Easing.ease),
+    }),
     -1,
     true,
   );
@@ -33,9 +36,15 @@ function StreamingIndicator(): ReactNode {
 
   return (
     <Animated.View style={animatedStyle}>
-      <Text fontSize="$3" color="$blue9" ml="$1">
-        ●
-      </Text>
+      {text ? (
+        <Text fontSize="$3" color="$gray10" lineHeight={22}>
+          {text}
+        </Text>
+      ) : (
+        <Text fontSize="$3" color="$blue9" ml="$1">
+          ●
+        </Text>
+      )}
     </Animated.View>
   );
 }
@@ -65,7 +74,6 @@ function AiChatBubble({
   onLongPress,
 }: Props): ReactNode {
   const isUser = message.role === 'user';
-  const isEmpty = !message.content && message.isStreaming;
   const bubbleRef = useRef<RNView>(null);
 
   const handleLongPress = useCallback(() => {
@@ -81,20 +89,27 @@ function AiChatBubble({
   }, [message, onLongPress]);
 
   if (!isUser) {
+    const hasContent = !!message.content;
+
     return (
-      <XStack px="$3" py="$1" gap="$2" style={{ alignItems: 'flex-start' }}>
+      <XStack
+        px="$3"
+        py="$1"
+        gap="$2"
+        style={{ alignItems: hasContent ? 'flex-start' : 'center' }}
+      >
         <AiAvatar />
         <YStack flex={1} px="$1" py="$1">
-          {isEmpty ? (
-            <StreamingIndicator />
-          ) : (
+          {hasContent ? (
             <YStack>
               <AiChatMarkdown
                 content={message.content}
                 isStreaming={message.isStreaming}
               />
-              {message.isStreaming ? <StreamingIndicator /> : null}
+              {message.isStreaming ? <WaitingIndicator /> : null}
             </YStack>
+          ) : (
+            <WaitingIndicator text={message.statusText} />
           )}
         </YStack>
       </XStack>
@@ -131,6 +146,8 @@ export default React.memo(AiChatBubble, (prev, next) => {
   return (
     p.content === n.content &&
     p.isStreaming === n.isStreaming &&
+    p.toolCalls === n.toolCalls &&
+    p.statusText === n.statusText &&
     prev.onLongPress === next.onLongPress &&
     prev.isTooltipTarget === next.isTooltipTarget
   );

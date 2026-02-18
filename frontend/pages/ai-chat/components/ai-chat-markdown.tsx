@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { ReactNode } from 'react';
-import { Platform } from 'react-native';
+import { Platform, ScrollView, View as RNView } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { useTheme, useThemeName } from 'tamagui';
 
@@ -15,9 +15,55 @@ const MONO_FONT = Platform.select({
   default: 'monospace',
 });
 
-function closePendingCodeBlocks(text: string): string {
-  const count = (text.match(/```/g) || []).length;
-  return count % 2 !== 0 ? text + '\n```' : text;
+/**
+ * 流式输出时，文本可能在 Markdown 语法标记中间被截断，
+ * 导致 react-native-markdown-display 解析失败或渲染异常。
+ * 这个函数修复所有常见的未闭合语法。
+ */
+function sanitizeStreamingMarkdown(text: string): string {
+  let result = text;
+
+  // 1. 未闭合的代码块 ```
+  const fenceCount = (result.match(/```/g) || []).length;
+  if (fenceCount % 2 !== 0) {
+    result += '\n```';
+  }
+
+  // 2. 未闭合的行内代码 `
+  //    排除已闭合的 `` 对和 ``` 块后，检查剩余的孤立 `
+  const withoutFences = result.replace(/```[\s\S]*?```/g, '');
+  const backtickCount = (withoutFences.match(/`/g) || []).length;
+  if (backtickCount % 2 !== 0) {
+    result += '`';
+  }
+
+  // 3. 未闭合的粗体 ** （检查最后一行，避免跨段落误判）
+  const lastLine = result.split('\n').pop() ?? '';
+  const boldCount = (lastLine.match(/\*\*/g) || []).length;
+  if (boldCount % 2 !== 0) {
+    result += '**';
+  }
+
+  // 4. 未闭合的斜体 *（排除 ** 之后，检查孤立的 *）
+  const lastLineNoBold = lastLine.replace(/\*\*/g, '');
+  const italicCount = (lastLineNoBold.match(/\*/g) || []).length;
+  if (italicCount % 2 !== 0) {
+    result += '*';
+  }
+
+  // 5. 未闭合的删除线 ~~
+  const strikeCount = (lastLine.match(/~~/g) || []).length;
+  if (strikeCount % 2 !== 0) {
+    result += '~~';
+  }
+
+  // 6. 末尾截断的链接语法 [text](url — 移除不完整的链接标记
+  //    匹配 "[已有文字](" 但没有闭合的 ")" 的情况
+  result = result.replace(/\[([^\]]*)\]\([^)]*$/, '$1');
+  //    匹配只有 "[文字" 没有闭合 "]" 的情况
+  result = result.replace(/\[([^\]]*)$/, '$1');
+
+  return result;
 }
 
 export default function AiChatMarkdown({
@@ -120,8 +166,35 @@ export default function AiChatMarkdown({
   }, [themeName]);
 
   const displayContent = isStreaming
-    ? closePendingCodeBlocks(content)
+    ? sanitizeStreamingMarkdown(content)
     : content;
 
-  return <Markdown style={markdownStyles}>{displayContent}</Markdown>;
+  const rules = useMemo(
+    () => ({
+      table: (
+        node: { key?: string },
+        children: ReactNode,
+        _parent: unknown,
+        styles: Record<string, object>,
+      ) => (
+        <ScrollView
+          key={node.key}
+          horizontal
+          showsHorizontalScrollIndicator
+          style={{ marginVertical: 8 }}
+        >
+          <RNView style={[styles.table, { marginVertical: 0 }]}>
+            {children}
+          </RNView>
+        </ScrollView>
+      ),
+    }),
+    [],
+  );
+
+  return (
+    <Markdown style={markdownStyles} rules={rules}>
+      {displayContent}
+    </Markdown>
+  );
 }

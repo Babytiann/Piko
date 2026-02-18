@@ -1,18 +1,22 @@
 import { NextRequest } from 'next/server';
-import { streamChat } from '@/lib/services/ai';
+import { streamChatWithTools } from '@/lib/services/ai';
 import type { AiChatRequest, SseEvent } from '@/types/ai';
 
 /**
  * POST /piko/ai/chat/v1
  *
- * Accepts a conversation history and returns a Server-Sent Events stream
- * of Gemini model responses.
+ * [模块 1] 基础：接收对话历史，返回 SSE 流式响应。
+ * [模块 2] 升级：支持 Tool Calling，新增 tool_start / tool_end 事件。
  *
- * Request body: { messages: [{ role: 'user'|'model', content: string }] }
- * Response: text/event-stream with JSON-encoded events per line.
+ * SSE 事件类型:
+ *   - chunk:      文本片段（打字效果）
+ *   - tool_start: Agent 开始调用工具（前端显示"正在查询..."）
+ *   - tool_end:   工具调用结束
+ *   - done:       整个响应完成
+ *   - error:      出错
  */
 export async function POST(request: NextRequest) {
-  // ── Parse & validate ───────────────────────────────────────────────
+  // ── 解析 & 校验（和模块 1 一样） ───────────────────────────────────
   let body: AiChatRequest;
   try {
     body = (await request.json()) as AiChatRequest;
@@ -29,20 +33,46 @@ export async function POST(request: NextRequest) {
     return errorResponse('Last message must be a non-empty user message', 400);
   }
 
-  // ── Stream ─────────────────────────────────────────────────────────
+  // ── SSE 流 ─────────────────────────────────────────────────────────
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
     async start(controller) {
+      let closed = false;
+
       const enqueue = (event: SseEvent) => {
-        controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify(event)}\n\n`),
-        );
+        if (closed) return;
+        try {
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify(event)}\n\n`),
+          );
+        } catch {
+          closed = true;
+        }
+      };
+
+      const close = () => {
+        if (closed) return;
+        closed = true;
+        try {
+          controller.close();
+        } catch {
+          /* already closed */
+        }
       };
 
       try {
-        const result = await streamChat(body.messages);
+        // [模块 2] 使用带工具的版本，通过 callbacks 在工具调用时实时推送事件
+        const result = await streamChatWithTools(body.messages, {
+          onToolStart(tool, args, message) {
+            enqueue({ type: 'tool_start', tool, args, message });
+          },
+          onToolEnd(tool, success) {
+            enqueue({ type: 'tool_end', tool, success });
+          },
+        });
 
+        // 流式输出最终回答（和模块 1 一样）
         for await (const chunk of result.stream) {
           const text = chunk.text();
           if (text) {
@@ -57,7 +87,7 @@ export async function POST(request: NextRequest) {
         console.error('[AI Chat] Stream error:', err);
         enqueue({ type: 'error', message });
       } finally {
-        controller.close();
+        close();
       }
     },
   });
