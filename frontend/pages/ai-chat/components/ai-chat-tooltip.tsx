@@ -100,14 +100,14 @@ export default function AiChatTooltip({ target, onClose }: Props): ReactNode {
     );
   }
 
-  async function handleCopy(): Promise<void> {
+  const handleCopy = async (): Promise<void> => {
     if (!target) return;
     await Clipboard.setStringAsync(target.message.content);
     if (Platform.OS === 'ios') {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
     animateClose();
-  }
+  };
 
   const backdropStyle = useAnimatedStyle(() => ({
     opacity: backdropOpacity.value,
