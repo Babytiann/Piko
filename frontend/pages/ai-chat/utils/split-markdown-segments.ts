@@ -3,6 +3,8 @@ import type { MarkdownSegment } from '../types';
 const TABLE_LINE_RE = /^\|.+\|$/;
 const SEPARATOR_RE = /^\|(\s*:?-+:?\s*\|)+\s*$/;
 const PAREN_CELL_RE = /^\(.*\)$/;
+const AMAP_NAV_RE =
+  /^\[([^\]]+)\]\((https:\/\/uri\.amap\.com\/navigation\?[^)]+)\)$/;
 
 function parseRow(line: string): string[] {
   return line
@@ -49,7 +51,16 @@ export function splitMarkdownSegments(text: string): MarkdownSegment[] {
     const cur = lines[i].trim();
     const next = i + 1 < lines.length ? lines[i + 1].trim() : '';
 
-    if (TABLE_LINE_RE.test(cur) && SEPARATOR_RE.test(next)) {
+    const amapMatch = AMAP_NAV_RE.exec(cur);
+    if (amapMatch) {
+      flushMd();
+      segments.push({
+        type: 'amap-navigation',
+        label: amapMatch[1],
+        url: amapMatch[2],
+      });
+      i++;
+    } else if (TABLE_LINE_RE.test(cur) && SEPARATOR_RE.test(next)) {
       flushMd();
       const headers = parseRow(cur);
       i += 2;

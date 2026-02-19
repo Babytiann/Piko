@@ -22,6 +22,7 @@ import { toolRegistry } from './ai-tools';
 
 // 注册所有工具 —— import 时会自动执行 register()
 import './tools/get-weather';
+import './tools/plan-route';
 
 // ---------------------------------------------------------------------------
 // Gemini client 单例（和模块 1 一样，防止热更新重复创建）
@@ -66,6 +67,9 @@ function buildSystemInstruction(): string {
     lines.push(tool.instruction);
     for (const hint of Object.values(tool.routing)) {
       lines.push(`- ${hint}`);
+    }
+    if ('outputRule' in tool && typeof tool.outputRule === 'string') {
+      lines.push(tool.outputRule);
     }
   }
 
@@ -225,38 +229,41 @@ export async function streamChatWithTools(
       `[AI]   Step ${step + 1}: AI 要求调用 ${functionCalls.length} 个工具 (${Date.now() - tStep}ms)`,
     );
 
-    const functionResponseParts: Part[] = [];
-
     for (const fc of functionCalls) {
       const { name, args } = fc.functionCall;
-
       console.log(`[AI]   🔧 调用工具: ${name}(${JSON.stringify(args)})`);
       callbacks.onToolStart(name, args, getToolStatusMessage(name));
-
-      const tTool = Date.now();
-      const result = await toolRegistry.execute(name, args);
-      const elapsed = Date.now() - tTool;
-
-      if (result.success) {
-        const dataPreview = JSON.stringify(result.data).slice(0, 200);
-        console.log(
-          `[AI]   ✓ ${name} 成功 (${elapsed}ms) → ${dataPreview}${JSON.stringify(result.data).length > 200 ? '...' : ''}`,
-        );
-      } else {
-        console.log(`[AI]   ✗ ${name} 失败 (${elapsed}ms) → ${result.error}`);
-      }
-
-      callbacks.onToolEnd(name, result.success);
-
-      functionResponseParts.push({
-        functionResponse: {
-          name,
-          response: result.success
-            ? { result: result.data }
-            : { error: result.error },
-        },
-      });
     }
+
+    const functionResponseParts: Part[] = await Promise.all(
+      functionCalls.map(async (fc) => {
+        const { name, args } = fc.functionCall;
+
+        const tTool = Date.now();
+        const result = await toolRegistry.execute(name, args);
+        const elapsed = Date.now() - tTool;
+
+        if (result.success) {
+          const dataPreview = JSON.stringify(result.data).slice(0, 200);
+          console.log(
+            `[AI]   ✓ ${name} 成功 (${elapsed}ms) → ${dataPreview}${JSON.stringify(result.data).length > 200 ? '...' : ''}`,
+          );
+        } else {
+          console.log(`[AI]   ✗ ${name} 失败 (${elapsed}ms) → ${result.error}`);
+        }
+
+        callbacks.onToolEnd(name, result.success);
+
+        return {
+          functionResponse: {
+            name,
+            response: result.success
+              ? { result: result.data }
+              : { error: result.error },
+          },
+        };
+      }),
+    );
 
     currentMessage = functionResponseParts;
     console.log(`[AI]   Step ${step + 1} 完成，把工具结果送回 AI...`);

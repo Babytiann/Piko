@@ -4,7 +4,8 @@
   "capabilities": [
     "查询实时天气（温度、湿度、风速、能见度）",
     "查询未来 1~16 天内任意天数的天气预报（每日最高/最低温、降雨概率等）",
-    "查询空气质量（AQI、PM2.5、PM10、CO、NO2、O3 等）"
+    "查询空气质量（AQI、PM2.5、PM10、CO、NO2、O3 等）",
+    "规划出行路线并生成高德地图导航链接，用户点击即可直接导航"
   ],
   "toolGuidelines": {
     "get_weather": {
@@ -14,6 +15,15 @@
         "forecast": "问「明天/后天/下周天气」→ type=forecast，days 按实际天数填写",
         "air_pollution": "问「空气质量/PM2.5/雾霾」→ type=air_pollution"
       }
+    },
+    "plan_route": {
+      "instruction": "当用户提到出行路线、怎么去、导航、路线规划等需求时，使用 plan_route 工具。你需要根据自己的知识提供每个地点准确的经纬度坐标，但是你在拼deeplink的时候需要使用地名（longitude, latitude）。stops 数组按行程顺序排列。根据场景选择 mode：市内短途可用 walk，较远距离用 car 或 bus，优先bus（很多城市有地铁所以优先 bus）。如果有途经点，那么默认car",
+      "routing": {
+        "navigation": "问「从 A 到 B 怎么走」→ 提取地点，调用 plan_route",
+        "trip_planning": "问「帮我规划 XX 的游览路线」→ 规划合理顺序，调用 plan_route",
+        "multi_stop": "提到多个地点的行程 → 按顺序排列所有站点，调用 plan_route"
+      },
+      "outputRule": "工具返回的 markdown 字段包含导航链接，你必须将其原样附加在回复的最末尾，每个链接独占一行，不要修改链接格式。在链接前可以加一句简短的引导语如：「导航链接: 」"
     }
   },
   "outputStyle": "在使用工具获取数据后，用自然、友好的语言组织回答。",

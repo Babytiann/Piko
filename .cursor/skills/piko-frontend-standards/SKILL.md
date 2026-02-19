@@ -321,13 +321,55 @@ API 响应 → getPageErrorType(resp) → PageErrorType | undefined
 
 ## Style System: Tamagui-First
 
+### 核心规则
+
 ```
-MUST:  布局用 Tamagui props (bg, px, py, gap, flex, borderRadius)
+MUST:  使用 Tamagui 组件 (XStack, YStack, View, Text) 替代 RN 原生组件
+MUST:  布局用 Tamagui props (bg, px, py, gap, flex, borderRadius, mt, mb, pl 等)
 MUST:  颜色只用 theme tokens ($color, $blue9, $gray4, $background)
 MUST:  间距只用 size tokens ($1, $2, $3, $4)
+MUST:  交互用 Tamagui 的 pressStyle + onPress，不用 RN Pressable/TouchableOpacity
+MUST:  非 Tamagui 组件 (如 Ionicons) 的颜色用 useTheme() + theme.xxx.val
+NEVER: 从 'react-native' 导入 View / Text — 从 'tamagui' 导入
+NEVER: useMemo 构造 style 对象 — 把样式直接写成 Tamagui props
 NEVER: className / Tailwind
 NEVER: 硬编码颜色 (#ffffff, rgba(...))
-AVOID: inline style — 仅 Tamagui 不支持的属性 (需注释原因)
+ALLOW: style prop — 仅 Tamagui 不支持的属性 (borderRadius 部分值、alignItems 等)
+```
+
+### 正确 vs 错误示例
+
+```typescript
+// BAD: RN 组件 + useMemo style 对象
+import { View, Text, Pressable } from 'react-native';
+const styles = useMemo(() => ({
+  container: { padding: 12, backgroundColor: theme.blue2.val, borderRadius: 12 },
+  title: { fontSize: 14, fontWeight: '600', color: theme.blue11.val },
+}), [themeName]);
+return (
+  <Pressable onPress={handlePress}>
+    <View style={styles.container}>
+      <Text style={styles.title}>标题</Text>
+    </View>
+  </Pressable>
+);
+
+// GOOD: Tamagui 组件 + inline props
+import { YStack, Text } from 'tamagui';
+return (
+  <YStack
+    bg="$blue2"
+    px="$3"
+    py="$2.5"
+    borderWidth={1}
+    borderColor="$blue7"
+    pressStyle={{ opacity: 0.8 }}
+    onPress={handlePress}
+    style={{ borderRadius: 12 }}
+  >
+    <Text fontSize={14} fontWeight="600" color="$blue11">标题</Text>
+  </YStack>
+);
 ```
 
 ## Naming Conventions
