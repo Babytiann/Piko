@@ -3,7 +3,7 @@ import type {
   ChatDetailPageData,
   MessageItem,
 } from '@/types/chat';
-import type { RawMessage } from './telegram';
+import type { RawMessage } from '@/types/telegram';
 import { getDialogList, getMessageList } from './telegram';
 
 // ---------------------------------------------------------------------------

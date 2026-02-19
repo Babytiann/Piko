@@ -29,6 +29,8 @@ export default function Avatar({
 }: Props): ReactNode {
   const [hasFailed, setHasFailed] = useState(false);
   const radius = size / 2;
+  console.log('url', url);
+  console.log('resolveUrl', resolveUrl(url ?? ''));
 
   if (url && !hasFailed) {
     return (

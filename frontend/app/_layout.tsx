@@ -46,9 +46,10 @@ export default function RootLayout() {
                 }}
               />
               <Stack.Screen
-                name="telegram-dialog"
+                name="telegram-dialog/index"
                 options={{
                   headerShown: false,
+                  title: '',
                   animation: 'slide_from_right',
                 }}
               />
