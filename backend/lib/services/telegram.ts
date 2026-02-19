@@ -44,31 +44,14 @@ interface PhotoCacheEntry {
 }
 
 const PHOTO_CACHE_TTL = 5 * 60 * 1000;
-const NO_PHOTO_CACHE_TTL = 60 * 1000;
 const photoCache = new Map<string, PhotoCacheEntry>();
-
-interface PeerPhotoCacheEntry {
-  buffer: Buffer | null;
-  timestamp: number;
-}
-const peerPhotoCache = new Map<string, PeerPhotoCacheEntry>();
 
 function sessionCacheKey(session: string): string {
   return session.slice(0, 32);
 }
 
-function peerCacheKey(session: string, peerId: string): string {
-  return `${session.slice(0, 16)}:${peerId}`;
-}
-
 function bufferToDataUri(buf: Buffer): string {
   return `data:image/jpeg;base64,${buf.toString('base64')}`;
-}
-
-export interface PeerRef {
-  peerId: string;
-  peerType: string;
-  accessHash: string;
 }
 
 export async function getUserInfo(session: string): Promise<TelegramUserInfo> {
@@ -120,29 +103,15 @@ export async function downloadPeerPhoto(
   peerType: string,
   accessHash: string,
 ): Promise<Buffer | null> {
-  const key = peerCacheKey(session, peerId);
-  const cached = peerPhotoCache.get(key);
-  if (cached) {
-    const ttl = cached.buffer ? PHOTO_CACHE_TTL : NO_PHOTO_CACHE_TTL;
-    if (Date.now() - cached.timestamp < ttl) {
-      return cached.buffer;
-    }
-    peerPhotoCache.delete(key);
-  }
-
   const client = await getPooledClient(session);
   const peer = resolveInputPeer(peerId, peerType, accessHash);
   try {
     const photo = await client.downloadProfilePhoto(peer);
     if (!photo || (Buffer.isBuffer(photo) && photo.length === 0)) {
-      peerPhotoCache.set(key, { buffer: null, timestamp: Date.now() });
       return null;
     }
-    const buf = Buffer.isBuffer(photo) ? photo : Buffer.from(photo);
-    peerPhotoCache.set(key, { buffer: buf, timestamp: Date.now() });
-    return buf;
+    return Buffer.isBuffer(photo) ? photo : Buffer.from(photo);
   } catch {
-    // Don't cache errors — allow retry on next request
     return null;
   }
 }
@@ -153,70 +122,6 @@ export async function getProfilePhotoBase64(
 ): Promise<string | undefined> {
   const { buffer } = await getProfilePhoto(session);
   return buffer ? bufferToDataUri(buffer) : undefined;
-}
-
-/**
- * Synchronously read a peer's photo from cache.
- * Returns a base64 data URI if cached, undefined otherwise.
- */
-export function getPeerPhotoFromCache(
-  session: string,
-  peerId: string,
-): string | undefined {
-  const key = peerCacheKey(session, peerId);
-  const cached = peerPhotoCache.get(key);
-  if (!cached) return undefined;
-  const ttl = cached.buffer ? PHOTO_CACHE_TTL : NO_PHOTO_CACHE_TTL;
-  if (Date.now() - cached.timestamp >= ttl) {
-    peerPhotoCache.delete(key);
-    return undefined;
-  }
-  return cached.buffer ? bufferToDataUri(cached.buffer) : undefined;
-}
-
-const warmingInProgress = new Set<string>();
-
-/**
- * Fire-and-forget: download photos for peers that are NOT yet cached.
- * Downloads sequentially (one at a time) to avoid overwhelming the
- * Telegram MTProto connection. Results are written to peerPhotoCache
- * so that the *next* request can serve them inline.
- */
-export function warmPeerPhotoCache(session: string, peers: PeerRef[]): void {
-  const uncached: PeerRef[] = [];
-  const seen = new Set<string>();
-  for (const p of peers) {
-    if (seen.has(p.peerId)) continue;
-    seen.add(p.peerId);
-    const key = peerCacheKey(session, p.peerId);
-    const cached = peerPhotoCache.get(key);
-    if (cached) {
-      const ttl = cached.buffer ? PHOTO_CACHE_TTL : NO_PHOTO_CACHE_TTL;
-      if (Date.now() - cached.timestamp < ttl) continue;
-    }
-    if (warmingInProgress.has(key)) continue;
-    uncached.push(p);
-  }
-
-  if (uncached.length === 0) return;
-
-  // Mark all as in-progress to avoid duplicate warming
-  for (const p of uncached) {
-    warmingInProgress.add(peerCacheKey(session, p.peerId));
-  }
-
-  // Sequential download in background — don't await
-  void (async () => {
-    for (const p of uncached) {
-      try {
-        await downloadPeerPhoto(session, p.peerId, p.peerType, p.accessHash);
-      } catch {
-        // ignore
-      } finally {
-        warmingInProgress.delete(peerCacheKey(session, p.peerId));
-      }
-    }
-  })();
 }
 
 export async function getDialogList(
