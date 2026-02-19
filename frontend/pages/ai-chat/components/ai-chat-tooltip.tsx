@@ -183,25 +183,25 @@ export default function AiChatTooltip({ target, onClose }: Props): ReactNode {
           tooltipAnimStyle,
         ]}
       >
-        <Pressable onPress={() => void handleCopy()}>
-          <XStack
-            bg="$gray3"
-            px="$4"
-            py="$2.5"
-            gap="$2"
-            borderWidth={1}
-            borderColor="$gray5"
-            style={{
-              borderRadius: 12,
-              alignItems: 'center',
-            }}
-          >
-            <Ionicons name="copy-outline" size={16} color={theme.gray11.val} />
-            <Text fontSize="$2" fontWeight="600" color="$color">
-              复制
-            </Text>
-          </XStack>
-        </Pressable>
+        <XStack
+          bg="$gray3"
+          px="$4"
+          py="$2.5"
+          gap="$2"
+          borderWidth={1}
+          borderColor="$gray5"
+          pressStyle={{ opacity: 0.7 }}
+          onPress={() => void handleCopy()}
+          style={{
+            borderRadius: 12,
+            alignItems: 'center',
+          }}
+        >
+          <Ionicons name="copy-outline" size={16} color={theme.gray11.val} />
+          <Text fontSize="$2" fontWeight="600" color="$color">
+            复制
+          </Text>
+        </XStack>
       </Animated.View>
     </Portal>
   );

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { Image, View } from 'react-native';
-import { Text } from 'tamagui';
+import { Image } from 'react-native';
+import { Text, View } from 'tamagui';
 
 import { API_HOST } from '@/common/config';
 
@@ -29,8 +29,6 @@ export default function Avatar({
 }: Props): ReactNode {
   const [hasFailed, setHasFailed] = useState(false);
   const radius = size / 2;
-  console.log('url', url);
-  console.log('resolveUrl', resolveUrl(url ?? ''));
 
   if (url && !hasFailed) {
     return (
@@ -49,9 +47,9 @@ export default function Avatar({
 
   return (
     <View
+      width={size}
+      height={size}
       style={{
-        width: size,
-        height: size,
         borderRadius: radius,
         backgroundColor: color,
         justifyContent: 'center',

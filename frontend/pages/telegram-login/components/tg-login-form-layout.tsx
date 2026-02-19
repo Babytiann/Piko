@@ -3,7 +3,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   View,
-  StyleSheet,
   Keyboard,
   TouchableWithoutFeedback,
 } from 'react-native';
@@ -33,21 +32,27 @@ export default function TgLoginFormLayout({
           style={{ flex: 1 }}
         >
           <YStack flex={1} pt={top} pb={bottom} px="$6" bg="$background">
-            <View style={styles.headerCenter}>
+            <YStack mb="$5" style={{ alignItems: 'center' }}>
               <Text fontSize={24} fontWeight="700" color="$color">
                 {title}
               </Text>
               <Text fontSize="$3" color="$gray11" mt="$2">
                 {subtitle}
               </Text>
-            </View>
+            </YStack>
 
             {error ? (
-              <View style={styles.errorBox}>
+              <YStack
+                bg="$red2"
+                px="$3"
+                py="$2"
+                mb="$3"
+                style={{ borderRadius: 8 }}
+              >
                 <Text color="$red11" fontSize="$2">
                   {error}
                 </Text>
-              </View>
+              </YStack>
             ) : null}
 
             {children}
@@ -59,17 +64,3 @@ export default function TgLoginFormLayout({
     </TouchableWithoutFeedback>
   );
 }
-
-const styles = StyleSheet.create({
-  headerCenter: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  errorBox: {
-    backgroundColor: 'rgba(255,0,0,0.1)',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginBottom: 16,
-  },
-});

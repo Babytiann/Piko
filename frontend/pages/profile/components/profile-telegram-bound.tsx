@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { TouchableOpacity } from 'react-native';
 import { XStack, YStack, Text } from 'tamagui';
 
 import Avatar from '@/common/components/avatar';
@@ -41,21 +40,21 @@ export default function ProfileTelegramBound({
         </YStack>
       </XStack>
 
-      <TouchableOpacity
+      <YStack
+        height={44}
+        bg="$red2"
+        pressStyle={{ opacity: 0.8 }}
         onPress={onUnbind}
-        activeOpacity={0.8}
         style={{
-          height: 44,
           borderRadius: 12,
-          backgroundColor: 'rgba(255, 59, 48, 0.1)',
           justifyContent: 'center',
           alignItems: 'center',
         }}
       >
-        <Text color="#FF3B30" fontWeight="600" fontSize="$3">
+        <Text color="$red10" fontWeight="600" fontSize="$3">
           {unbindButtonText}
         </Text>
-      </TouchableOpacity>
+      </YStack>
     </>
   );
 }

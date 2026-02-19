@@ -10,8 +10,10 @@ interface Props {
 export default function AmapNavigationCard({ url, label }: Props): ReactNode {
   const displayLabel = label.replace(/🧭\s*/, '');
 
-  const handlePress = (): void => {
-    void Linking.openURL(url);
+  const handlePress = async (): Promise<void> => {
+    const nativeUrl = url.replace('https://uri.amap.com', 'amapuri://');
+    const canOpen = await Linking.canOpenURL(nativeUrl);
+    void Linking.openURL(canOpen ? nativeUrl : url);
   };
 
   return (

@@ -1,8 +1,8 @@
 import { useEffect, type ReactNode } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { YStack, XStack, Text, Spacer } from 'tamagui';
-import { Alert, Pressable } from 'react-native';
+import { YStack, XStack, Text, Spacer, useTheme } from 'tamagui';
+import { Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import PageLoading from '@/common/components/page-loading';
@@ -18,6 +18,7 @@ import ChatListUnboundPrompt from '@/pages/chat-list/components/chat-list-unboun
 export default function TelegramDialogsScreen(): ReactNode {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const theme = useTheme();
   const { session, logout } = useAuth();
   const {
     isLoading,
@@ -67,9 +68,13 @@ export default function TelegramDialogsScreen(): ReactNode {
   return (
     <YStack flex={1} pt={insets.top} bg="$background">
       <XStack px="$4" py="$3" style={{ alignItems: 'center' }}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
-          <Ionicons name="arrow-back" size={24} color="$color" />
-        </Pressable>
+        <YStack
+          pressStyle={{ opacity: 0.6 }}
+          onPress={() => router.back()}
+          hitSlop={8}
+        >
+          <Ionicons name="arrow-back" size={24} color={theme.color.val} />
+        </YStack>
         <Text
           fontSize="$7"
           fontWeight="700"

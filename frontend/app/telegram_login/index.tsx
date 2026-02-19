@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { useState, useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 
+import PageLoading from '@/common/components/page-loading';
 import * as telegramApi from '@/services/telegram';
 import { TelegramLoginStep } from '@/common/typings/telegram-login';
 import type { PhoneStepText } from '@/common/typings/telegram-login';
@@ -65,11 +65,7 @@ export default function TelegramLoginScreen(): ReactNode {
   };
 
   if (!text) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
+    return <PageLoading />;
   }
 
   const { phonePlaceholder, sendCodeButton, countries, countryPickerHeader } =
@@ -96,11 +92,3 @@ export default function TelegramLoginScreen(): ReactNode {
     </TgLoginFormLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

@@ -1,10 +1,5 @@
 import type { ReactNode } from 'react';
-import {
-  ActionSheetIOS,
-  Platform,
-  Alert,
-  TouchableOpacity,
-} from 'react-native';
+import { ActionSheetIOS, Platform, Alert, Pressable } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 
@@ -57,12 +52,12 @@ export default function ChatDetailContextMenu({
   };
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.9}
+    <Pressable
       onLongPress={handleLongPress}
       delayLongPress={300}
+      style={({ pressed }) => (pressed ? { opacity: 0.9 } : undefined)}
     >
       {children}
-    </TouchableOpacity>
+    </Pressable>
   );
 }

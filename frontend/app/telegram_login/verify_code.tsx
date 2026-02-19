@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import { useState, useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { useAuth } from '@/common/hooks';
+import PageLoading from '@/common/components/page-loading';
 import * as telegramApi from '@/services/telegram';
 import { TelegramLoginStep } from '@/common/typings/telegram-login';
 import type { VerifyCodeStepText } from '@/common/typings/telegram-login';
@@ -76,11 +76,7 @@ export default function VerifyCodeScreen(): ReactNode {
   };
 
   if (!text) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
+    return <PageLoading />;
   }
 
   return (
@@ -104,11 +100,3 @@ export default function VerifyCodeScreen(): ReactNode {
     </TgLoginFormLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
-import { TouchableOpacity } from 'react-native';
-import { Text } from 'tamagui';
+import { YStack, Text } from 'tamagui';
 
 interface ProfileTelegramUnboundProps {
   prompt: string;
@@ -18,21 +17,21 @@ export default function ProfileTelegramUnbound({
       <Text fontSize="$2" color="$gray11">
         {prompt}
       </Text>
-      <TouchableOpacity
+      <YStack
+        height={48}
+        bg="$color"
+        pressStyle={{ opacity: 0.8 }}
         onPress={onBind}
-        activeOpacity={0.8}
         style={{
-          height: 48,
           borderRadius: 12,
-          backgroundColor: '#000000',
           justifyContent: 'center',
           alignItems: 'center',
         }}
       >
-        <Text color="white" fontWeight="600" fontSize="$3">
+        <Text color="$background" fontWeight="600" fontSize="$3">
           {buttonText}
         </Text>
-      </TouchableOpacity>
+      </YStack>
     </>
   );
 }

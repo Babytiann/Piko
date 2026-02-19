@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { TouchableOpacity } from 'react-native';
 import { YStack, Text } from 'tamagui';
 
 import { PageErrorType } from './utils';
@@ -54,23 +53,23 @@ export default function PageStatusView({
       ) : null}
 
       {onRetry ? (
-        <TouchableOpacity
+        <YStack
+          mt="$5"
+          height={44}
+          px="$6"
+          bg="$color"
+          pressStyle={{ opacity: 0.8 }}
           onPress={onRetry}
-          activeOpacity={0.8}
           style={{
-            marginTop: 24,
-            height: 44,
-            paddingHorizontal: 32,
             borderRadius: 22,
-            backgroundColor: '#000000',
             justifyContent: 'center',
             alignItems: 'center',
           }}
         >
-          <Text color="white" fontWeight="600" fontSize="$3">
+          <Text color="$background" fontWeight="600" fontSize="$3">
             重试
           </Text>
-        </TouchableOpacity>
+        </YStack>
       ) : null}
     </YStack>
   );

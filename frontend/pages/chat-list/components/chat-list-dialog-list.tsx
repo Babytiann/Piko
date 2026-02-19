@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
-import { Text } from 'tamagui';
+import { FlatList, RefreshControl, StyleSheet } from 'react-native';
+import { Text, View, YStack } from 'tamagui';
 
 import type { DialogItem as DialogItemData } from '@/common/typings/chat';
 
@@ -8,7 +8,13 @@ import ChatListDialogItem from './chat-list-dialog-item';
 
 const SEPARATOR_LEFT_MARGIN = 78;
 
-const ItemSeparator = (): ReactNode => <View style={styles.separator} />;
+const ItemSeparator = (): ReactNode => (
+  <View
+    height={StyleSheet.hairlineWidth}
+    bg="$gray5"
+    style={{ marginLeft: SEPARATOR_LEFT_MARGIN }}
+  />
+);
 
 interface ChatListDialogListProps {
   dialogs: DialogItemData[];
@@ -38,26 +44,15 @@ export default function ChatListDialogList({
       }
       contentContainerStyle={{ paddingBottom: contentPaddingBottom }}
       ListEmptyComponent={
-        <View style={styles.empty}>
+        <YStack
+          py="$8"
+          style={{ justifyContent: 'center', alignItems: 'center' }}
+        >
           <Text color="$gray11" fontSize="$3">
             暂无对话
           </Text>
-        </View>
+        </YStack>
       }
     />
   );
 }
-
-const styles = StyleSheet.create({
-  separator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#E5E5EA',
-    marginLeft: SEPARATOR_LEFT_MARGIN,
-  },
-  empty: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-});

@@ -6,7 +6,6 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
-  View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
@@ -176,18 +175,15 @@ export default function ChatScreen(): ReactNode {
     >
       <YStack flex={1} bg="$background">
         {messages.length === 0 ? (
-          <View
-            style={{
-              flex: 1,
-              justifyContent: 'center',
-              alignItems: 'center',
-              paddingVertical: 40,
-            }}
+          <YStack
+            flex={1}
+            py="$8"
+            style={{ justifyContent: 'center', alignItems: 'center' }}
           >
             <Text color="$gray11" fontSize="$3">
               暂无消息
             </Text>
-          </View>
+          </YStack>
         ) : (
           <FlatList
             ref={flatListRef}
@@ -210,9 +206,9 @@ export default function ChatScreen(): ReactNode {
             onEndReachedThreshold={0.3}
             ListFooterComponent={
               loadingMore ? (
-                <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+                <YStack py="$3" style={{ alignItems: 'center' }}>
                   <ActivityIndicator size="small" />
-                </View>
+                </YStack>
               ) : null
             }
           />

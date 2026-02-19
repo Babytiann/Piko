@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { TouchableOpacity } from 'react-native';
 import { YStack, Text } from 'tamagui';
 
 import type { UnboundState } from '@/common/typings/chat';
@@ -27,23 +26,23 @@ export default function ChatListUnboundPrompt({
       >
         {data.description}
       </Text>
-      <TouchableOpacity
+      <YStack
+        mt="$4"
+        height={44}
+        px="$5"
+        bg="$color"
+        pressStyle={{ opacity: 0.8 }}
         onPress={onBind}
-        activeOpacity={0.8}
         style={{
-          marginTop: 20,
-          height: 44,
-          paddingHorizontal: 24,
           borderRadius: 12,
-          backgroundColor: '#000000',
           justifyContent: 'center',
           alignItems: 'center',
         }}
       >
-        <Text color="white" fontWeight="600" fontSize="$3">
+        <Text color="$background" fontWeight="600" fontSize="$3">
           {data.bindButtonText}
         </Text>
-      </TouchableOpacity>
+      </YStack>
     </YStack>
   );
 }

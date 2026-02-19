@@ -1,11 +1,6 @@
 import type { ReactNode } from 'react';
 import { useState } from 'react';
-import {
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  StyleSheet,
-} from 'react-native';
+import { TextInput, ActivityIndicator, StyleSheet } from 'react-native';
 import { XStack, YStack, Text, View } from 'tamagui';
 
 import type { MessageItem } from '@/common/typings/chat';
@@ -77,11 +72,15 @@ export default function ChatDetailMessageInput({
               {replyTo.text || (replyTo.hasMedia ? '[媒体]' : '')}
             </Text>
           </YStack>
-          <TouchableOpacity onPress={onCancelReply} hitSlop={8}>
-            <Text fontSize={18} color="$gray10">
-              ✕
-            </Text>
-          </TouchableOpacity>
+          <Text
+            fontSize={18}
+            color="$gray10"
+            pressStyle={{ opacity: 0.6 }}
+            onPress={onCancelReply}
+            hitSlop={8}
+          >
+            ✕
+          </Text>
         </XStack>
       ) : null}
 
@@ -94,15 +93,19 @@ export default function ChatDetailMessageInput({
           multiline
           returnKeyType="default"
         />
-        <TouchableOpacity
-          onPress={() => void handleSend()}
-          disabled={sending || !trimmed}
-          style={[
-            styles.sendButton,
-            {
-              backgroundColor: trimmed ? '#007AFF' : 'rgba(128,128,128,0.2)',
-            },
-          ]}
+        <View
+          width={36}
+          height={36}
+          bg={trimmed ? '$blue9' : '$gray4'}
+          opacity={trimmed ? 1 : 0.5}
+          pressStyle={trimmed ? { scale: 0.92 } : undefined}
+          onPress={!sending && trimmed ? () => void handleSend() : undefined}
+          animation="quick"
+          style={{
+            borderRadius: 18,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
         >
           {sending ? (
             <ActivityIndicator color="white" size="small" />
@@ -115,7 +118,7 @@ export default function ChatDetailMessageInput({
               ↑
             </Text>
           )}
-        </TouchableOpacity>
+        </View>
       </XStack>
     </View>
   );
@@ -131,12 +134,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     fontSize: 15,
-  },
-  sendButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });

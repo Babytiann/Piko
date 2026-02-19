@@ -1,18 +1,11 @@
 import type { ReactNode } from 'react';
-import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import { ActivityIndicator } from 'react-native';
+import { YStack } from 'tamagui';
 
 export default function PageLoading(): ReactNode {
   return (
-    <View style={styles.container}>
+    <YStack flex={1} style={{ justifyContent: 'center', alignItems: 'center' }}>
       <ActivityIndicator size="large" />
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

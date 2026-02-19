@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ActivityIndicator, TouchableOpacity, StyleSheet } from 'react-native';
+import { ActivityIndicator } from 'react-native';
 import { YStack, Text, Input } from 'tamagui';
 
 interface TgLoginCodeStepProps {
@@ -42,42 +42,36 @@ export default function TgLoginCodeStep({
         onChangeText={onPhoneCodeChange}
         keyboardType="number-pad"
       />
-      <TouchableOpacity
-        style={[styles.button, loading && styles.buttonDisabled]}
-        onPress={onSignIn}
-        disabled={loading}
-        activeOpacity={0.8}
+      <YStack
+        height={48}
+        bg="$gray12"
+        opacity={loading ? 0.6 : 1}
+        pressStyle={loading ? undefined : { opacity: 0.8 }}
+        onPress={loading ? undefined : onSignIn}
+        style={{
+          borderRadius: 12,
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
       >
         {loading ? (
           <ActivityIndicator color="white" />
         ) : (
-          <Text color="white" fontWeight="600" fontSize="$4">
+          <Text color="$gray1" fontWeight="600" fontSize="$4">
             {verifyButtonText}
           </Text>
         )}
-      </TouchableOpacity>
-      <TouchableOpacity onPress={onBack} style={styles.backLink}>
+      </YStack>
+      <YStack
+        py="$2"
+        pressStyle={{ opacity: 0.6 }}
+        onPress={onBack}
+        style={{ alignItems: 'center' }}
+      >
         <Text color="$gray11" fontSize="$2">
           {backLinkText}
         </Text>
-      </TouchableOpacity>
+      </YStack>
     </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    height: 48,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#333',
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  backLink: {
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-});
