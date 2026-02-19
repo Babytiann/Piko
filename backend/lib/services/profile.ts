@@ -1,5 +1,5 @@
 import type { ProfilePageData } from '@/types/profile';
-import { getUserInfo, hasProfilePhoto } from './telegram';
+import { getUserInfo, getProfilePhotoBase64 } from './telegram';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -52,7 +52,9 @@ export async function getProfilePageData(
   if (!session) return buildUnboundPageData();
 
   const userInfo = await getUserInfo(session);
-  const hasPhoto = await hasProfilePhoto(session);
+  const img_url = userInfo.hasPhoto
+    ? await getProfilePhotoBase64(session)
+    : undefined;
 
   const displayName =
     [userInfo.firstName, userInfo.lastName].filter(Boolean).join(' ') ||
@@ -67,9 +69,7 @@ export async function getProfilePageData(
         displayName,
         username: userInfo.username ? `@${userInfo.username}` : '',
         phone: userInfo.phone,
-        avatarUrl: hasPhoto
-          ? `/piko/telegram/profile-photo/v1?session=${encodeURIComponent(session)}`
-          : undefined,
+        img_url,
         avatarText: (userInfo.firstName || userInfo.username || '?')
           .charAt(0)
           .toUpperCase(),

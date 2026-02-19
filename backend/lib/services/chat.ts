@@ -3,8 +3,13 @@ import type {
   ChatDetailPageData,
   MessageItem,
 } from '@/types/chat';
-import type { RawMessage } from './telegram';
-import { getDialogList, getMessageList } from './telegram';
+import type { RawMessage, PeerRef } from './telegram';
+import {
+  getDialogList,
+  getMessageList,
+  getPeerPhotoFromCache,
+  warmPeerPhotoCache,
+} from './telegram';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -48,22 +53,6 @@ function formatTime(timestamp: number | null): string {
 function formatMessageTime(timestamp: number): string {
   const date = new Date(timestamp * 1000);
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
-/** Build the avatar proxy URL for a peer. */
-function buildAvatarUrl(
-  session: string,
-  peerId: string,
-  peerType: string,
-  accessHash: string,
-): string {
-  const params = new URLSearchParams({
-    session,
-    peerId,
-    peerType,
-    accessHash,
-  });
-  return `/piko/telegram/avatar/v1?${params.toString()}`;
 }
 
 /** Build the media proxy URL for a message with downloadable media. */
@@ -119,6 +108,15 @@ export async function getChatListPageData(
 
   const rawDialogs = await getDialogList(session, 50);
 
+  const peers: PeerRef[] = rawDialogs.map((d) => ({
+    peerId: d.id,
+    peerType: d.type,
+    accessHash: d.accessHash,
+  }));
+
+  // Kick off background download for uncached photos (fire-and-forget)
+  warmPeerPhotoCache(session, peers);
+
   return {
     header: { title: '消息' },
     dialogs: rawDialogs.map((d) => ({
@@ -128,7 +126,7 @@ export async function getChatListPageData(
       accessHash: d.accessHash,
       avatarText: d.title.charAt(0).toUpperCase(),
       avatarColor: getAvatarColor(d.id),
-      avatarUrl: buildAvatarUrl(session, d.id, d.type, d.accessHash),
+      img_url: getPeerPhotoFromCache(session, d.id),
       lastMessage: d.lastMessage || '...',
       lastMessageTime: formatTime(d.lastMessageDate),
       unreadCount: d.unreadCount,
@@ -164,14 +162,31 @@ export async function getChatDetailPageData(
     messageById.set(m.id, m);
   }
 
+  // Collect unique non-self senders for background cache warming.
+  const senderPeers: PeerRef[] = [];
+  const seenSenders = new Set<string>();
+  for (const m of rawMessages) {
+    if (
+      !(m.isMe || m.isOutgoing) &&
+      m.senderId &&
+      !seenSenders.has(m.senderId)
+    ) {
+      seenSenders.add(m.senderId);
+      senderPeers.push({
+        peerId: m.senderId,
+        peerType: m.senderType,
+        accessHash: m.senderAccessHash,
+      });
+    }
+  }
+  warmPeerPhotoCache(session, senderPeers);
+
   const messages: MessageItem[] = rawMessages.map((m) => {
-    // Media URL — only for types we can meaningfully render
     const mediaUrl =
       m.hasMedia && m.mediaType && IMAGE_MEDIA_TYPES.has(m.mediaType)
         ? buildMediaUrl(session, chatId, chatType, accessHash, m.id)
         : null;
 
-    // Reply preview — look up in the current batch
     let replyToText: string | null = null;
     let replyToSenderName: string | null = null;
     if (m.replyToMsgId != null) {
@@ -185,10 +200,9 @@ export async function getChatDetailPageData(
       }
     }
 
-    // Sender avatar — skip for outgoing messages (we don't need our own avatar)
-    const senderAvatarUrl =
+    const img_url =
       !(m.isMe || m.isOutgoing) && m.senderId
-        ? buildAvatarUrl(session, m.senderId, m.senderType, m.senderAccessHash)
+        ? getPeerPhotoFromCache(session, m.senderId)
         : undefined;
 
     return {
@@ -196,7 +210,7 @@ export async function getChatDetailPageData(
       text: m.text,
       time: formatMessageTime(m.date),
       senderName: m.senderName,
-      senderAvatarUrl,
+      img_url,
       isMe: m.isMe || m.isOutgoing,
       hasMedia: m.hasMedia,
       mediaType: m.mediaType,

@@ -18,7 +18,7 @@ export default function ChatListDialogItem({
     <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
       <View style={styles.row}>
         <Avatar
-          url={dialog.avatarUrl}
+          url={dialog.img_url}
           text={dialog.avatarText}
           color={dialog.avatarColor}
         />

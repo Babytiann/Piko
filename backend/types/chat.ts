@@ -7,8 +7,8 @@ export interface DialogItem {
   accessHash: string;
   avatarText: string;
   avatarColor: string;
-  /** URL to fetch the peer's profile photo via the avatar proxy. */
-  avatarUrl?: string;
+  /** Base64 data URI of the peer's profile photo. */
+  img_url?: string;
   lastMessage: string;
   lastMessageTime: string;
   unreadCount: number;
@@ -32,8 +32,8 @@ export interface MessageItem {
   text: string;
   time: string;
   senderName: string;
-  /** URL to fetch the sender's profile photo via the avatar proxy. */
-  senderAvatarUrl?: string;
+  /** Base64 data URI of the sender's profile photo. */
+  img_url?: string;
   isMe: boolean;
   hasMedia: boolean;
   mediaType: string | null;

@@ -84,7 +84,7 @@ export default function ChatDetailMessageBubble({
     return (
       <XStack px="$3" py="$1" gap="$2" style={{ alignItems: 'flex-end' }}>
         <Avatar
-          url={message.senderAvatarUrl}
+          url={message.img_url}
           text={message.senderName?.charAt(0)?.toUpperCase() ?? '?'}
           color="#4ECDC4"
           size={32}

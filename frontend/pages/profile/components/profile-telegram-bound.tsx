@@ -20,7 +20,7 @@ export default function ProfileTelegramBound({
     <>
       <XStack gap="$3" style={{ alignItems: 'center' }}>
         <Avatar
-          url={user.avatarUrl}
+          url={user.img_url}
           text={user.avatarText}
           color={user.avatarColor}
         />
