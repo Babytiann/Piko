@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Linking } from 'react-native';
+import * as Linking from 'expo-linking';
 import { Text, XStack, YStack } from 'tamagui';
 
 interface Props {
@@ -11,7 +11,7 @@ export default function AmapNavigationCard({ url, label }: Props): ReactNode {
   const displayLabel = label.replace(/🧭\s*/, '');
 
   const handlePress = async (): Promise<void> => {
-    const nativeUrl = url.replace('https://uri.amap.com', 'amapuri://');
+    const nativeUrl = url.replace('https://uri.amap.com/', 'amapuri://');
     const canOpen = await Linking.canOpenURL(nativeUrl);
     void Linking.openURL(canOpen ? nativeUrl : url);
   };
