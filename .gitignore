@@ -75,3 +75,6 @@ reports/
 # Lockfiles：monorepo 根目录保留 pnpm-lock.yaml 并提交，子包 lock 可忽略
 # 若希望只保留根 lock，可取消下一行注释（会忽略所有 lock）
 # *.lock
+
+#AI Skills
+.agents/
