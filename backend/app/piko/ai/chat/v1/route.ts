@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { streamChatWithTools } from '@/lib/services/ai';
+import { createLocationRequest } from '@/lib/services/location-bridge';
 import type { AiChatRequest, SseEvent } from '@/types/ai';
 
 /**
@@ -7,13 +8,15 @@ import type { AiChatRequest, SseEvent } from '@/types/ai';
  *
  * [模块 1] 基础：接收对话历史，返回 SSE 流式响应。
  * [模块 2] 升级：支持 Tool Calling，新增 tool_start / tool_end 事件。
+ * [模块 3] 升级：支持前端协作式工具（get_user_location），新增 request_location 事件。
  *
  * SSE 事件类型:
- *   - chunk:      文本片段（打字效果）
- *   - tool_start: Agent 开始调用工具（前端显示"正在查询..."）
- *   - tool_end:   工具调用结束
- *   - done:       整个响应完成
- *   - error:      出错
+ *   - chunk:            文本片段（打字效果）
+ *   - tool_start:       Agent 开始调用工具（前端显示"正在查询..."）
+ *   - tool_end:         工具调用结束
+ *   - request_location: 请求前端获取用户位置
+ *   - done:             整个响应完成
+ *   - error:            出错
  */
 export async function POST(request: NextRequest) {
   const t0 = Date.now();
@@ -76,6 +79,13 @@ export async function POST(request: NextRequest) {
           },
           onToolEnd(tool, success) {
             enqueue({ type: 'tool_end', tool, success });
+          },
+          async onRequestLocation() {
+            // 创建位置请求，通过 SSE 通知前端
+            const { requestId, promise } = createLocationRequest();
+            enqueue({ type: 'request_location', requestId });
+            // 等待前端通过 POST /piko/ai/location/v1 回传位置
+            return promise;
           },
         });
         console.log(

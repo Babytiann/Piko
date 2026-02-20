@@ -45,12 +45,20 @@ export interface SseToolEndEvent {
   success: boolean;
 }
 
+/** 请求前端获取用户地理位置 */
+export interface SseRequestLocationEvent {
+  type: 'request_location';
+  /** 用于关联位置回传的唯一请求 ID */
+  requestId: string;
+}
+
 export type SseEvent =
   | SseChunkEvent
   | SseDoneEvent
   | SseErrorEvent
   | SseToolStartEvent
-  | SseToolEndEvent;
+  | SseToolEndEvent
+  | SseRequestLocationEvent;
 
 /** Copywriting / text content for the AI chat page. */
 export interface AiCopywriting {

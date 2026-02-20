@@ -20,6 +20,7 @@ interface Props {
   emptySubtitle: string;
   tooltipMessageId?: string;
   onMessageLongPress?: (message: AiMessage, layout: BubbleLayout) => void;
+  onRequestLocationPermission?: (messageId: string) => void;
 }
 
 export default function AiChatMessageList({
@@ -29,6 +30,7 @@ export default function AiChatMessageList({
   emptySubtitle,
   tooltipMessageId,
   onMessageLongPress,
+  onRequestLocationPermission,
 }: Props): ReactElement {
   const listRef = useRef<FlatList<AiMessage>>(null);
   const isNearBottomRef = useRef(true);
@@ -70,9 +72,10 @@ export default function AiChatMessageList({
         message={item}
         isTooltipTarget={item.id === tooltipMessageId}
         onLongPress={onMessageLongPress}
+        onRequestLocationPermission={onRequestLocationPermission}
       />
     ),
-    [tooltipMessageId, onMessageLongPress],
+    [tooltipMessageId, onMessageLongPress, onRequestLocationPermission],
   );
 
   if (messages.length === 0) {

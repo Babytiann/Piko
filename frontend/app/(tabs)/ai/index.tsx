@@ -51,7 +51,13 @@ export default function AiScreen(): ReactNode {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const theme = useTheme();
-  const { messages, isStreaming, sendMessage, clearMessages } = useAiChat();
+  const {
+    messages,
+    isStreaming,
+    sendMessage,
+    clearMessages,
+    requestLocationPermission,
+  } = useAiChat();
   const { copy } = useAiCopywriting();
   const bottomInset = useKeyboardBottomInset();
 
@@ -122,6 +128,7 @@ export default function AiScreen(): ReactNode {
           emptySubtitle={copy.emptySubtitle}
           tooltipMessageId={tooltipTarget?.message.id}
           onMessageLongPress={handleMessageLongPress}
+          onRequestLocationPermission={requestLocationPermission}
         />
         <AiChatInput
           onSend={sendMessage}

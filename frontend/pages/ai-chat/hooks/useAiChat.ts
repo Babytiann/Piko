@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 
-import { streamAiChat } from '@/services/ai';
+import { streamAiChat, postLocationResponse } from '@/services/ai';
 import type { AiMessage, ToolCallInfo } from '../types';
+import { useLocation } from './useLocation';
 
 const FLUSH_INTERVAL_MS = 48;
 
@@ -22,6 +23,7 @@ interface UseAiChatReturn {
   isStreaming: boolean;
   sendMessage: (text: string) => void;
   clearMessages: () => void;
+  requestLocationPermission: (messageId: string) => void;
 }
 
 export function useAiChat(): UseAiChatReturn {
@@ -32,6 +34,9 @@ export function useAiChat(): UseAiChatReturn {
   const chunkBufferRef = useRef('');
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retryRef = useRef<RetryPayload | null>(null);
+
+  const { getLocation, wasDenied, resetDenied, requestPermissionAgain } =
+    useLocation();
 
   const clearFlushTimer = (): void => {
     if (flushTimerRef.current) {
@@ -79,12 +84,52 @@ export function useAiChat(): UseAiChatReturn {
     );
   };
 
+  const handleRequestLocation = async (
+    aiMsgId: string,
+    requestId: string,
+  ): Promise<void> => {
+    if (wasDenied()) {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === aiMsgId
+            ? {
+                ...m,
+                locationDeniedHint:
+                  '📍 未获取到地理位置信息，推荐的地图应用可能不准确',
+                locationRequestId: requestId,
+              }
+            : m,
+        ),
+      );
+      postLocationResponse(requestId, null);
+      return;
+    }
+
+    const location = await getLocation();
+    if (!location) {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === aiMsgId
+            ? {
+                ...m,
+                locationDeniedHint:
+                  '📍 未获取到地理位置信息，推荐的地图应用可能不准确',
+                locationRequestId: requestId,
+              }
+            : m,
+        ),
+      );
+    }
+    postLocationResponse(requestId, location);
+  };
+
   const startStream = (
     history: { role: 'user' | 'model'; content: string }[],
     aiMsgId: string,
   ): void => {
     setIsStreaming(true);
     chunkBufferRef.current = '';
+    let hasReceivedChunk = false;
 
     const flushChunks = (): void => {
       const buffered = chunkBufferRef.current;
@@ -102,6 +147,20 @@ export function useAiChat(): UseAiChatReturn {
     cleanupRef.current = streamAiChat({
       messages: history,
       onChunk(chunk) {
+        if (!hasReceivedChunk) {
+          hasReceivedChunk = true;
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === aiMsgId
+                ? {
+                    ...m,
+                    locationDeniedHint: undefined,
+                    locationRequestId: undefined,
+                  }
+                : m,
+            ),
+          );
+        }
         chunkBufferRef.current += chunk;
         if (!flushTimerRef.current) {
           flushTimerRef.current = setTimeout(() => {
@@ -115,6 +174,9 @@ export function useAiChat(): UseAiChatReturn {
       },
       onToolEnd(tool, success) {
         handleToolEnd(aiMsgId, tool, success);
+      },
+      onRequestLocation(requestId) {
+        void handleRequestLocation(aiMsgId, requestId);
       },
       onDone() {
         clearFlushTimer();
@@ -219,5 +281,32 @@ export function useAiChat(): UseAiChatReturn {
     setIsStreaming(false);
   };
 
-  return { messages, isStreaming, sendMessage, clearMessages };
+  const requestLocationPermission = (messageId: string): void => {
+    const message = messages.find((m) => m.id === messageId);
+    const requestId = message?.locationRequestId;
+    if (!requestId) return;
+
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId ? { ...m, locationDeniedHint: undefined } : m,
+      ),
+    );
+
+    void (async (): Promise<void> => {
+      const location = await requestPermissionAgain();
+
+      if (location) {
+        resetDenied();
+        postLocationResponse(requestId, location);
+      }
+    })();
+  };
+
+  return {
+    messages,
+    isStreaming,
+    sendMessage,
+    clearMessages,
+    requestLocationPermission,
+  };
 }

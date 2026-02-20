@@ -11,6 +11,11 @@
  *   每一步都用 sendMessageStream，通过 peek 第一个 chunk 判断响应类型：
  *   - 包含 functionCall → 收集完整响应，执行工具，继续循环
  *   - 包含 text → 把真实 stream 直接返回（peeked chunk 拼回去）
+ *
+ * 前端协作式工具：
+ *   get_user_location 需要前端配合获取位置，不能在后端直接执行。
+ *   检测到此工具调用时，通过 callbacks.onRequestLocation() 通知前端，
+ *   等待前端回传位置数据后再将结果喂回 AI。
  */
 
 import type {
@@ -30,9 +35,13 @@ import { getToolStatusMessage } from './types';
 // 注册所有工具 —— import 时会自动执行 register()
 import '../tools/get-weather';
 import '../tools/plan-route';
+import '../tools/get-user-location';
 
 /** ReAct 循环最大步数 —— 防止无限循环 */
 const MAX_REACT_STEPS = 5;
+
+/** 需要前端协作的工具名称 */
+const FRONTEND_COLLABORATIVE_TOOLS = new Set(['get_user_location']);
 
 export async function streamChatWithTools(
   messages: ChatMessage[],
@@ -126,8 +135,42 @@ export async function streamChatWithTools(
       const functionResponseParts: Part[] = await Promise.all(
         functionCalls.map(async (fc) => {
           const { name, args } = fc.functionCall;
-
           const tTool = Date.now();
+
+          // ── 前端协作式工具：特殊处理 ──────────────────────
+          if (FRONTEND_COLLABORATIVE_TOOLS.has(name)) {
+            console.log(`[AI]   📍 前端协作工具: ${name}，等待前端回传...`);
+            const location = await callbacks.onRequestLocation();
+            const elapsed = Date.now() - tTool;
+
+            if (location) {
+              console.log(
+                `[AI]   ✓ ${name} 成功 (${elapsed}ms) → ${location.latitude},${location.longitude}`,
+              );
+              callbacks.onToolEnd(name, true);
+              return {
+                functionResponse: {
+                  name,
+                  response: { result: location },
+                },
+              };
+            } else {
+              console.log(
+                `[AI]   ✗ ${name} 失败 (${elapsed}ms) → 用户拒绝提供位置`,
+              );
+              callbacks.onToolEnd(name, false);
+              return {
+                functionResponse: {
+                  name,
+                  response: {
+                    error: '用户拒绝提供地理位置权限，无法获取位置信息',
+                  },
+                },
+              };
+            }
+          }
+
+          // ── 普通工具：直接执行 ────────────────────────────
           const result = await toolRegistry.execute(name, args);
           const elapsed = Date.now() - tTool;
 

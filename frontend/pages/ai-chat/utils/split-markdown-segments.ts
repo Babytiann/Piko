@@ -5,6 +5,8 @@ const SEPARATOR_RE = /^\|(\s*:?-+:?\s*\|)+\s*$/;
 const PAREN_CELL_RE = /^\(.*\)$/;
 const AMAP_NAV_RE =
   /^\[([^\]]+)\]\((https:\/\/uri\.amap\.com\/navigation\?[^)]+)\)$/;
+const GOOGLE_MAPS_NAV_RE =
+  /^\[([^\]]+)\]\((https:\/\/www\.google\.com\/maps\/dir\/\?[^)]+)\)$/;
 
 function parseRow(line: string): string[] {
   return line
@@ -52,12 +54,21 @@ export function splitMarkdownSegments(text: string): MarkdownSegment[] {
     const next = i + 1 < lines.length ? lines[i + 1].trim() : '';
 
     const amapMatch = AMAP_NAV_RE.exec(cur);
+    const googleMatch = !amapMatch ? GOOGLE_MAPS_NAV_RE.exec(cur) : null;
     if (amapMatch) {
       flushMd();
       segments.push({
         type: 'amap-navigation',
         label: amapMatch[1],
         url: amapMatch[2],
+      });
+      i++;
+    } else if (googleMatch) {
+      flushMd();
+      segments.push({
+        type: 'google-maps-navigation',
+        label: googleMatch[1],
+        url: googleMatch[2],
       });
       i++;
     } else if (TABLE_LINE_RE.test(cur) && SEPARATOR_RE.test(next)) {

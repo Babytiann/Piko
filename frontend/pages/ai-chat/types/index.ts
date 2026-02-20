@@ -27,6 +27,10 @@ export interface AiMessage {
   toolCalls?: ToolCallInfo[];
   /** 工具执行期间持续展示的状态文案，非空时一直显示，直到第一个 chunk 到来才清除 */
   statusText?: string;
+  /** 位置权限被拒绝时的提示文案 */
+  locationDeniedHint?: string;
+  /** 位置请求 ID，用于授权后继续发送位置给后端 */
+  locationRequestId?: string;
 }
 
 /** 长按消息时通过 measureInWindow 测量的屏幕坐标 */
@@ -74,17 +78,25 @@ export interface SseToolEndEvent {
   success: boolean;
 }
 
+/** 请求前端获取用户地理位置 */
+export interface SseRequestLocationEvent {
+  type: 'request_location';
+  requestId: string;
+}
+
 export type SseEvent =
   | SseChunkEvent
   | SseDoneEvent
   | SseErrorEvent
   | SseToolStartEvent
-  | SseToolEndEvent;
+  | SseToolEndEvent
+  | SseRequestLocationEvent;
 
 export type MarkdownSegment =
   | { type: 'markdown'; content: string }
   | { type: 'table'; headers: string[]; rows: string[][] }
-  | { type: 'amap-navigation'; url: string; label: string };
+  | { type: 'amap-navigation'; url: string; label: string }
+  | { type: 'google-maps-navigation'; url: string; label: string };
 
 /** Copywriting / text content for the AI chat page (from backend). */
 export interface AiCopywriting {

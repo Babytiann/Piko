@@ -3,6 +3,7 @@ import { post } from '@/services';
 import type { SseEvent, AiCopywriting } from '@/pages/ai-chat/types';
 
 const SSE_URL = `${API_HOST}/piko/ai/chat/v1`;
+const LOCATION_URL = `${API_HOST}/piko/ai/location/v1`;
 
 /**
  * Fetch all user-facing copywriting for the AI chat page.
@@ -30,6 +31,8 @@ interface StreamOptions {
   ) => void;
   /** [模块 2] 工具调用结束 */
   onToolEnd?: (tool: string, success: boolean) => void;
+  /** 后端请求获取用户位置，前端获取后回传 */
+  onRequestLocation?: (requestId: string) => void;
 }
 
 export function streamAiChat({
@@ -39,6 +42,7 @@ export function streamAiChat({
   onError,
   onToolStart,
   onToolEnd,
+  onRequestLocation,
 }: StreamOptions): () => void {
   const xhr = new XMLHttpRequest();
   let lastIndex = 0;
@@ -73,6 +77,9 @@ export function streamAiChat({
           break;
         case 'tool_end':
           onToolEnd?.(parsed.tool, parsed.success);
+          break;
+        case 'request_location':
+          onRequestLocation?.(parsed.requestId);
           break;
         case 'done':
           finished = true;
@@ -123,4 +130,15 @@ export function streamAiChat({
     finished = true;
     xhr.abort();
   };
+}
+
+/** 回传用户位置数据给后端 */
+export function postLocationResponse(
+  requestId: string,
+  location: { latitude: number; longitude: number } | null,
+): void {
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', LOCATION_URL);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.send(JSON.stringify({ requestId, location }));
 }

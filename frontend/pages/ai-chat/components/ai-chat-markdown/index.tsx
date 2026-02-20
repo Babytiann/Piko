@@ -5,8 +5,8 @@ import { useTheme, useThemeName } from 'tamagui';
 
 import { MONO_FONT } from '../../consts';
 import { sanitizeStreamingMarkdown, splitMarkdownSegments } from '../../utils';
-import AmapNavigationCard from './amap-navigation-card';
 import MarkdownTable from './markdown-table';
+import NavigationCard from './navigation-card';
 
 interface Props {
   content: string;
@@ -113,7 +113,19 @@ export default function AiChatMarkdown({
         seg.type === 'table' ? (
           <MarkdownTable key={idx} headers={seg.headers} rows={seg.rows} />
         ) : seg.type === 'amap-navigation' ? (
-          <AmapNavigationCard key={idx} url={seg.url} label={seg.label} />
+          <NavigationCard
+            key={idx}
+            variant="amap"
+            url={seg.url}
+            label={seg.label}
+          />
+        ) : seg.type === 'google-maps-navigation' ? (
+          <NavigationCard
+            key={idx}
+            variant="google-maps"
+            url={seg.url}
+            label={seg.label}
+          />
         ) : (
           <Markdown key={idx} style={markdownStyles}>
             {seg.content}

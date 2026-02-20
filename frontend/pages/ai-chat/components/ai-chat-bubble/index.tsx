@@ -14,12 +14,14 @@ interface Props {
   message: AiMessage;
   isTooltipTarget?: boolean;
   onLongPress?: (message: AiMessage, layout: BubbleLayout) => void;
+  onRequestLocationPermission?: (messageId: string) => void;
 }
 
 function AiChatBubble({
   message,
   isTooltipTarget,
   onLongPress,
+  onRequestLocationPermission,
 }: Props): ReactNode {
   const isUser = message.role === 'user';
   const bubbleRef = useRef<RNView>(null);
@@ -55,6 +57,29 @@ function AiChatBubble({
             {message.isStreaming && <WaitingIndicator />}
           </YStack>
         )}
+
+        {message.locationDeniedHint ? (
+          <XStack
+            gap="$2"
+            px="$1"
+            mt="$1"
+            style={{ alignItems: 'center', flexWrap: 'wrap' }}
+          >
+            <Text fontSize={12} color="$yellow10">
+              {message.locationDeniedHint}
+            </Text>
+            {message.locationRequestId && onRequestLocationPermission ? (
+              <Text
+                fontSize={12}
+                color="$blue10"
+                pressStyle={{ opacity: 0.7 }}
+                onPress={() => onRequestLocationPermission(message.id)}
+              >
+                点击授权位置权限
+              </Text>
+            ) : null}
+          </XStack>
+        ) : null}
       </YStack>
     );
   }
@@ -91,7 +116,10 @@ export default React.memo(AiChatBubble, (prev, next) => {
     p.isStreaming === n.isStreaming &&
     p.toolCalls === n.toolCalls &&
     p.statusText === n.statusText &&
+    p.locationDeniedHint === n.locationDeniedHint &&
+    p.locationRequestId === n.locationRequestId &&
     prev.onLongPress === next.onLongPress &&
-    prev.isTooltipTarget === next.isTooltipTarget
+    prev.isTooltipTarget === next.isTooltipTarget &&
+    prev.onRequestLocationPermission === next.onRequestLocationPermission
   );
 });
