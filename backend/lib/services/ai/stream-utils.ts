@@ -1,20 +1,8 @@
-/**
- * 流式输出辅助函数。
- *
- * - prependChunkToStream: 把 peek 过的 chunk 拼回流
- * - createStreamFromText: 纯文本模拟成流式输出（仅用于兜底）
- */
-
 import type {
   EnhancedGenerateContentResponse,
   GenerateContentStreamResult,
 } from '@google/generative-ai';
 
-/**
- * 将已 peek 过的第一个 chunk 和剩余 iterator 重新组装成 GenerateContentStreamResult。
- * 这样路由层完全不用改 —— 拿到的仍是标准 stream 接口，
- * 只是第一个 chunk 已经被我们提前读过了。
- */
 export function prependChunkToStream(
   firstChunk: EnhancedGenerateContentResponse,
   remainingIterator: AsyncIterator<EnhancedGenerateContentResponse>,

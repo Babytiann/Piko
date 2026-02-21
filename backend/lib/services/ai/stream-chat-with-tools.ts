@@ -1,23 +1,3 @@
-/**
- * [模块 2] 带 Tool Calling 的聊天 —— ReAct 循环（真流式输出）。
- *
- * 和 streamChat 的区别：
- * - streamChat: AI 直接回答，一轮就结束
- * - streamChatWithTools: AI 可能要调用工具，多轮交互后才回答
- *
- * 返回的是最终回答的真实流式结果，中间的工具调用通过 callbacks 回传。
- *
- * 流式策略：
- *   每一步都用 sendMessageStream，通过 peek 第一个 chunk 判断响应类型：
- *   - 包含 functionCall → 收集完整响应，执行工具，继续循环
- *   - 包含 text → 把真实 stream 直接返回（peeked chunk 拼回去）
- *
- * 前端协作式工具：
- *   get_user_location 需要前端配合获取位置，不能在后端直接执行。
- *   检测到此工具调用时，通过 callbacks.onRequestLocation() 通知前端，
- *   等待前端回传位置数据后再将结果喂回 AI。
- */
-
 import type {
   Content,
   EnhancedGenerateContentResponse,
@@ -32,15 +12,12 @@ import { prependChunkToStream, createStreamFromText } from './stream-utils';
 import type { ToolCallbacks } from './types';
 import { getToolStatusMessage } from './types';
 
-// 注册所有工具 —— import 时会自动执行 register()
 import '../tools/get-weather';
 import '../tools/plan-route';
 import '../tools/get-user-location';
 
-/** ReAct 循环最大步数 —— 防止无限循环 */
 const MAX_REACT_STEPS = 5;
 
-/** 需要前端协作的工具名称 */
 const FRONTEND_COLLABORATIVE_TOOLS = new Set(['get_user_location']);
 
 export async function streamChatWithTools(
@@ -70,15 +47,6 @@ export async function streamChatWithTools(
   }
 
   const chat = model.startChat({ history });
-
-  // ── ReAct 循环（全流式）─────────────────────────────────────────────
-  //
-  // 每一步都用 sendMessageStream：
-  //   1. peek 第一个 chunk，检查是否有 functionCall
-  //   2. 如果有 tool call → 收集完整响应 → 执行工具 → 继续循环
-  //   3. 如果是纯文本 → 返回真实流（把 peek 过的 chunk 拼回去）
-  //
-  // 这样最终回答能真正边生成边推送，用户在几秒内就能看到文字。
 
   let currentMessage: string | Part[] = lastMessage.content;
 
@@ -201,16 +169,10 @@ export async function streamChatWithTools(
       currentMessage = functionResponseParts;
       console.log(`[AI]   Step ${step + 1} 完成，把工具结果送回 AI...`);
     } else {
-      // ── 纯文本路径：返回真实流 ──────────────────────────────────
-      //
-      // 把 peek 过的第一个 chunk 和剩余的 stream 拼成一个新的
-      // GenerateContentStreamResult，直接返回给路由层。
-      // 路由层的 for-await 会真正逐块收到 Gemini 边生成边推送的文本。
       console.log(
         `[AI]   Step ${step + 1}: 无工具调用 → 返回真实流 (${Date.now() - tStep}ms)`,
       );
-
-      return prependChunkToStream(firstChunk, iterator, streamResult.response);
+      return prependChunkToStream(firstChunk, iterator, new Promise(() => {}));
     }
   }
 

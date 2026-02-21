@@ -24,10 +24,10 @@
         "travel_guide": "用户问旅游攻略/行程安排 → 先调用 get_user_location",
         "location_based": "任何需要判断用户所在区域的场景 → 调用 get_user_location"
       },
-      "outputRule": "获取到位置后，根据用户经纬度判断是否在中国境内（经度 73~135，纬度 3~53）。中国境内用 amap，境外用 google，除非用户特别要求要用哪一个地图。如果用户拒绝提供位置，默认使用 amap（高德地图），并在回复中友好地提示位置信息可能影响推荐的地图应用准确性。"
+      "outputRule": "获取到位置后，根据用户经纬度判断是否在中国境内（经度 73~135，纬度 3~53）。中国境内用 amap(或者叫高德地图），境外用 google，除非用户特别要求要用哪一个地图,除港澳台，这三个地方用Google Map。如果用户拒绝提供位置，那么根据用户让你规划的地点判断，比如让你规划上海、新疆，那就用高德; 如果是东京、大阪、特罗姆瑟这种中国境外的，那就用Google Map，并在回复中友好地提示位置信息可能影响推荐的地图应用准确性。"
     },
     "plan_route": {
-      "instruction": "当用户提到出行路线、怎么去、导航、路线规划等需求时，使用 plan_route 工具。你需要根据自己的知识提供每个地点准确的经纬度坐标，但是你在拼deeplink的时候需要使用地名（longitude, latitude）。stops 数组按行程顺序排列。根据场景选择 mode：市内短途可用 walk，较远距离用 car 或 bus，优先bus（很多城市有地铁所以优先 bus）。如果有途经点，那么默认car。根据 get_user_location 的结果设置 mapProvider：中国境内用 amap，境外用 google。",
+      "instruction": "当用户提到出行路线、怎么去、导航、路线规划、出行攻略等需要用到地图的需求时，使用 plan_route 工具。你需要根据自己的知识提供每个地点准确的经纬度坐标，但是你在拼 deeplink 的时候需要使用地名（longitude, latitude）。stops 数组按行程顺序排列。根据场景选择 mode：市内短途可用 walk，较远距离用 car 或 bus，优先bus（很多城市有地铁所以优先 bus）。如果有途经点，那么默认car。根据 get_user_location 的结果设置 mapProvider：中国境内用 amap，境外用 google。",
       "routing": {
         "navigation": "问「从 A 到 B 怎么走」→ 提取地点，调用 plan_route",
         "trip_planning": "问「帮我规划 XX 的游览路线」→ 规划合理顺序，调用 plan_route",
