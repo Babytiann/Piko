@@ -11,10 +11,12 @@ import {
   View,
 } from 'react-native';
 
-const ACTION_SIZE = 44;
-const ACTION_BG_LIGHT = '#1C1C1E';
-const ACTION_BG_DARK = '#3A3A3C';
-const ACTION_ICON_COLOR = '#FFFFFF';
+import {
+  ACTION_SIZE,
+  ACTION_BG_LIGHT,
+  ACTION_BG_DARK,
+  ACTION_ICON_COLOR,
+} from './consts';
 
 interface Props {
   route: BottomTabBarProps['state']['routes'][number];

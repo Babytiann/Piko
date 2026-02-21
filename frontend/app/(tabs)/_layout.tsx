@@ -37,15 +37,6 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="scan/index"
-        options={{
-          title: '',
-          tabBarIcon: ({ color }) => (
-            <Ionicons size={22} name="camera-outline" color={color} />
-          ),
-        }}
-      />
     </Tabs>
   );
 }

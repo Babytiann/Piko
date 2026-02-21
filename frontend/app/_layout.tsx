@@ -53,6 +53,15 @@ export default function RootLayout() {
                   animation: 'slide_from_right',
                 }}
               />
+              <Stack.Screen
+                name="scan/index"
+                options={{
+                  headerShown: false,
+                  animation: 'slide_from_right',
+                  gestureEnabled: true,
+                  gestureDirection: 'horizontal',
+                }}
+              />
             </Stack>
           </AuthProvider>
         </PortalProvider>

@@ -3,9 +3,8 @@ import { AppState, type AppStateStatus } from 'react-native';
 
 import { streamAiChat, postLocationResponse } from '@/services/ai';
 import type { AiMessage, ToolCallInfo } from '../types';
+import { FLUSH_INTERVAL_MS } from '../consts';
 import { useLocation } from './useLocation';
-
-const FLUSH_INTERVAL_MS = 48;
 
 let nextId = 0;
 function genId(): string {

@@ -19,3 +19,5 @@ export const MONO_FONT = Platform.select({
 export const TABLE_FONT_SIZE = 14;
 export const CELL_PAD_H = 10;
 export const MIN_COL_W = 60;
+
+export const FLUSH_INTERVAL_MS = 48;

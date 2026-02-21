@@ -1,6 +1,7 @@
 import { API_HOST } from '@/common/config';
 import { post } from '@/services';
 import type { SseEvent, AiCopywriting } from '@/pages/ai-chat/types';
+import type { RecognizeResult } from '@/pages/scan/types';
 
 const SSE_URL = `${API_HOST}/piko/ai/chat/v1`;
 const LOCATION_URL = `${API_HOST}/piko/ai/location/v1`;
@@ -141,4 +142,15 @@ export function postLocationResponse(
   xhr.open('POST', LOCATION_URL);
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.send(JSON.stringify({ requestId, location }));
+}
+
+/** 调用 Gemini Vision 识别消费票据/截图 */
+export async function recognizeExpense(
+  imageBase64: string,
+  mimeType: string,
+): Promise<RecognizeResult> {
+  return post<RecognizeResult>('ai/recognize/v1', {
+    image: imageBase64,
+    mimeType,
+  });
 }

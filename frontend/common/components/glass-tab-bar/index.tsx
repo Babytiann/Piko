@@ -11,6 +11,8 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
 
 import { Colors } from '@/common/consts/theme';
@@ -21,13 +23,7 @@ import {
 } from '@/common/consts';
 import GlassTabButton from './glass-tab-button';
 import GlassOverlay from './glass-overlay';
-
-/** Route name of the action button (scan/camera tab). */
-const ACTION_ROUTE = 'scan/index';
-
-function isActionTab(routeName: string): boolean {
-  return routeName === ACTION_ROUTE;
-}
+import { ACTION_ROUTE, SPRING_DURATION } from './consts';
 
 export default function GlassTabBar({
   state,
@@ -39,25 +35,25 @@ export default function GlassTabBar({
   const colors = Colors[colorScheme ?? 'light'];
   const isDark = colorScheme === 'dark';
   const hasGlass = isLiquidGlassAvailable();
+  const router = useRouter();
 
   const [barWidth, setBarWidth] = useState(0);
   const translateX = useRef(new Animated.Value(0)).current;
   const indicatorScale = useRef(new Animated.Value(1)).current;
   const prevBarWidth = useRef(0);
 
-  // Track the last selected normal (non-action) tab for indicator position.
-  const lastNormalIndex = useRef(0);
-  const currentIsAction = isActionTab(state.routes[state.index]?.name ?? '');
-  if (!currentIsAction) {
-    lastNormalIndex.current = state.index;
-  }
+  // 过滤掉 scan action tab，它不作为普通 tab 显示
+  const visibleRoutes = state.routes.filter(
+    (route) => route.name !== ACTION_ROUTE,
+  );
+  const visibleIndex = visibleRoutes.findIndex(
+    (r) => r.key === state.routes[state.index]?.key,
+  );
 
-  const tabCount = state.routes.length;
-  const tabWidth = barWidth > 0 ? barWidth / tabCount : 0;
-  const indicatorIndex = currentIsAction
-    ? lastNormalIndex.current
-    : state.index;
-  const targetX = indicatorIndex * tabWidth + INDICATOR_MARGIN_H;
+  const tabCount = visibleRoutes.length;
+  const tabWidth = barWidth > 0 ? barWidth / (tabCount + 1) : 0;
+  const targetX =
+    (visibleIndex >= 0 ? visibleIndex : 0) * tabWidth + INDICATOR_MARGIN_H;
 
   useEffect(() => {
     if (barWidth <= 0) return;
@@ -70,10 +66,6 @@ export default function GlassTabBar({
       return;
     }
 
-    // Skip bounce animation when switching to action tab.
-    if (currentIsAction) return;
-
-    const SPRING_DURATION = 300;
     const HALF = SPRING_DURATION / 2;
 
     Animated.parallel([
@@ -99,14 +91,7 @@ export default function GlassTabBar({
         }),
       ]),
     ]).start();
-  }, [
-    state.index,
-    barWidth,
-    targetX,
-    translateX,
-    indicatorScale,
-    currentIsAction,
-  ]);
+  }, [state.index, barWidth, targetX, translateX, indicatorScale]);
 
   const indicatorWidth = tabWidth - INDICATOR_MARGIN_H * 2;
 
@@ -175,19 +160,15 @@ export default function GlassTabBar({
       ) : null}
 
       {/* Tab buttons */}
-      {state.routes.map((route, index) => {
+      {visibleRoutes.map((route) => {
         const { options } = descriptors[route.key];
-        const isFocused = state.index === index;
-        const isAction = isActionTab(route.name);
+        const realIndex = state.routes.findIndex((r) => r.key === route.key);
+        const isFocused = state.index === realIndex;
         const color = isFocused ? colors.text : colors.tabIconDefault;
 
         const onPress = (): void => {
           if (Platform.OS === 'ios') {
-            void Haptics.impactAsync(
-              isAction
-                ? Haptics.ImpactFeedbackStyle.Medium
-                : Haptics.ImpactFeedbackStyle.Light,
-            );
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }
 
           const event = navigation.emit({
@@ -206,13 +187,32 @@ export default function GlassTabBar({
             key={route.key}
             route={route}
             isFocused={isFocused}
-            isActionButton={isAction}
             options={options}
             color={color}
             onPress={onPress}
           />
         );
       })}
+
+      {/* 相机 action 按钮 */}
+      <GlassTabButton
+        key="action-scan"
+        route={{ key: 'action-scan', name: 'scan', params: undefined }}
+        isFocused={false}
+        isActionButton
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="camera-outline" size={size} color={color} />
+          ),
+        }}
+        color={colors.tabIconDefault}
+        onPress={() => {
+          if (Platform.OS === 'ios') {
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          }
+          router.push('/scan');
+        }}
+      />
     </View>
   );
 }

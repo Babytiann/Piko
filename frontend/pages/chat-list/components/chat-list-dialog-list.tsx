@@ -4,9 +4,8 @@ import { Text, View, YStack } from 'tamagui';
 
 import type { DialogItem as DialogItemData } from '@/common/typings/chat';
 
+import { SEPARATOR_LEFT_MARGIN } from '../consts';
 import ChatListDialogItem from './chat-list-dialog-item';
-
-const SEPARATOR_LEFT_MARGIN = 78;
 
 const ItemSeparator = (): ReactNode => (
   <View

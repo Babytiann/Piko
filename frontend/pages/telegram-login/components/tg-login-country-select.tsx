@@ -22,6 +22,7 @@ import Animated, {
 import { DROPDOWN_MAX_HEIGHT } from '@/common/consts';
 import type { CountryItem } from '@/common/typings/telegram-login';
 
+import { SPRING_CONFIG } from '../consts';
 import { getCodeByName } from '../utils/getCodeByName';
 import { TgLoginGlassBackground } from './tg-login-glass-background';
 
@@ -31,12 +32,6 @@ interface TgLoginCountrySelectProps {
   countries: CountryItem[];
   header: string;
 }
-
-const SPRING_CONFIG = {
-  damping: 20,
-  mass: 0.8,
-  stiffness: 200,
-};
 
 export default function TgLoginCountrySelect({
   value,
