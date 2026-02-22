@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   Animated,
   Dimensions,
@@ -8,10 +8,11 @@ import {
 } from 'react-native';
 import { YStack, XStack, Text, useTheme } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { ConversationItem } from '../../types';
 
-const DRAWER_WIDTH = Dimensions.get('window').width * 0.78;
+const DRAWER_WIDTH = Dimensions.get('window').width * 0.7;
 
 interface AiConversationDrawerProps {
   visible: boolean;
@@ -35,40 +36,30 @@ export default function AiConversationDrawer({
   onNewChat,
 }: AiConversationDrawerProps): ReactNode {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const translateX = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
-  const backdrop = useRef(new Animated.Value(0)).current;
+  const [shouldRender, setShouldRender] = useState(false);
 
   useEffect(() => {
     if (visible) {
-      Animated.parallel([
-        Animated.timing(translateX, {
-          toValue: 0,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-        Animated.timing(backdrop, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      setShouldRender(true);
+      Animated.timing(translateX, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
     } else {
-      Animated.parallel([
-        Animated.timing(translateX, {
-          toValue: -DRAWER_WIDTH,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(backdrop, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      Animated.timing(translateX, {
+        toValue: -DRAWER_WIDTH,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
+        setShouldRender(false);
+      });
     }
-  }, [visible, translateX, backdrop]);
+  }, [visible, translateX]);
 
-  if (!visible) return null;
+  if (!shouldRender) return null;
 
   const renderItem = ({ item }: { item: ConversationItem }) => {
     const isActive = item.id === activeId;
@@ -113,15 +104,6 @@ export default function AiConversationDrawer({
     <>
       <Animated.View
         style={[
-          StyleSheet.absoluteFill,
-          { backgroundColor: 'rgba(0,0,0,0.4)', opacity: backdrop, zIndex: 50 },
-        ]}
-      >
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-      </Animated.View>
-
-      <Animated.View
-        style={[
           styles.drawer,
           {
             backgroundColor: theme.background.val,
@@ -131,7 +113,7 @@ export default function AiConversationDrawer({
       >
         <XStack
           px="$4"
-          pt="$4"
+          pt={insets.top}
           pb="$3"
           style={{ alignItems: 'center', justifyContent: 'space-between' }}
         >
@@ -192,10 +174,5 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: DRAWER_WIDTH,
     zIndex: 51,
-    shadowColor: '#000',
-    shadowOffset: { width: 2, height: 0 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 16,
   },
 });
