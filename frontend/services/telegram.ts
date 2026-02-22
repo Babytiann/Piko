@@ -68,12 +68,14 @@ export function signIn(
   phoneNumber: string,
   phoneCode: string,
   phoneCodeHash: string,
+  pendingSession?: string,
 ): Promise<SignInResult> {
   return telegramAuth<SignInResult>({
     session_tag: SessionTag.SIGN_IN,
     phoneNumber,
     phoneCode,
     phoneCodeHash,
+    ...(pendingSession ? { pendingSession } : {}),
   });
 }
 

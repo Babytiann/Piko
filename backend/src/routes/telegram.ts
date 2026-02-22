@@ -82,9 +82,14 @@ telegramRoutes.post('/auth/v1', async (c) => {
           body.phoneNumber,
         );
 
+        // 序列化 session（包含 auth key 物料），回传给前端
+        // signIn 时用此 session 恢复 client，保证 auth key 与 phoneCodeHash 匹配
+        const pendingSession = (client.session as StringSession).save();
+
         return c.json({
           success: true,
           phoneCodeHash: result.phoneCodeHash,
+          pendingSession,
           codeType: result.isCodeViaApp ? 'app' : 'sms',
           timeout: null,
         });
@@ -102,7 +107,11 @@ telegramRoutes.post('/auth/v1', async (c) => {
           );
         }
 
-        const client = await getOrCreatePendingClient(body.phoneNumber);
+        // 优先用 sendCode 阶段回传的 pendingSession 恢复 client（auth key 完全一致）
+        // 降级到内存 Map，兼容未携带 pendingSession 的旧请求
+        const client = body.pendingSession
+          ? await getPooledClient(body.pendingSession)
+          : await getOrCreatePendingClient(body.phoneNumber);
 
         try {
           const result = await client.invoke(

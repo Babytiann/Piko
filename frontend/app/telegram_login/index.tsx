@@ -55,6 +55,7 @@ export default function TelegramLoginScreen(): ReactNode {
         params: {
           phoneNumber: fullPhoneNumber,
           phoneCodeHash: result.phoneCodeHash,
+          pendingSession: result.pendingSession,
         },
       });
     } catch (err) {

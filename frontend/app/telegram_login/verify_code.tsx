@@ -14,9 +14,10 @@ import TgLoginCodeStep from '@/pages/telegram-login/components/tg-login-code-ste
 export default function VerifyCodeScreen(): ReactNode {
   const router = useRouter();
   const { login } = useAuth();
-  const { phoneNumber, phoneCodeHash } = useLocalSearchParams<{
+  const { phoneNumber, phoneCodeHash, pendingSession } = useLocalSearchParams<{
     phoneNumber: string;
     phoneCodeHash: string;
+    pendingSession: string;
   }>();
 
   const [text, setText] = useState<VerifyCodeStepText | null>(null);
@@ -53,6 +54,7 @@ export default function VerifyCodeScreen(): ReactNode {
         phoneNumber ?? '',
         phoneCode,
         phoneCodeHash ?? '',
+        pendingSession ?? '',
       );
 
       if (result.require2FA) {

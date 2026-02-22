@@ -28,6 +28,8 @@ export interface TelegramAuthRequest {
   phoneCode?: string;
   /** signIn */
   phoneCodeHash?: string;
+  /** signIn — sendCode 阶段序列化的 session 字符串，用于恢复同一 auth key */
+  pendingSession?: string;
   /** checkPassword */
   session?: string;
   /** checkPassword */
