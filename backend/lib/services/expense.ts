@@ -1,5 +1,7 @@
-import { prisma } from '@/lib/prisma';
+import { eq, and, gte, lte, desc, count, sql } from 'drizzle-orm';
+import { db, expenses } from '@/db';
 import { uploadImage, deleteObject } from '@/lib/r2';
+import { createId } from '@paralleldrive/cuid2';
 import type { RecognizeResult } from '@/types/expense';
 
 // ---------------------------------------------------------------------------
@@ -36,9 +38,21 @@ export interface ExpenseListParams {
 /**
  * 创建消费记录。若有图片则先上传到 R2。
  */
-export async function createExpense(userId: string, input: CreateExpenseInput) {
-  let imageUrl: string | undefined;
-  let imageKey: string | undefined;
+export async function createExpense(
+  userId: string,
+  input: CreateExpenseInput,
+): Promise<{
+  id: string;
+  amount: number;
+  merchant: string | null;
+  category: string;
+  date: Date;
+  source: string;
+  imageUrl: string | null;
+  createdAt: Date;
+}> {
+  let imageUrl: string | null = null;
+  let imageKey: string | null = null;
 
   // 上传图片到 R2（如果有的话）
   if (input.imageBase64 && input.imageMimeType) {
@@ -48,60 +62,101 @@ export async function createExpense(userId: string, input: CreateExpenseInput) {
     imageUrl = await uploadImage(buffer, imageKey, input.imageMimeType);
   }
 
-  const expense = await prisma.expense.create({
-    data: {
+  const [expense] = await db
+    .insert(expenses)
+    .values({
+      id: createId(),
       userId,
-      amount: input.amount,
-      merchant: input.merchant,
+      amount: input.amount.toString(),
+      merchant: input.merchant ?? null,
       category: input.category,
       date: new Date(input.date),
-      items: input.items ?? undefined,
-      confidence: input.confidence,
+      items: input.items ?? null,
+      confidence: input.confidence ?? null,
       source: input.source,
       imageUrl,
       imageKey,
-      rawResult: input.rawResult ? (input.rawResult as object) : undefined,
-    },
-  });
+      rawResult: input.rawResult ?? null,
+      createdAt: new Date(),
+    })
+    .returning();
 
-  return expense;
+  if (!expense) {
+    throw new Error('消费记录创建失败');
+  }
+
+  return {
+    id: expense.id,
+    amount: Number(expense.amount),
+    merchant: expense.merchant,
+    category: expense.category,
+    date: expense.date,
+    source: expense.source,
+    imageUrl: expense.imageUrl,
+    createdAt: expense.createdAt,
+  };
 }
 
 /**
  * 查询用户消费记录列表（分页 + 日期过滤）。
  */
-export async function listExpenses(userId: string, params: ExpenseListParams) {
+export async function listExpenses(
+  userId: string,
+  params: ExpenseListParams,
+): Promise<{
+  expenses: Array<{
+    id: string;
+    amount: number;
+    merchant: string | null;
+    category: string;
+    date: string;
+    items: string[] | null;
+    source: string;
+    imageUrl: string | null;
+    confidence: number | null;
+    createdAt: string;
+  }>;
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}> {
   const page = Math.max(1, params.page ?? 1);
   const pageSize = Math.min(100, Math.max(1, params.pageSize ?? 20));
-  const skip = (page - 1) * pageSize;
+  const offset = (page - 1) * pageSize;
 
-  const where: Record<string, unknown> = { userId };
-
-  if (params.startDate || params.endDate) {
-    const dateFilter: Record<string, Date> = {};
-    if (params.startDate) dateFilter.gte = new Date(params.startDate);
-    if (params.endDate) dateFilter.lte = new Date(params.endDate);
-    where.date = dateFilter;
+  // 构建日期过滤条件
+  const conditions = [eq(expenses.userId, userId)];
+  if (params.startDate) {
+    conditions.push(gte(expenses.date, new Date(params.startDate)));
+  }
+  if (params.endDate) {
+    conditions.push(lte(expenses.date, new Date(params.endDate)));
   }
 
-  const [expenses, total] = await Promise.all([
-    prisma.expense.findMany({
-      where,
-      orderBy: { date: 'desc' },
-      skip,
-      take: pageSize,
-    }),
-    prisma.expense.count({ where }),
+  const where = and(...conditions);
+
+  const [rows, [countRow]] = await Promise.all([
+    db
+      .select()
+      .from(expenses)
+      .where(where)
+      .orderBy(desc(expenses.date))
+      .limit(pageSize)
+      .offset(offset),
+    db.select({ total: count() }).from(expenses).where(where),
   ]);
 
+  const total = countRow?.total ?? 0;
+
   return {
-    expenses: expenses.map((e: (typeof expenses)[number]) => ({
+    expenses: rows.map((e) => ({
       id: e.id,
       amount: Number(e.amount),
       merchant: e.merchant,
       category: e.category,
       date: e.date.toISOString(),
-      items: e.items as string[] | null,
+      items: (e.items as string[] | null) ?? null,
       source: e.source,
       imageUrl: e.imageUrl,
       confidence: e.confidence,
@@ -115,12 +170,29 @@ export async function listExpenses(userId: string, params: ExpenseListParams) {
 }
 
 /**
- * 获取单条消费记录详情。
+ * 获取单条消费记录详情（校验用户权限）。
  */
-export async function getExpenseDetail(userId: string, expenseId: string) {
-  const expense = await prisma.expense.findFirst({
-    where: { id: expenseId, userId },
-  });
+export async function getExpenseDetail(
+  userId: string,
+  expenseId: string,
+): Promise<{
+  id: string;
+  amount: number;
+  merchant: string | null;
+  category: string;
+  date: string;
+  items: string[] | null;
+  source: string;
+  imageUrl: string | null;
+  confidence: number | null;
+  rawResult: unknown;
+  createdAt: string;
+} | null> {
+  const [expense] = await db
+    .select()
+    .from(expenses)
+    .where(and(eq(expenses.id, expenseId), eq(expenses.userId, userId)))
+    .limit(1);
 
   if (!expense) return null;
 
@@ -130,7 +202,7 @@ export async function getExpenseDetail(userId: string, expenseId: string) {
     merchant: expense.merchant,
     category: expense.category,
     date: expense.date.toISOString(),
-    items: expense.items as string[] | null,
+    items: (expense.items as string[] | null) ?? null,
     source: expense.source,
     imageUrl: expense.imageUrl,
     confidence: expense.confidence,
@@ -141,15 +213,22 @@ export async function getExpenseDetail(userId: string, expenseId: string) {
 
 /**
  * 删除消费记录（同时清理 R2 图片）。
+ * @returns true 表示删除成功，false 表示记录不存在
  */
-export async function deleteExpense(userId: string, expenseId: string) {
-  const expense = await prisma.expense.findFirst({
-    where: { id: expenseId, userId },
-  });
+export async function deleteExpense(
+  userId: string,
+  expenseId: string,
+): Promise<boolean> {
+  // 先查出 imageKey，再删除记录
+  const [expense] = await db
+    .select({ id: expenses.id, imageKey: expenses.imageKey })
+    .from(expenses)
+    .where(and(eq(expenses.id, expenseId), eq(expenses.userId, userId)))
+    .limit(1);
 
   if (!expense) return false;
 
-  // 清理 R2 图片
+  // 清理 R2 图片（失败不影响删除逻辑）
   if (expense.imageKey) {
     try {
       await deleteObject(expense.imageKey);
@@ -158,6 +237,9 @@ export async function deleteExpense(userId: string, expenseId: string) {
     }
   }
 
-  await prisma.expense.delete({ where: { id: expenseId } });
+  await db
+    .delete(expenses)
+    .where(and(eq(expenses.id, expenseId), eq(expenses.userId, userId)));
+
   return true;
 }

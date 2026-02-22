@@ -1,5 +1,5 @@
-/**
- * 路线规划工具 — 构建高德地图 / Google Maps 导航 Deep Link。
+﻿/**
+ * 路线规划工具 — 构建高德地图 / Google Maps 导航 Deep Link（Vercel AI SDK 版）。
  *
  * AI 提供地点名称与经纬度坐标，本工具负责：
  * 1. 根据 mapProvider 决定使用高德还是 Google Maps
@@ -8,26 +8,42 @@
  * 4. 4+ 站自动拆分为多段链接（高德），Google Maps 直接用 waypoints
  */
 
-import { SchemaType } from '@google/generative-ai';
+import { z } from 'zod';
 import { toolRegistry, type ToolDefinition } from '../ai-tools';
 
 // ---------------------------------------------------------------------------
 // 类型
 // ---------------------------------------------------------------------------
 
-interface Stop {
-  name: string;
-  longitude: number;
-  latitude: number;
-}
+const stopSchema = z.object({
+  name: z.string().describe('地点名称（如"东方明珠"、"Tokyo Tower"）'),
+  longitude: z.number().describe('经度（如 121.4997）'),
+  latitude: z.number().describe('纬度（如 31.2397）'),
+});
 
+type Stop = z.infer<typeof stopSchema>;
 type MapProvider = 'amap' | 'google';
 
-interface PlanRouteParams {
-  stops: Stop[];
-  mode?: 'car' | 'bus' | 'walk' | 'ride';
-  mapProvider?: MapProvider;
-}
+const parametersSchema = z.object({
+  stops: z
+    .array(stopSchema)
+    .min(2)
+    .describe('按行程顺序排列的站点列表，至少 2 个'),
+  mode: z
+    .enum(['car', 'bus', 'walk', 'ride'])
+    .optional()
+    .describe(
+      '出行方式: car（驾车，默认）、bus（公交）、walk（步行）、ride（骑行）',
+    ),
+  mapProvider: z
+    .enum(['amap', 'google'])
+    .optional()
+    .describe(
+      '地图平台: amap（高德地图，中国境内默认）、google（Google Maps，中国境外使用）',
+    ),
+});
+
+type PlanRouteParams = z.infer<typeof parametersSchema>;
 
 interface NavigationLink {
   url: string;
@@ -245,7 +261,7 @@ async function execute(params: PlanRouteParams): Promise<PlanRouteResult> {
 // 工具定义 & 注册
 // ---------------------------------------------------------------------------
 
-const planRouteTool: ToolDefinition<PlanRouteParams, PlanRouteResult> = {
+const planRouteTool: ToolDefinition<typeof parametersSchema> = {
   name: 'plan_route',
   description: [
     '为用户规划出行路线，生成地图导航链接。',
@@ -265,44 +281,7 @@ const planRouteTool: ToolDefinition<PlanRouteParams, PlanRouteResult> = {
     '  - 如果没有获取到用户位置，默认使用 "amap"',
     '- 工具会返回包含导航链接的 markdown 文本，你必须将其原样附加在回复末尾',
   ].join('\n'),
-  parameters: {
-    type: SchemaType.OBJECT,
-    properties: {
-      stops: {
-        type: SchemaType.ARRAY,
-        description: '按行程顺序排列的站点列表，至少 2 个',
-        items: {
-          type: SchemaType.OBJECT,
-          properties: {
-            name: {
-              type: SchemaType.STRING,
-              description: '地点名称（如"东方明珠"、"Tokyo Tower"）',
-            },
-            longitude: {
-              type: SchemaType.NUMBER,
-              description: '经度（如 121.4997）',
-            },
-            latitude: {
-              type: SchemaType.NUMBER,
-              description: '纬度（如 31.2397）',
-            },
-          },
-          required: ['name', 'longitude', 'latitude'],
-        },
-      },
-      mode: {
-        type: SchemaType.STRING,
-        description:
-          '出行方式: car（驾车，默认）、bus（公交）、walk（步行）、ride（骑行）',
-      },
-      mapProvider: {
-        type: SchemaType.STRING,
-        description:
-          '地图平台: amap（高德地图，中国境内默认）、google（Google Maps，中国境外使用）',
-      },
-    },
-    required: ['stops'],
-  },
+  parameters: parametersSchema,
   execute: async (params) => execute(params),
 };
 

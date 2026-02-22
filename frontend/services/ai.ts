@@ -1,7 +1,6 @@
 import { API_HOST } from '@/common/config';
 import { post, postSafe } from '@/services';
 import type {
-  SseEvent,
   AiCopywriting,
   ConversationItem,
   AiMessage as AiChatMessage,
@@ -61,7 +60,17 @@ export function streamAiChat({
   let buffer = '';
   let finished = false;
 
-  /** Extract and dispatch newly arrived SSE events. */
+  /**
+   * 解析 Vercel AI SDK Data Stream 格式。
+   *
+   * 协议行格式:
+   *   0:"text chunk"      — 文本片段 (type 0)
+   *   2:[{...},{...}]     — custom data array (type 2)
+   *   d:{finishReason}    — 流结束标记 (type d)
+   *   3:"error message"  — 错误 (type 3)
+   *   8:{...}             — 消息元数据 (type 8，忽略)
+   *   e:{...}             — step finish (type e，忽略)
+   */
   function processNewData(): void {
     if (finished) return;
 
@@ -71,41 +80,79 @@ export function streamAiChat({
 
     buffer += newText;
 
-    // SSE events are separated by double newlines.
-    const parts = buffer.split('\n\n');
-    buffer = parts.pop() ?? '';
+    // 按换行分割处理每一行
+    const lines = buffer.split('\n');
+    // 最后一行可能不完整，保留在 buffer 中
+    buffer = lines.pop() ?? '';
 
-    for (const part of parts) {
-      const dataLine = part.split('\n').find((l) => l.startsWith('data: '));
-      if (!dataLine) continue;
+    for (const line of lines) {
+      if (!line.trim()) continue;
 
-      const parsed: SseEvent = JSON.parse(dataLine.slice(6));
-      switch (parsed.type) {
-        case 'chunk':
-          onChunk(parsed.content);
-          break;
-        case 'tool_start':
-          onToolStart?.(parsed.tool, parsed.args, parsed.message);
-          break;
-        case 'tool_end':
-          onToolEnd?.(parsed.tool, parsed.success);
-          break;
-        case 'request_location':
-          onRequestLocation?.(parsed.requestId);
-          break;
-        case 'conversation':
-          onConversation?.(parsed.conversationId);
-          break;
-        case 'done':
-          finished = true;
-          onDone(parsed.conversationId);
-          xhr.abort();
-          return;
-        case 'error':
-          finished = true;
-          onError(parsed.message);
-          xhr.abort();
-          return;
+      const colonIdx = line.indexOf(':');
+      if (colonIdx === -1) continue;
+
+      const typeStr = line.slice(0, colonIdx);
+      const valueStr = line.slice(colonIdx + 1);
+
+      try {
+        switch (typeStr) {
+          case '0': {
+            // 文本 chunk — value 是 JSON 字符串（带引号）
+            const text: string = JSON.parse(valueStr);
+            onChunk(text);
+            break;
+          }
+          case '2': {
+            // custom data array — 后端通过 dataStream.writeData() 写入的对象
+            const dataItems: unknown[] = JSON.parse(valueStr);
+            for (const item of dataItems) {
+              if (!item || typeof item !== 'object') continue;
+              const data = item as Record<string, unknown>;
+
+              switch (data.type) {
+                case 'conversation':
+                  onConversation?.(data.conversationId as string);
+                  break;
+                case 'tool_start':
+                  onToolStart?.(
+                    data.tool as string,
+                    (data.args as Record<string, unknown>) ?? {},
+                    (data.message as string) ?? '',
+                  );
+                  break;
+                case 'tool_end':
+                  onToolEnd?.(data.tool as string, data.success as boolean);
+                  break;
+                case 'request_location':
+                  onRequestLocation?.(data.requestId as string);
+                  break;
+              }
+            }
+            break;
+          }
+          case 'd': {
+            // 流结束 — { finishReason, usage }
+            if (!finished) {
+              finished = true;
+              onDone();
+            }
+            break;
+          }
+          case '3': {
+            // 错误
+            const errorMsg: string = JSON.parse(valueStr);
+            if (!finished) {
+              finished = true;
+              onError(errorMsg);
+            }
+            break;
+          }
+          // 8 = message annotations, e = step finish — 忽略
+          default:
+            break;
+        }
+      } catch {
+        // JSON 解析失败忽略此行
       }
     }
   }

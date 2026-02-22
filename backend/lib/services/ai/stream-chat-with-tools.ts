@@ -1,178 +1,117 @@
-import type {
-  Content,
-  EnhancedGenerateContentResponse,
-  GenerateContentStreamResult,
-  Part,
-} from '@google/generative-ai';
-import type { ChatMessage } from '@/types/ai';
+/**
+ * streamChatWithTools — Vercel AI SDK 版多步骤 Agent 流式对话。
+ *
+ * 核心流程：
+ *   1. 接收对话历史（CoreMessage[]），通过 streamText 发起多步推理
+ *   2. 工具调用（weather / plan_route / get_user_location 等）由 Vercel AI SDK 自动处理
+ *   3. get_user_location 等前端协作式工具通过 context.writeData 向数据流写
+ *      request_location 事件，由前端 GPS 采集后 POST 回来
+ *   4. 返回 Response（Vercel AI SDK Data Stream 协议）给 Hono 路由层
+ */
 
+import {
+  streamText,
+  createDataStreamResponse,
+  type CoreMessage,
+  type DataStreamWriter,
+  type JSONValue,
+} from 'ai';
+import { getModel, SYSTEM_INSTRUCTION } from './client';
 import { toolRegistry } from '../ai-tools';
-import { getGeminiClient, DEFAULT_MODEL, SYSTEM_INSTRUCTION } from './client';
-import { prependChunkToStream } from './stream-utils';
-import type { ToolCallbacks } from './types';
 import { getToolStatusMessage } from './types';
 
+// 确保工具在模块加载时注册（副作用 import）
 import '../tools/get-weather';
 import '../tools/plan-route';
 import '../tools/get-user-location';
 
-const FRONTEND_COLLABORATIVE_TOOLS = new Set(['get_user_location']);
+// ---------------------------------------------------------------------------
+// 类型
+// ---------------------------------------------------------------------------
 
-export async function streamChatWithTools(
-  messages: ChatMessage[],
-  callbacks: ToolCallbacks,
-): Promise<GenerateContentStreamResult> {
-  const client = getGeminiClient();
+export interface StreamChatOptions {
+  /**
+   * 流开始前的钩子 — 路由层用于：
+   * 1. 创建新会话、写 conversationId 数据部分
+   * 2. 保存用户消息到 DB
+   */
+  setup?: (dataStream: DataStreamWriter) => Promise<void>;
+  /** 流完成后的回调，用于保存 AI 消息到 DB */
+  onFinish?: (result: { text: string }) => Promise<void>;
+}
 
-  // 把工具定义传给模型 —— 告诉 AI "你有这些超能力"
-  const tools = toolRegistry.getToolDeclarations();
+// ---------------------------------------------------------------------------
+// 主函数
+// ---------------------------------------------------------------------------
 
-  const model = client.getGenerativeModel({
-    model: DEFAULT_MODEL,
-    systemInstruction: SYSTEM_INSTRUCTION,
-    tools,
-  });
+/**
+ * 启动流式对话，返回标准 Web Response（Vercel AI SDK Data Stream 格式）。
+ * Hono 路由层直接 `return streamChatWithTools(messages)` 即可。
+ */
+export function streamChatWithTools(
+  messages: CoreMessage[],
+  options: StreamChatOptions = {},
+): Response {
+  const { setup, onFinish } = options;
 
-  // 构建对话历史（和模块 1 一样）
-  const history: Content[] = messages.slice(0, -1).map((m) => ({
-    role: m.role,
-    parts: [{ text: m.content }],
-  }));
-
-  const lastMessage = messages[messages.length - 1];
-  if (!lastMessage || lastMessage.role !== 'user') {
-    throw new Error('Last message must be from user');
-  }
-
-  const chat = model.startChat({ history });
-
-  let currentMessage: string | Part[] = lastMessage.content;
-  let step = 0;
-
-  console.log('[AI] 开始 (无步数上限)');
-
-  while (true) {
-    step += 1;
-    const tStep = Date.now();
-    console.log(`[AI]   ── Step ${step} ── 发送消息给 Gemini`);
-
-    const streamResult = await chat.sendMessageStream(currentMessage);
-
-    // ── Peek 第一个 chunk ──────────────────────────────────────────
-    const iterator = streamResult.stream[Symbol.asyncIterator]();
-    const first = await iterator.next();
-
-    if (first.done) {
-      throw new Error('Gemini 返回空流');
-    }
-
-    const firstChunk = first.value as EnhancedGenerateContentResponse;
-
-    // 检查第一个 chunk 是否包含 functionCall
-    const firstParts = firstChunk.candidates?.[0]?.content?.parts ?? [];
-    const hasFunctionCall = firstParts.some((p) => 'functionCall' in p);
-
-    if (hasFunctionCall) {
-      // ── Tool call 路径：收集完整响应 ────────────────────────────
-      // 需要完整的 parts 来拿到所有 function call，所以等 response 完成
-      const fullResponse = await streamResult.response;
-      const candidate = fullResponse.candidates?.[0];
-
-      if (!candidate) {
-        throw new Error('Gemini 返回空结果');
+  return createDataStreamResponse({
+    execute: async (dataStream) => {
+      // 路由层的预处理（建会话、保存用户消息等）
+      if (setup) {
+        await setup(dataStream);
       }
 
-      const functionCalls = candidate.content.parts.filter(
-        (
-          part,
-        ): part is Part & {
-          functionCall: { name: string; args: Record<string, unknown> };
-        } => 'functionCall' in part,
-      );
-
-      console.log(
-        `[AI]   Step ${step}: AI 要求调用 ${functionCalls.length} 个工具 (${Date.now() - tStep}ms)`,
-      );
-
-      for (const fc of functionCalls) {
-        const { name, args } = fc.functionCall;
-        console.log(`[AI]   🔧 调用工具: ${name}(${JSON.stringify(args)})`);
-        callbacks.onToolStart(name, args, getToolStatusMessage(name));
-      }
-
-      const functionResponseParts: Part[] = await Promise.all(
-        functionCalls.map(async (fc) => {
-          const { name, args } = fc.functionCall;
-          const tTool = Date.now();
-
-          // ── 前端协作式工具：特殊处理 ──────────────────────
-          if (FRONTEND_COLLABORATIVE_TOOLS.has(name)) {
-            console.log(`[AI]   📍 前端协作工具: ${name}，等待前端回传...`);
-            const location = await callbacks.onRequestLocation();
-            const elapsed = Date.now() - tTool;
-
-            if (location) {
-              console.log(
-                `[AI]   ✓ ${name} 成功 (${elapsed}ms) → ${location.latitude},${location.longitude}`,
-              );
-              callbacks.onToolEnd(name, true);
-              return {
-                functionResponse: {
-                  name,
-                  response: { result: location },
-                },
-              };
-            } else {
-              console.log(
-                `[AI]   ✗ ${name} 失败 (${elapsed}ms) → 用户拒绝提供位置`,
-              );
-              callbacks.onToolEnd(name, false);
-              return {
-                functionResponse: {
-                  name,
-                  response: {
-                    error: '用户拒绝提供地理位置权限，无法获取位置信息',
-                  },
-                },
-              };
-            }
-          }
-
-          // ── 普通工具：直接执行 ────────────────────────────
-          const result = await toolRegistry.execute(name, args);
-          const elapsed = Date.now() - tTool;
-
-          if (result.success) {
-            const dataPreview = JSON.stringify(result.data).slice(0, 200);
-            console.log(
-              `[AI]   ✓ ${name} 成功 (${elapsed}ms) → ${dataPreview}${JSON.stringify(result.data).length > 200 ? '...' : ''}`,
-            );
-          } else {
-            console.log(
-              `[AI]   ✗ ${name} 失败 (${elapsed}ms) → ${result.error}`,
-            );
-          }
-
-          callbacks.onToolEnd(name, result.success);
-
-          return {
-            functionResponse: {
-              name,
-              response: result.success
-                ? { result: result.data }
-                : { error: result.error },
-            },
-          };
+      const result = streamText({
+        model: getModel(),
+        system: SYSTEM_INSTRUCTION,
+        messages,
+        // 注入 ToolContext.writeData，前端协作式工具需要
+        tools: toolRegistry.getToolsForAI({
+          writeData: (d) => dataStream.writeData(d as JSONValue),
         }),
-      );
+        // 最多 10 步自主推理（避免死循环）
+        maxSteps: 10,
 
-      currentMessage = functionResponseParts;
-      console.log(`[AI]   Step ${step} 完成，把工具结果送回 AI...`);
-    } else {
-      console.log(
-        `[AI]   Step ${step}: 无工具调用 → 返回真实流 (${Date.now() - tStep}ms)`,
-      );
-      return prependChunkToStream(firstChunk, iterator, new Promise(() => {}));
-    }
-  }
+        // ── 工具调用开始时发 tool_start 事件 ──────────────────────────
+        onChunk: ({ chunk }) => {
+          if (chunk.type === 'tool-call') {
+            dataStream.writeData({
+              type: 'tool_start',
+              tool: chunk.toolName,
+              message: getToolStatusMessage(chunk.toolName),
+            });
+          }
+        },
+
+        // ── 每步完成时发 tool_end 事件 ────────────────────────────────
+        onStepFinish: async ({ toolResults }) => {
+          for (const tr of toolResults as Array<{
+            toolName: string;
+            isError: boolean;
+          }>) {
+            dataStream.writeData({
+              type: 'tool_end',
+              tool: tr.toolName,
+              success: !tr.isError,
+            });
+          }
+        },
+
+        // ── 全部步骤完成后回调（用于 DB 持久化）─────────────────────
+        onFinish: async ({ text }) => {
+          if (onFinish) {
+            await onFinish({ text });
+          }
+        },
+      });
+
+      // 把 streamText 产出的文本/工具事件合并进 dataStream
+      result.mergeIntoDataStream(dataStream);
+    },
+
+    onError: (error) => {
+      console.error('[streamChatWithTools] 流式对话异常:', error);
+      return '抱歉，AI 服务暂时不可用，请稍后再试。';
+    },
+  });
 }
