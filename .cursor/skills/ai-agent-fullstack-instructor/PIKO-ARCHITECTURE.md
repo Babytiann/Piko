@@ -10,6 +10,9 @@
 | -------- | --------------------------------------------------- | ------------------------- |
 | 前端     | Expo 54 / React Native 0.81 / Tamagui / Expo Router | `frontend/`               |
 | 后端     | Next.js 16 App Router / TypeScript                  | `backend/`                |
+| 数据库   | PostgreSQL (Neon) + Prisma ORM                      | `backend/prisma/`         |
+| 对象存储 | Cloudflare R2 (S3 兼容)                             | `backend/lib/r2.ts`       |
+| 认证     | Mock Auth → Apple Sign In + Next-Auth v5            | `backend/lib/auth.ts`     |
 | Telegram | GramJS (MTProto)                                    | `backend/lib/telegram.ts` |
 | 包管理   | pnpm workspaces                                     | `pnpm-workspace.yaml`     |
 
@@ -89,7 +92,10 @@ backend/
 │   ├── page.tsx
 │   └── piko/                     # API 路由 (所有端点前缀 /piko)
 │       ├── homepage/summary/v1/route.ts
-│       ├── profile/detail/v1/route.ts
+│       ├── profile/
+│       │   ├── detail/v1/route.ts
+│       │   ├── update/v1/route.ts        # 更新昵称/头像 (新增)
+│       │   └── avatar/v1/route.ts        # 头像上传 (新增)
 │       ├── chat/
 │       │   ├── list/v1/route.ts
 │       │   └── detail/v1/route.ts
@@ -101,51 +107,72 @@ backend/
 │       │   ├── avatar/v1/route.ts
 │       │   ├── profile-photo/v1/route.ts
 │       │   ├── media/v1/route.ts
-│       │   └── text_detail/v1/route.ts
-│       ├── ai/                   # AI 相关 (新增)
-│       │   ├── chat/v1/route.ts      # AI 流式聊天 (SSE)
-│       │   └── action/v1/route.ts    # 统一 AI 动作 (recognize/advice/search)
-│       └── expense/              # 消费/预算 (新增)
-│           └── v1/route.ts           # CRUD (add/list/set_budget/summary)
+│       │   ├── text_detail/v1/route.ts
+│       │   └── unbind/v1/route.ts
+│       ├── ai/                   # AI 相关
+│       │   ├── chat/v1/route.ts          # AI 流式聊天 (SSE)
+│       │   ├── copywriting/v1/route.ts   # 页面文案
+│       │   ├── location/v1/route.ts      # 位置回传
+│       │   ├── recognize/v1/route.ts     # 账单识别
+│       │   └── conversation/             # AI 对话管理 (新增)
+│       │       ├── list/v1/route.ts
+│       │       ├── create/v1/route.ts
+│       │       ├── detail/v1/route.ts
+│       │       └── delete/v1/route.ts
+│       ├── expense/              # 消费记录 (新增)
+│       │   ├── upload/v1/route.ts        # 图片上传 + 识别
+│       │   ├── list/v1/route.ts          # 历史查询
+│       │   └── detail/v1/route.ts        # 单条详情
+│       └── auth/                 # 认证 (新增，待接入 Apple Sign In)
+│           └── apple/v1/route.ts         # Apple 登录 (TODO)
 │
 ├── lib/
 │   ├── telegram.ts               # Telegram Client 池
-│   ├── prisma.ts                 # Prisma Client (新增)
+│   ├── prisma.ts                 # Prisma Client 单例 (新增)
+│   ├── auth.ts                   # 统一认证 getUserId() (新增，当前 Mock)
+│   ├── r2.ts                     # Cloudflare R2 客户端 (新增)
 │   ├── services/
 │   │   ├── chat.ts               # 聊天数据聚合
 │   │   ├── home.ts               # 首页数据
 │   │   ├── profile.ts            # 个人资料
-│   │   ├── telegram.ts           # Telegram API 封装
-│   │   ├── ai.ts                 # Gemini API 封装 (新增)
-│   │   ├── ai-tools.ts           # Tool Registry (新增)
-│   │   ├── weather.ts            # OpenWeatherMap (新增)
-│   │   ├── budget.ts             # 预算计算 (新增)
-│   │   ├── push.ts               # 推送服务 (新增)
-│   │   ├── embedding.ts          # Embedding (新增)
-│   │   ├── vector-store.ts       # 向量存储 (新增)
-│   │   └── rag.ts                # RAG 流水线 (新增)
-│   ├── services/tools/           # Agent 工具 (新增)
-│   │   ├── search-attractions.ts
-│   │   ├── plan-route.ts
-│   │   ├── get-map-route.ts
-│   │   ├── recognize-payment.ts
-│   │   └── add-expense.ts
-│   ├── agents/                   # 多 Agent (新增)
-│   │   ├── registry.ts
-│   │   ├── router.ts
-│   │   ├── orchestrator.ts
-│   │   ├── travel-agent.ts
-│   │   ├── budget-agent.ts
-│   │   ├── advice-agent.ts
-│   │   └── weather-agent.ts
-│   └── scheduler/                # 定时任务 (新增)
-│       ├── index.ts
-│       └── jobs/daily-briefing.ts
+│   │   ├── expense.ts            # 消费记录 CRUD (新增)
+│   │   ├── ai-prompt.json        # AI 系统提示词
+│   │   ├── ai-tools.ts           # Tool Registry
+│   │   ├── location-bridge.ts    # 位置协作桥梁
+│   │   ├── ai/                   # AI 服务层
+│   │   │   ├── index.ts
+│   │   │   ├── client.ts
+│   │   │   ├── stream-chat.ts
+│   │   │   ├── stream-chat-with-tools.ts
+│   │   │   ├── stream-utils.ts
+│   │   │   ├── types.ts
+│   │   │   └── conversation.ts       # AI 对话 CRUD (新增)
+│   │   ├── telegram/             # Telegram 服务层
+│   │   │   ├── dialog.ts
+│   │   │   ├── message.ts
+│   │   │   ├── photo.ts
+│   │   │   └── user-info.ts
+│   │   ├── tools/                # Agent 工具
+│   │   │   ├── get-weather.ts
+│   │   │   ├── plan-route.ts
+│   │   │   ├── get-user-location.ts
+│   │   │   └── recognize-payment.ts
+│   │   └── weather/              # 天气服务
+│   ├── agents/                   # 多 Agent (新增，模块 7)
+│   └── scheduler/                # 定时任务 (新增，模块 4)
 │
 ├── prisma/                       # Prisma (新增)
-│   └── schema.prisma
+│   └── schema.prisma             # 8 张表: User/Account/Session/VerificationToken/TelegramBinding/Expense/AiConversation/AiMessage
 │
 └── types/
+    ├── ai.ts
+    ├── base.ts
+    ├── chat.ts
+    ├── expense.ts
+    ├── home.ts
+    ├── profile.ts
+    ├── telegram-login.ts
+    └── telegram.ts
 ```
 
 ---
@@ -167,29 +194,60 @@ backend/
 | `/piko/telegram/avatar/v1`       | GET  | 头像代理      |
 | `/piko/telegram/media/v1`        | GET  | 媒体下载      |
 
-### 新增端点（Agent 功能，收敛为 3 个新端点 + 2 个扩展）
+### 新增端点
 
-| 端点                        | 方法       | 用途                                                                       |
-| --------------------------- | ---------- | -------------------------------------------------------------------------- |
-| `/piko/ai/chat/v1`          | POST (SSE) | AI 流式聊天（独立，因为 SSE 协议特殊）                                     |
-| `/piko/ai/action/v1`        | POST       | 统一 AI 动作：`{ action: "recognize" \| "advice" \| "search", payload }`   |
-| `/piko/expense/v1`          | POST       | 消费/预算 CRUD：`{ action: "add" \| "list" \| "set_budget" \| "summary" }` |
-| `/piko/homepage/summary/v1` | POST       | **扩展已有**：聚合返回预算 + 天气 + AI 建议 + 今日消费                     |
-| `/piko/profile/detail/v1`   | POST       | **扩展已有**：支持 pushToken 注册（body 中加 pushToken 字段）              |
+| 端点                              | 方法       | 用途                             |
+| --------------------------------- | ---------- | -------------------------------- |
+| `/piko/ai/chat/v1`                | POST (SSE) | AI 流式聊天（带 conversationId） |
+| `/piko/ai/copywriting/v1`         | POST       | AI 页面文案                      |
+| `/piko/ai/location/v1`            | POST       | 前端回传位置                     |
+| `/piko/ai/recognize/v1`           | POST       | Gemini Vision 账单识别           |
+| `/piko/ai/conversation/list/v1`   | POST       | AI 对话列表 (新增)               |
+| `/piko/ai/conversation/create/v1` | POST       | 新建 AI 对话 (新增)              |
+| `/piko/ai/conversation/detail/v1` | POST       | AI 对话详情/历史消息 (新增)      |
+| `/piko/ai/conversation/delete/v1` | POST       | 删除 AI 对话 (新增)              |
+| `/piko/expense/upload/v1`         | POST       | 账单图片上传 + 识别 (新增)       |
+| `/piko/expense/list/v1`           | POST       | 消费历史查询 (新增)              |
+| `/piko/expense/detail/v1`         | POST       | 单条消费详情 (新增)              |
+| `/piko/profile/update/v1`         | POST       | 更新昵称/头像 (新增)             |
+| `/piko/profile/avatar/v1`         | POST       | 头像上传 (新增)                  |
+| `/piko/auth/apple/v1`             | POST       | Apple 登录 (TODO，待接入)        |
 
 ---
 
 ## 5. 认证流程
 
+**当前阶段：Mock Auth**
+
+```
+所有受保护路由 → getUserId(request)
+                           │
+                           ├─ 检查 header X-Mock-User-Id → 有则返回
+                           └─ 无则返回默认 "mock-user-001"
+```
+
+**未来阶段：Apple Sign In + Next-Auth v5**
+
+```
+前端 expo-apple-authentication → identityToken
+  → POST /piko/auth/apple/v1 → 后端验证 + 创建/查找 User → 返回 JWT
+  → JWT 存入 expo-secure-store
+  → 每次请求携带 Authorization: Bearer <jwt>
+  → getUserId(request) 从 JWT 解析真实 userId
+```
+
+**切换点唯一**：`backend/lib/auth.ts` — 改一个函数即可完成切换
+
+**Telegram 登录**（保留，作为绑定功能）:
+
 ```
 手机号 → sendCode → 验证码 → signIn → (可选 2FA → checkPassword) → session string
                                                                          ↓
-                                               存储: expo-secure-store (native) / localStorage (web)
-                                                                         ↓
-                                               每次 API 请求在 body 中携带 session
+                                               绑定成功后写入 TelegramBinding 表
+                                               session string 存 DB，不再存前端
 ```
 
-关键文件: `common/hooks/useAuth.ts`、`backend/lib/telegram.ts`
+关键文件: `backend/lib/auth.ts`、`common/hooks/useAuth.ts`、`backend/lib/telegram.ts`
 
 ---
 
@@ -227,7 +285,23 @@ TELEGRAM_API_HASH=xxx
 GEMINI_API_KEY=xxx              # Google Gemini
 OPENWEATHER_API_KEY=xxx         # OpenWeatherMap
 AMAP_API_KEY=xxx                # 高德地图 (待申请)
-DATABASE_URL=postgresql://...   # PostgreSQL
+
+# PostgreSQL (Neon)
+DATABASE_URL=postgresql://...   # Neon 连接串
+
+# 认证 (Apple Sign In 接入后启用)
+AUTH_SECRET=xxx                 # Next-Auth JWT 签名密钥
+APPLE_ID=xxx                    # Apple Services ID (TODO)
+APPLE_TEAM_ID=xxx               # (TODO)
+APPLE_KEY_ID=xxx                # (TODO)
+APPLE_SECRET=xxx                # (TODO)
+
+# Cloudflare R2
+R2_ACCOUNT_ID=xxx
+R2_ACCESS_KEY_ID=xxx
+R2_SECRET_ACCESS_KEY=xxx
+R2_BUCKET_NAME=piko-uploads
+R2_PUBLIC_URL=https://pub-xxx.r2.dev
 ```
 
 ---

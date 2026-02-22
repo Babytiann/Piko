@@ -35,7 +35,9 @@ description: 高级 AI Agent 全栈开发讲师。擅长教前端工程师转型
 | 前端     | Expo 54 / React Native 0.81 / Tamagui / Expo Router | 已有                    |
 | 后端     | Next.js 16 App Router / TypeScript                  | 已有                    |
 | 大模型   | Google Gemini (gemini-3-flash-preview)              | `@google/generative-ai` |
-| 数据库   | PostgreSQL + Prisma ORM                             | 新增                    |
+| 数据库   | PostgreSQL (Neon) + Prisma ORM                      | 新增                    |
+| 对象存储 | Cloudflare R2 (S3 兼容)                             | 新增，存账单图片/头像   |
+| 认证     | Apple Sign In + Next-Auth v5（暂跳过，Mock Auth）   | 待接入                  |
 | 天气     | OpenWeatherMap                                      | 已有 API Key            |
 | 地图     | 高德地图 (默认) / Google Maps (备选)                | 待申请 API Key          |
 | 推送     | Expo Push Notifications                             | 新增                    |
@@ -64,15 +66,15 @@ description: 高级 AI Agent 全栈开发讲师。擅长教前端工程师转型
 
 按以下顺序教学，每个模块都产出一个可运行的功能：
 
-| 模块 | 主题         | 实战功能                       | 核心新概念                     |
-| ---- | ------------ | ------------------------------ | ------------------------------ |
-| 1    | LLM 接入     | `/ai` Tab 页 AI 聊天助手       | Gemini API, SSE Streaming      |
-| 2    | Tool Calling | 出行规划 + 智能记账 + 首页整合 | Function Calling, 多模态, 地图 |
-| 3    | 持久化存储   | 消费记录/预算/出行历史持久化   | PostgreSQL, Prisma ORM         |
-| 4    | 定时任务     | 每日简报自动生成+推送          | node-cron, 任务编排            |
-| 5    | 推送通知     | App 系统通知                   | Expo Push Notifications        |
-| 6    | RAG          | Telegram 聊天记录智能搜索      | Embedding, 向量检索            |
-| 7    | 多 Agent     | 个人生活助理系统               | Agent 编排, 协作模式           |
+| 模块 | 主题         | 实战功能                       | 核心新概念                               |
+| ---- | ------------ | ------------------------------ | ---------------------------------------- |
+| 1    | LLM 接入     | `/ai` Tab 页 AI 聊天助手       | Gemini API, SSE Streaming                |
+| 2    | Tool Calling | 出行规划 + 智能记账 + 首页整合 | Function Calling, 多模态, 地图           |
+| 3    | 持久化存储   | 用户/消费/TG绑定/AI对话持久化  | PostgreSQL (Neon), Prisma, R2, Mock Auth |
+| 4    | 定时任务     | 每日简报自动生成+推送          | node-cron, 任务编排                      |
+| 5    | 推送通知     | App 系统通知                   | Expo Push Notifications                  |
+| 6    | RAG          | Telegram 聊天记录智能搜索      | Embedding, 向量检索                      |
+| 7    | 多 Agent     | 个人生活助理系统               | Agent 编排, 协作模式                     |
 
 详细内容见 [CURRICULUM.md](CURRICULUM.md)。
 
@@ -170,3 +172,4 @@ Piko 项目的完整架构速查见 [PIKO-ARCHITECTURE.md](PIKO-ARCHITECTURE.md)
 - 路由: `/piko/{module}/{action}/v1/route.ts`
 - 服务: `backend/lib/services/{module}.ts`
 - 类型: `backend/types/{module}.ts`
+- 认证: `backend/lib/auth.ts` — 统一 `getUserId(request)` 函数（Mock 阶段返回固定 ID，Apple 登录接入后改为解析 JWT）

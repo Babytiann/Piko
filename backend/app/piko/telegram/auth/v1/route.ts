@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { Api } from 'telegram';
 import { StringSession } from 'telegram/sessions';
 import { computeCheck } from 'telegram/Password';
@@ -8,6 +8,8 @@ import {
   removePendingClient,
   getPooledClient,
 } from '@/lib/telegram';
+import { getUserId } from '@/lib/auth';
+import { ensureUser, bindTelegram } from '@/lib/services/user';
 import {
   SessionTag,
   type TelegramAuthRequest,
@@ -72,6 +74,7 @@ async function handleSignIn(
   phoneNumber: string,
   phoneCode: string,
   phoneCodeHash: string,
+  userId: string,
 ) {
   const client = await getOrCreatePendingClient(phoneNumber);
 
@@ -93,10 +96,21 @@ async function handleSignIn(
     const session = (client.session as StringSession).save();
     removePendingClient(phoneNumber);
 
+    // 持久化用户 + TG 绑定到数据库
+    const user = userPayload(result.user);
+    await ensureUser(userId);
+    await bindTelegram(userId, {
+      telegramUserId: BigInt(user.id ?? '0'),
+      username: user.username || undefined,
+      firstName: user.firstName || undefined,
+      phone: user.phone || undefined,
+      sessionString: session,
+    });
+
     return NextResponse.json({
       success: true,
       session,
-      user: userPayload(result.user),
+      user,
     });
   } catch (err: unknown) {
     if (
@@ -110,7 +124,11 @@ async function handleSignIn(
   }
 }
 
-async function handleCheckPassword(session: string, password: string) {
+async function handleCheckPassword(
+  session: string,
+  password: string,
+  userId: string,
+) {
   const client = await getPooledClient(session);
 
   const passwordInfo = await client.invoke(new Api.account.GetPassword());
@@ -122,15 +140,27 @@ async function handleCheckPassword(session: string, password: string) {
 
   const newSession = (client.session as StringSession).save();
 
+  // 持久化用户 + TG 绑定到数据库
+  const user = userPayload(result.user);
+  await ensureUser(userId);
+  await bindTelegram(userId, {
+    telegramUserId: BigInt(user.id ?? '0'),
+    username: user.username || undefined,
+    firstName: user.firstName || undefined,
+    phone: user.phone || undefined,
+    sessionString: newSession,
+  });
+
   return NextResponse.json({
     success: true,
     session: newSession,
-    user: userPayload(result.user),
+    user,
   });
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    const userId = getUserId(request);
     const body = (await request.json()) as TelegramAuthRequest;
     const { session_tag } = body;
 
@@ -160,6 +190,7 @@ export async function POST(request: Request) {
           body.phoneNumber,
           body.phoneCode,
           body.phoneCodeHash,
+          userId,
         );
       }
 
@@ -173,7 +204,7 @@ export async function POST(request: Request) {
             { status: 400 },
           );
         }
-        return await handleCheckPassword(body.session, body.password);
+        return await handleCheckPassword(body.session, body.password, userId);
       }
 
       default:

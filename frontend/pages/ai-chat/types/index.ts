@@ -55,6 +55,7 @@ export interface SseChunkEvent {
 
 export interface SseDoneEvent {
   type: 'done';
+  conversationId?: string;
 }
 
 export interface SseErrorEvent {
@@ -104,4 +105,12 @@ export interface AiCopywriting {
   emptyTitle: string;
   emptySubtitle: string;
   inputPlaceholder: string;
+}
+
+/** 会话列表项 */
+export interface ConversationItem {
+  id: string;
+  title: string;
+  updatedAt: string;
+  messageCount: number;
 }

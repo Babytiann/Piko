@@ -12,6 +12,8 @@ export interface ChatMessage {
 /** Request body for POST /piko/ai/chat/v1 */
 export interface AiChatRequest {
   messages: ChatMessage[];
+  /** 对话 ID。"new" 或不传 = 新建对话，已有值 = 追加到现有对话 */
+  conversationId?: string;
 }
 
 /** SSE event data shapes. */
@@ -22,6 +24,8 @@ export interface SseChunkEvent {
 
 export interface SseDoneEvent {
   type: 'done';
+  /** 对话 ID（新建对话时返回给前端） */
+  conversationId?: string;
 }
 
 export interface SseErrorEvent {

@@ -262,6 +262,105 @@ async function getUserSpendingProfile(userId: string): Promise<string> {
 
 ---
 
+### 5b. Mock Auth → 生产 Auth 平滑过渡模式
+
+**适用场景**: 所有需要用户身份的路由，开发阶段无需真实登录
+
+核心思想：统一切换点，所有路由统一调用 `getUserId()`，切换时只改这一个文件。
+
+```typescript
+// backend/lib/auth.ts — Mock 阶段
+import type { NextRequest } from 'next/server';
+
+/** 默认 Mock 用户 ID，数据库 seed 时需要预先创建这个用户 */
+const MOCK_USER_ID = 'mock-user-001';
+
+/**
+ * 从请求中提取用户 ID。
+ *
+ * Mock 阶段：从 X-Mock-User-Id header 读取，无则返回默认值。
+ * Apple 登录接入后：改为从 Authorization: Bearer <jwt> 解析。
+ */
+export function getUserId(request: NextRequest): string {
+  // TODO: Apple Sign In 接入后替换为 JWT 解析
+  // const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+  // return verifyJwt(token).userId;
+
+  return request.headers.get('X-Mock-User-Id') ?? MOCK_USER_ID;
+}
+```
+
+**前端配合** — 统一注入 header：
+
+```typescript
+// frontend/services/index.ts
+function getAuthHeaders(): Record<string, string> {
+  // TODO: Apple 登录接入后改为：
+  // return { Authorization: `Bearer ${getToken()}` };
+  return { 'X-Mock-User-Id': 'mock-user-001' };
+}
+
+export async function post<T>(path: string, body = {}): Promise<T> {
+  const response = await fetch(`${API_BASE}/${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(body),
+  });
+  // ...
+}
+```
+
+---
+
+### 5c. 数据库持久化模式 (Prisma)
+
+**适用场景**: 消费记录、AI 对话、用户资料等需要跨 session 保存的数据
+
+```typescript
+// backend/lib/prisma.ts — Prisma Client 单例
+// 使用 globalThis 缓存防止 Next.js 热重载重复创建
+import { PrismaClient } from '@prisma/client';
+
+const globalForPrisma = globalThis as unknown as { __prisma?: PrismaClient };
+
+export const prisma = globalForPrisma.__prisma ?? new PrismaClient();
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.__prisma = prisma;
+}
+```
+
+**AI 对话持久化** — 前端持有上下文，后端旁路存储：
+
+```typescript
+// 后端: 流式完成后存入 DB，不影响主流程性能
+async function persistMessages(
+  conversationId: string,
+  userContent: string,
+  modelContent: string,
+  toolCalls?: unknown[],
+): Promise<void> {
+  await prisma.aiMessage.createMany({
+    data: [
+      { conversationId, role: 'USER', content: userContent },
+      {
+        conversationId,
+        role: 'MODEL',
+        content: modelContent,
+        toolCalls: toolCalls ?? undefined,
+      },
+    ],
+  });
+  // 更新对话活跃时间
+  await prisma.aiConversation.update({
+    where: { id: conversationId },
+    data: { updatedAt: new Date() },
+  });
+}
+```
+
+---
+
 ### 6. Scheduled Agent 模式
 
 **适用场景**: 每日简报、预算预警

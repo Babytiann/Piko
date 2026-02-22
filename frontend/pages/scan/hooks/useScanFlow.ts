@@ -4,6 +4,7 @@ import * as Haptics from 'expo-haptics';
 import type { ScanPhase, RecognizeResult, ExpenseRecord } from '../types';
 import { useScanCamera } from './useScanCamera';
 import { useScanRecognize } from './useScanRecognize';
+import { uploadExpense } from '@/services/ai';
 
 interface UseScanFlowReturn {
   /** 当前流程阶段 */
@@ -100,6 +101,18 @@ export function useScanFlow(): UseScanFlowReturn {
     };
     setExpenses((prev) => [expense, ...prev]);
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+    // 异步上传后端持久化（不阻塞 UI）
+    void uploadExpense({
+      amount: record.amount,
+      merchant: record.merchant,
+      category: record.category,
+      date: record.date,
+      items: record.items,
+      source: record.source,
+      image: capturedBase64 ?? undefined,
+      mimeType: capturedMimeType,
+    }).catch((err) => console.error('[Expense] upload error:', err));
 
     // 保存后回到相机
     setCapturedUri(null);

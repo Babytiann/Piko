@@ -1,6 +1,12 @@
 import { NextRequest } from 'next/server';
 import { streamChatWithTools } from '@/lib/services/ai';
 import { createLocationRequest } from '@/lib/services/location-bridge';
+import { getUserId } from '@/lib/auth';
+import {
+  createConversation,
+  saveMessages,
+  autoTitle,
+} from '@/lib/services/ai/conversation';
 import type { AiChatRequest, SseEvent } from '@/types/ai';
 
 /**
@@ -20,6 +26,7 @@ import type { AiChatRequest, SseEvent } from '@/types/ai';
  */
 export async function POST(request: NextRequest) {
   const t0 = Date.now();
+  const userId = getUserId(request);
 
   let body: AiChatRequest;
   try {
@@ -37,10 +44,14 @@ export async function POST(request: NextRequest) {
     return errorResponse('Last message must be a non-empty user message', 400);
   }
 
+  // conversationId: "new" = 新建对话，已有值 = 追加到现有对话
+  const conversationId = body.conversationId ?? null;
+  const isNewConversation = !conversationId || conversationId === 'new';
+
   const msgCount = body.messages.length;
   const userText = lastMsg.content.slice(0, 80);
   console.log(
-    `[AI] ← 收到请求 (${msgCount} 条历史) "${userText}${lastMsg.content.length > 80 ? '...' : ''}"`,
+    `[AI] ← 收到请求 (${msgCount} 条历史, conv=${conversationId ?? 'new'}) "${userText}${lastMsg.content.length > 80 ? '...' : ''}"`,
   );
 
   const encoder = new TextEncoder();
@@ -92,17 +103,44 @@ export async function POST(request: NextRequest) {
           `[AI]   ReAct 循环完成 (+${Date.now() - tReact}ms)，开始流式输出`,
         );
 
+        let fullModelResponse = '';
         for await (const chunk of result.stream) {
           const text = chunk.text();
           if (text) {
             chunkCount++;
+            fullModelResponse += text;
             enqueue({ type: 'chunk', content: text });
           }
         }
 
-        enqueue({ type: 'done' });
+        // ── 持久化到数据库（旁路存储，不影响流式响应） ──
+        let savedConversationId = conversationId;
+        try {
+          if (isNewConversation) {
+            const conv = await createConversation(userId);
+            savedConversationId = conv.id;
+            await autoTitle(conv.id, lastMsg.content);
+          }
+          if (savedConversationId && savedConversationId !== 'new') {
+            await saveMessages(
+              savedConversationId,
+              lastMsg.content,
+              fullModelResponse,
+            );
+          }
+        } catch (persistErr) {
+          console.error('[AI] 持久化失败（不影响响应）:', persistErr);
+        }
+
+        enqueue({
+          type: 'done',
+          ...(savedConversationId &&
+            savedConversationId !== 'new' && {
+              conversationId: savedConversationId,
+            }),
+        });
         console.log(
-          `[AI] → 完成 (${chunkCount} chunks, 总耗时 ${Date.now() - t0}ms)`,
+          `[AI] → 完成 (${chunkCount} chunks, conv=${savedConversationId}, 总耗时 ${Date.now() - t0}ms)`,
         );
       } catch (err: unknown) {
         const message =

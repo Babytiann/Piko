@@ -3,13 +3,26 @@ import { API_HOST } from '@/common/config';
 
 const API_BASE = `${API_HOST}/piko`;
 
+/**
+ * 返回认证相关的 HTTP headers。
+ *
+ * Mock 阶段：发送 X-Mock-User-Id。
+ * Apple Sign In 接入后：改为发送 Authorization: Bearer <jwt>。
+ */
+function getAuthHeaders(): Record<string, string> {
+  // TODO: Apple 登录接入后替换为：
+  // const token = await getToken(); // 从 expo-secure-store 读取
+  // return token ? { Authorization: `Bearer ${token}` } : {};
+  return { 'X-Mock-User-Id': 'mock-user-001' };
+}
+
 export async function post<T>(
   path: string,
   body: Record<string, unknown> = {},
 ): Promise<T> {
   const response = await fetch(`${API_BASE}/${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify(body),
   });
 
@@ -33,7 +46,7 @@ export async function postSafe<T>(
   try {
     const response = await fetch(`${API_BASE}/${path}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify(body),
     });
 
@@ -60,7 +73,7 @@ export async function postDirect<T>(
 ): Promise<T> {
   const response = await fetch(`${API_BASE}/${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify(body),
   });
 

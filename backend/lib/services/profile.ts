@@ -1,5 +1,6 @@
 import type { ProfilePageData } from '@/types/profile';
 import { getUserInfo, getProfilePhotoBase64 } from './telegram';
+import { getUserWithBinding, getTelegramSession, unbindTelegram } from './user';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -25,7 +26,7 @@ function getAvatarColor(id: string): string {
 // Page data builders
 // ---------------------------------------------------------------------------
 
-function buildUnboundPageData(): ProfilePageData {
+function buildUnboundPageData(nickname?: string): ProfilePageData {
   return {
     header: { title: '个人中心' },
     telegramSection: {
@@ -34,6 +35,7 @@ function buildUnboundPageData(): ProfilePageData {
       bindPrompt: '绑定 Telegram 账号后，可以查看和管理你的 Telegram 消息。',
       bindButtonText: '绑定 Telegram 账号',
     },
+    ...(nickname && { user: { nickname } }),
   };
 }
 
@@ -43,39 +45,57 @@ function buildUnboundPageData(): ProfilePageData {
 
 /**
  * Aggregate all data needed by the Profile page.
- * When `session` is provided, fetches Telegram user details;
- * otherwise returns the "unbound" variant.
+ *
+ * 优先从 DB 查询 TG 绑定的 sessionString；
+ * 若 DB 无记录则 fallback 到前端传入的 session（向后兼容）。
  */
 export async function getProfilePageData(
-  session?: string,
+  userId: string,
+  fallbackSession?: string,
 ): Promise<ProfilePageData> {
-  if (!session) return buildUnboundPageData();
+  const dbUser = await getUserWithBinding(userId);
+  const nickname = dbUser?.nickname ?? undefined;
 
-  const userInfo = await getUserInfo(session);
-  const img_url = userInfo.hasPhoto
-    ? await getProfilePhotoBase64(session)
-    : undefined;
+  // 尝试从 DB 拿 session，兜底用前端传入的
+  const session =
+    dbUser?.telegramBinding?.sessionString ?? fallbackSession ?? null;
 
-  const displayName =
-    [userInfo.firstName, userInfo.lastName].filter(Boolean).join(' ') ||
-    '未知用户';
+  if (!session) return buildUnboundPageData(nickname);
 
-  return {
-    header: { title: '个人中心' },
-    telegramSection: {
-      title: 'Telegram 账号',
-      isLoggedIn: true,
-      user: {
-        displayName,
-        username: userInfo.username ? `@${userInfo.username}` : '',
-        phone: userInfo.phone,
-        img_url,
-        avatarText: (userInfo.firstName || userInfo.username || '?')
-          .charAt(0)
-          .toUpperCase(),
-        avatarColor: getAvatarColor(userInfo.id),
+  try {
+    const userInfo = await getUserInfo(session);
+    const img_url = userInfo.hasPhoto
+      ? await getProfilePhotoBase64(session)
+      : undefined;
+
+    const displayName =
+      [userInfo.firstName, userInfo.lastName].filter(Boolean).join(' ') ||
+      '未知用户';
+
+    return {
+      header: { title: '个人中心' },
+      telegramSection: {
+        title: 'Telegram 账号',
+        isLoggedIn: true,
+        user: {
+          displayName,
+          username: userInfo.username ? `@${userInfo.username}` : '',
+          phone: userInfo.phone,
+          img_url,
+          avatarText: (userInfo.firstName || userInfo.username || '?')
+            .charAt(0)
+            .toUpperCase(),
+          avatarColor: getAvatarColor(userInfo.id),
+        },
+        unbindButtonText: '解除绑定',
       },
-      unbindButtonText: '解除绑定',
-    },
-  };
+      ...(nickname && { user: { nickname } }),
+    };
+  } catch (err: unknown) {
+    // TG session 失效时自动清理 DB 绑定
+    if (err instanceof Error && err.message.includes('AUTH_KEY_UNREGISTERED')) {
+      await unbindTelegram(userId).catch(() => {});
+    }
+    throw err;
+  }
 }

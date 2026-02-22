@@ -20,14 +20,17 @@ interface RetryPayload {
 interface UseAiChatReturn {
   messages: AiMessage[];
   isStreaming: boolean;
+  conversationId: string | null;
   sendMessage: (text: string) => void;
   clearMessages: () => void;
   requestLocationPermission: (messageId: string) => void;
+  loadConversation: (msgs: AiMessage[], convId: string) => void;
 }
 
 export function useAiChat(): UseAiChatReturn {
   const [messages, setMessages] = useState<AiMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
   const cleanupRef = useRef<(() => void) | null>(null);
   const chunkBufferRef = useRef('');
@@ -145,6 +148,7 @@ export function useAiChat(): UseAiChatReturn {
 
     cleanupRef.current = streamAiChat({
       messages: history,
+      conversationId: conversationId ?? 'new',
       onChunk(chunk) {
         if (!hasReceivedChunk) {
           hasReceivedChunk = true;
@@ -177,10 +181,13 @@ export function useAiChat(): UseAiChatReturn {
       onRequestLocation(requestId) {
         void handleRequestLocation(aiMsgId, requestId);
       },
-      onDone() {
+      onDone(savedConversationId) {
         clearFlushTimer();
         flushChunks();
         retryRef.current = null;
+        if (savedConversationId) {
+          setConversationId(savedConversationId);
+        }
         setMessages((prev) =>
           prev.map((m) =>
             m.id === aiMsgId ? { ...m, isStreaming: false } : m,
@@ -278,6 +285,7 @@ export function useAiChat(): UseAiChatReturn {
     cleanupRef.current = null;
     setMessages([]);
     setIsStreaming(false);
+    setConversationId(null);
   };
 
   const requestLocationPermission = (messageId: string): void => {
@@ -301,11 +309,24 @@ export function useAiChat(): UseAiChatReturn {
     })();
   };
 
+  const loadConversation = (msgs: AiMessage[], convId: string): void => {
+    clearFlushTimer();
+    chunkBufferRef.current = '';
+    retryRef.current = null;
+    cleanupRef.current?.();
+    cleanupRef.current = null;
+    setMessages(msgs);
+    setIsStreaming(false);
+    setConversationId(convId);
+  };
+
   return {
     messages,
     isStreaming,
+    conversationId,
     sendMessage,
     clearMessages,
     requestLocationPermission,
+    loadConversation,
   };
 }

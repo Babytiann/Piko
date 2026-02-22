@@ -1,6 +1,11 @@
 import { API_HOST } from '@/common/config';
 import { post } from '@/services';
-import type { SseEvent, AiCopywriting } from '@/pages/ai-chat/types';
+import type {
+  SseEvent,
+  AiCopywriting,
+  ConversationItem,
+  AiMessage as AiChatMessage,
+} from '@/pages/ai-chat/types';
 import type { RecognizeResult } from '@/pages/scan/types';
 
 const SSE_URL = `${API_HOST}/piko/ai/chat/v1`;
@@ -21,8 +26,9 @@ interface ChatPayload {
 
 interface StreamOptions {
   messages: ChatPayload[];
+  conversationId?: string | null;
   onChunk: (text: string) => void;
-  onDone: () => void;
+  onDone: (conversationId?: string) => void;
   onError: (error: string) => void;
   /** [模块 2] 工具开始调用，message 是后端下发的状态文案 */
   onToolStart?: (
@@ -38,6 +44,7 @@ interface StreamOptions {
 
 export function streamAiChat({
   messages,
+  conversationId,
   onChunk,
   onDone,
   onError,
@@ -84,7 +91,7 @@ export function streamAiChat({
           break;
         case 'done':
           finished = true;
-          onDone();
+          onDone(parsed.conversationId);
           xhr.abort();
           return;
         case 'error':
@@ -99,6 +106,8 @@ export function streamAiChat({
   xhr.open('POST', SSE_URL);
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.setRequestHeader('Accept', 'text/event-stream');
+  // Mock Auth header（Apple 登录接入后改为 Authorization: Bearer <jwt>）
+  xhr.setRequestHeader('X-Mock-User-Id', 'mock-user-001');
   xhr.timeout = 120_000;
 
   xhr.onprogress = processNewData;
@@ -125,7 +134,12 @@ export function streamAiChat({
     }
   };
 
-  xhr.send(JSON.stringify({ messages }));
+  xhr.send(
+    JSON.stringify({
+      messages,
+      ...(conversationId && { conversationId }),
+    }),
+  );
 
   return () => {
     finished = true;
@@ -141,6 +155,8 @@ export function postLocationResponse(
   const xhr = new XMLHttpRequest();
   xhr.open('POST', LOCATION_URL);
   xhr.setRequestHeader('Content-Type', 'application/json');
+  // Mock Auth header（Apple 登录接入后改为 Authorization: Bearer <jwt>）
+  xhr.setRequestHeader('X-Mock-User-Id', 'mock-user-001');
   xhr.send(JSON.stringify({ requestId, location }));
 }
 
@@ -153,4 +169,76 @@ export async function recognizeExpense(
     image: imageBase64,
     mimeType,
   });
+}
+
+// ---------------------------------------------------------------------------
+// Conversation CRUD
+// ---------------------------------------------------------------------------
+
+/** 获取会话列表 */
+export function fetchConversationList(): Promise<ConversationItem[]> {
+  return post<ConversationItem[]>('ai/conversation/list/v1');
+}
+
+/** 获取会话详情（含消息） */
+export function fetchConversationDetail(conversationId: string): Promise<{
+  id: string;
+  title: string;
+  messages: { role: 'user' | 'model'; content: string; createdAt: string }[];
+}> {
+  return post('ai/conversation/detail/v1', { conversationId });
+}
+
+/** 创建新会话 */
+export function createConversation(
+  title?: string,
+): Promise<{ id: string; title: string }> {
+  return post('ai/conversation/create/v1', { title });
+}
+
+/** 删除会话 */
+export function deleteConversation(conversationId: string): Promise<void> {
+  return post('ai/conversation/delete/v1', { conversationId });
+}
+
+// ---------------------------------------------------------------------------
+// Expense API
+// ---------------------------------------------------------------------------
+
+/** 上传消费记录 */
+export function uploadExpense(data: {
+  amount: number;
+  merchant?: string;
+  category?: string;
+  date?: string;
+  items?: string[];
+  source: 'camera' | 'album' | 'manual';
+  image?: string;
+  mimeType?: string;
+}): Promise<{ id: string; amount: number }> {
+  return post('expense/upload/v1', data as Record<string, unknown>);
+}
+
+/** 获取消费记录列表 */
+export function fetchExpenseList(params?: {
+  page?: number;
+  pageSize?: number;
+  startDate?: string;
+  endDate?: string;
+}): Promise<{
+  expenses: Array<{
+    id: string;
+    amount: number;
+    merchant: string | null;
+    category: string;
+    date: string;
+    source: string;
+    imageUrl: string | null;
+    createdAt: string;
+  }>;
+  total: number;
+  page: number;
+  pageSize: number;
+}> {
+  return post('expense/list/v1', (params ?? {}) as Record<string, unknown>);
 }

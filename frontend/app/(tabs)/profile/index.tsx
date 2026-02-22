@@ -19,7 +19,7 @@ export default function ProfileScreen(): ReactNode {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { session, logout } = useAuth();
-  const { isLoading, errorType, data, handleRetry } = useProfileData(session);
+  const { isLoading, errorType, data, handleRetry } = useProfileData();
   const [isUnbinding, setIsUnbinding] = useState(false);
 
   // 检测到 AUTH 错误时自动弹窗提示并清除本地 session

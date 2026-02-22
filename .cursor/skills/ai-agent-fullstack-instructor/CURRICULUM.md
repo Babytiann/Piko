@@ -157,76 +157,189 @@
 
 ## 模块 3: 持久化存储 — 给 Agent 加记忆
 
-**实战功能**: 消费记录、预算、出行历史、AI 对话历史持久化到 PostgreSQL
+**实战功能**: 用户体系、消费记录、Telegram 绑定、AI 对话历史全部持久化到 PostgreSQL (Neon)，账单图片存储到 Cloudflare R2
+
+**认证策略** (Mock Auth → Apple Sign In):
+
+当前阶段使用 Mock Auth，所有需要用户身份的地方统一调用 `getUserId(request)` 函数：
+
+- Mock 阶段：从 header `X-Mock-User-Id` 读取，无则返回默认 `"mock-user-001"`
+- Apple 登录接入后：改为从 `Authorization: Bearer <jwt>` 解析真实 `userId`
+- **切换点唯一**：`backend/lib/auth.ts`
 
 **后端变更**:
 
-- `prisma/schema.prisma` — 数据模型定义
-- `lib/prisma.ts` — Prisma Client 实例
+- `prisma/schema.prisma` — 数据模型定义（8 张表）
+- `lib/prisma.ts` — Prisma Client 单例（globalThis 缓存防热重载）
+- `lib/auth.ts` — 统一认证函数 `getUserId(request)`
+- `lib/r2.ts` — Cloudflare R2 客户端（S3Client）
+- `lib/services/expense.ts` — 消费记录 CRUD
+- `lib/services/ai/conversation.ts` — AI 对话 CRUD
+- `app/piko/expense/upload/v1/route.ts` — 图片上传 + 识别
+- `app/piko/expense/list/v1/route.ts` — 消费历史查询
+- `app/piko/ai/conversation/list/v1/route.ts` — 对话列表
+- `app/piko/ai/conversation/create/v1/route.ts` — 新建对话
+- `app/piko/ai/conversation/detail/v1/route.ts` — 对话详情
+- `app/piko/ai/conversation/delete/v1/route.ts` — 删除对话
 
-**数据模型**:
+**前端变更**:
+
+- `services/index.ts` — `post`/`postSafe`/`postDirect` 添加 `X-Mock-User-Id` header
+- `services/ai.ts` — XHR 请求添加 `X-Mock-User-Id` header
+- `pages/ai-chat/hooks/useConversationList.ts` — 对话列表 Data Hook
+- `pages/ai-chat/hooks/useConversation.ts` — 当前对话管理 Hook
+- `pages/ai-chat/components/ai-conversation-drawer/` — 侧边栏 Drawer
+
+**数据模型 (8 张表)**:
 
 ```prisma
+// ============ Next-Auth 标准表 (4 张，Apple 登录接入后启用) ============
+
 model User {
-  id        String   @id @default(cuid())
-  session   String   @unique
-  city      String?
-  createdAt DateTime @default(now())
-  budgets   Budget[]
-  expenses  Expense[]
-  trips     Trip[]
-  chats     ChatMessage[]
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  nickname      String?   // 用户自定义昵称
+  avatarUrl     String?   // 自定义头像 (R2 URL)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts         Account[]
+  sessions         Session[]
+  telegramBinding  TelegramBinding?
+  expenses         Expense[]
+  aiConversations  AiConversation[]
 }
 
-model Budget {
-  id        String   @id @default(cuid())
-  userId    String
-  month     String   // "2026-02"
-  total     Float
-  categories Json    // { "餐饮": 800, "交通": 500, ... }
-  user      User     @relation(fields: [userId], references: [id])
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============ 业务表 (4 张) ============
+
+model TelegramBinding {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  telegramUserId  BigInt   @unique
+  username        String?
+  firstName       String?
+  phone           String?
+  sessionString   String   // 加密存储的 GramJS session
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Expense {
-  id        String   @id @default(cuid())
-  userId    String
-  amount    Float
-  category  String
-  merchant  String?
-  note      String?
-  date      DateTime
-  source    String   // "camera" | "album" | "manual"
-  user      User     @relation(fields: [userId], references: [id])
-}
-
-model Trip {
   id          String   @id @default(cuid())
   userId      String
-  destination String
-  startDate   DateTime
-  endDate     DateTime
-  routeData   Json?
-  user        User     @relation(fields: [userId], references: [id])
+  amount      Decimal  @db.Decimal(10, 2)
+  merchant    String?
+  category    String
+  date        DateTime // 消费日期
+  items       Json?    // 消费明细
+  confidence  Float?
+  source      String   // "CAMERA" | "ALBUM" | "MANUAL"
+  imageUrl    String?  // R2 公开访问 URL
+  imageKey    String?  // R2 object key（用于删除）
+  rawResult   Json?    // Gemini 原始识别结果
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date(sort: Desc)])
 }
 
-model ChatMessage {
+model AiConversation {
   id        String   @id @default(cuid())
   userId    String
-  role      String   // "user" | "assistant" | "tool"
-  content   String
-  toolCalls Json?
+  title     String   @default("新对话")
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  AiMessage[]
+
+  @@index([userId, updatedAt(sort: Desc)])
 }
+
+enum MessageRole {
+  USER
+  MODEL
+}
+
+model AiMessage {
+  id              String         @id @default(cuid())
+  conversationId  String
+  role            MessageRole
+  content         String
+  toolCalls       Json?          // [{tool, args, message, success}]
+  createdAt       DateTime       @default(now())
+  conversation    AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt(sort: Asc)])
+}
+```
+
+**AI 对话持久化数据流**:
+
+```
+【性能优化核心原则】前端始终持有并发送完整 messages[]，后端只负责持久化，不为 AI 上下文查库
+
+首次发消息:
+  前端 POST { conversationId: "new", messages: [{role:"user", content:"你好"}] }
+  后端: 创建 Conversation → messages 直接传给 Gemini → 流式回复 → 存 user+model 消息到 DB
+  SSE done { conversationId: "clx...", title: "你好" }
+
+后续消息:
+  前端 POST { conversationId: "clx...", messages: [全部历史+新消息] }
+  后端: messages 直接传给 Gemini → 只存最新一轮 user+model 到 DB
+
+切换历史对话:
+  Drawer 点击 → fetchConversationDetail(id) → messages[] 填充到前端 state
+  后续发消息时前端 state 已有完整历史，直接带上发送
 ```
 
 **核心技术点**:
 
-1. Prisma ORM 安装与配置
-2. 数据模型设计（关系、索引、JSON 字段）
+1. Prisma ORM 安装与配置（Neon Serverless PostgreSQL）
+2. 数据模型设计（8 张表、关系、索引、JSON 字段、级联删除）
 3. Prisma Migrate 数据库迁移
-4. Agent Memory：短期（对话上下文 window）vs 长期（历史消费模式）
-5. 聚合查询：按月/周/日汇总消费数据
+4. Mock Auth → Apple Sign In 平滑过渡模式
+5. Cloudflare R2 图片存储（S3 兼容 API）
+6. AI 对话持久化：前端持有上下文，后端旁路存储
+7. 聚合查询：按月/周/日汇总消费数据
+8. Telegram 绑定持久化（sessionString 存 DB，不再依赖前端传递）
 
 ---
 
