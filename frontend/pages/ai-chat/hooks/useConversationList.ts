@@ -39,11 +39,21 @@ async function loadConversationCache(): Promise<ConversationItem[]> {
   });
 }
 
-export function useConversationList(): UseConversationListReturn {
+export function useConversationList(
+  userId: string | null,
+): UseConversationListReturn {
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    if (!userId) {
+      setConversations([]);
+      void AsyncStorage.removeItem(CONVERSATION_CACHE_KEY).catch((err) => {
+        console.error('[ConversationList] clear cache error:', err);
+      });
+      return;
+    }
+
     const bootstrap = async (): Promise<void> => {
       try {
         const cached = await loadConversationCache();
@@ -56,7 +66,7 @@ export function useConversationList(): UseConversationListReturn {
     };
 
     void bootstrap();
-  }, []);
+  }, [userId]);
 
   const refresh = useCallback(async (): Promise<void> => {
     setIsLoading(true);

@@ -9,6 +9,8 @@ import {
   getChatListPageData,
   getChatDetailPageData,
 } from '@/lib/services/chat';
+import { unbindTelegram } from '@/lib/services/user';
+import { getUserId } from '@/lib/auth';
 
 export const chatRoutes = new Hono();
 
@@ -23,7 +25,13 @@ chatRoutes.post('/list/v1', async (c) => {
       err instanceof Error ? err.message : 'Failed to load chat list';
     console.error('chat/list error:', err);
 
-    if (message.includes('AUTH_KEY_UNREGISTERED')) {
+    if (
+      message.includes('AUTH_KEY_UNREGISTERED') ||
+      message.includes('AUTH_BYTES_INVALID')
+    ) {
+      void unbindTelegram(getUserId(c.req.raw)).catch((e) => {
+        console.error('chat/list unbind error:', e);
+      });
       return c.json(
         {
           success: false,
@@ -73,7 +81,13 @@ chatRoutes.post('/detail/v1', async (c) => {
       err instanceof Error ? err.message : 'Failed to load chat detail';
     console.error('chat/detail error:', err);
 
-    if (message.includes('AUTH_KEY_UNREGISTERED')) {
+    if (
+      message.includes('AUTH_KEY_UNREGISTERED') ||
+      message.includes('AUTH_BYTES_INVALID')
+    ) {
+      void unbindTelegram(getUserId(c.req.raw)).catch((e) => {
+        console.error('chat/detail unbind error:', e);
+      });
       return c.json(
         {
           success: false,

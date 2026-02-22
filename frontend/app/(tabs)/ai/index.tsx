@@ -15,6 +15,7 @@ import { YStack, XStack, Text, useTheme } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
 
 import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
+import { useAuth } from '@/common/hooks';
 import {
   useAiChat,
   useAiCopywriting,
@@ -78,7 +79,8 @@ export default function AiScreen(): ReactNode {
   } = useAiChat();
   const { copy } = useAiCopywriting();
   const bottomInset = useKeyboardBottomInset();
-  const convList = useConversationList();
+  const { user } = useAuth();
+  const convList = useConversationList(user?.id ?? null);
 
   const contentTranslateX = useRef(new Animated.Value(0)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
