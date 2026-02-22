@@ -1,3 +1,4 @@
+import { Api } from 'telegram';
 import { getPooledClient, resolveInputPeer } from '@/lib/telegram';
 
 interface PhotoCacheEntry {
@@ -43,16 +44,43 @@ export async function downloadPeerPhoto(
   accessHash: string,
 ): Promise<Buffer | null> {
   const client = await getPooledClient(session);
-  const peer = resolveInputPeer(peerId, peerType, accessHash);
+
   try {
-    const photo = await client.downloadProfilePhoto(peer);
+    // 优先从 GramJS 实体缓存解析（getDialogs 调用时已填充缓存），
+    // 缓存中有正确的 accessHash，不需要前端传入。
+    let entity: Api.TypeInputPeer;
+    try {
+      let peerRef: Api.PeerUser | Api.PeerChat | Api.PeerChannel;
+      const id = BigInt(peerId) as unknown as Api.long;
+      switch (peerType) {
+        case 'channel':
+          peerRef = new Api.PeerChannel({ channelId: id });
+          break;
+        case 'group':
+          peerRef = new Api.PeerChat({ chatId: id });
+          break;
+        default:
+          peerRef = new Api.PeerUser({ userId: id });
+      }
+      entity = await client.getInputEntity(peerRef);
+    } catch {
+      // 缓存未命中，fallback 到手动构建（需要有效 accessHash）
+      entity = resolveInputPeer(peerId, peerType, accessHash);
+    }
+
+    const photo = await client.downloadProfilePhoto(entity);
     if (!photo || (Buffer.isBuffer(photo) && photo.length === 0)) {
       return null;
     }
     return Buffer.isBuffer(photo) ? photo : Buffer.from(photo);
-  } catch {
+  } catch (err) {
+    console.error(`avatar download failed [peerId=${peerId}]:`, err);
     return null;
   }
+}
+
+export function clearPhotoCache(session: string): void {
+  photoCache.delete(sessionCacheKey(session));
 }
 
 export async function getProfilePhotoBase64(

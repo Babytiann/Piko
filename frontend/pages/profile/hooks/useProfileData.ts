@@ -14,7 +14,7 @@ interface UseProfileDataReturn {
   handleRetry: () => void;
 }
 
-export function useProfileData(): UseProfileDataReturn {
+export function useProfileData(session: string | null): UseProfileDataReturn {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorType, setErrorType] = useState<PageErrorType | undefined>(
     undefined,
@@ -52,7 +52,7 @@ export function useProfileData(): UseProfileDataReturn {
     return () => {
       cancelled = true;
     };
-  }, [fetchKey]);
+  }, [session, fetchKey]);
 
   const handleRetry = (): void => {
     setFetchKey((k) => k + 1);

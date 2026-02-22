@@ -3,6 +3,7 @@ import { Api } from 'telegram';
 import { getPooledClient, removePooledClient } from '@/lib/telegram';
 import { getUserId } from '@/lib/auth';
 import { unbindTelegram, getTelegramSession } from '@/lib/services/user';
+import { clearPhotoCache } from '@/lib/services/telegram/photo';
 
 /**
  * POST /piko/telegram/unbind/v1
@@ -40,6 +41,9 @@ export async function POST(request: NextRequest) {
         }
       }
     }
+
+    // 清理头像内存缓存
+    if (session) clearPhotoCache(session);
 
     // 从数据库删除绑定记录
     await unbindTelegram(userId);

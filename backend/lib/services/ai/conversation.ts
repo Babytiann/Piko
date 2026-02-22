@@ -125,7 +125,7 @@ export async function saveMessages(
   modelContent: string,
   toolCalls?: unknown,
 ): Promise<void> {
-  await prisma.$transaction([
+  await Promise.all([
     prisma.aiMessage.create({
       data: {
         conversationId,
