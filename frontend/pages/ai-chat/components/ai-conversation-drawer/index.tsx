@@ -67,22 +67,22 @@ export default function AiConversationDrawer({
     return (
       <Pressable onPress={() => onSelect(item.id)}>
         <XStack
-          px="$3"
-          py="$2.5"
-          mx="$2"
+          px="$4"
+          py="$3.5"
+          mx="$3"
           bg={isActive ? '$blue3' : 'transparent'}
-          style={{ alignItems: 'center', borderRadius: 8 }}
+          style={{ alignItems: 'center', borderRadius: 10 }}
         >
-          <YStack flex={1} mr="$2">
+          <YStack flex={1} mr="$3">
             <Text
-              fontSize="$3"
+              fontSize="$4"
               fontWeight={isActive ? '600' : '400'}
               color="$color"
               numberOfLines={1}
             >
               {item.title || '新对话'}
             </Text>
-            <Text fontSize="$1" color="$gray9" mt="$0.5">
+            <Text fontSize="$2" color="$gray9" mt="$1">
               {item.messageCount} 条消息
             </Text>
           </YStack>
@@ -91,9 +91,9 @@ export default function AiConversationDrawer({
               e.stopPropagation();
               onDelete(item.id);
             }}
-            hitSlop={8}
+            hitSlop={10}
           >
-            <Ionicons name="trash-outline" size={16} color={theme.gray9.val} />
+            <Ionicons name="trash-outline" size={18} color={theme.gray9.val} />
           </Pressable>
         </XStack>
       </Pressable>
@@ -112,22 +112,22 @@ export default function AiConversationDrawer({
         ]}
       >
         <XStack
-          px="$4"
-          pt={insets.top}
-          pb="$3"
+          px="$5"
+          pt={insets.top + 8}
+          pb="$4"
           style={{ alignItems: 'center', justifyContent: 'space-between' }}
         >
-          <Text fontSize="$5" fontWeight="700" color="$color">
+          <Text fontSize="$7" fontWeight="700" color="$color">
             历史对话
           </Text>
           <Pressable onPress={onNewChat} hitSlop={8}>
-            <XStack gap="$1.5" style={{ alignItems: 'center' }}>
+            <XStack gap="$2" style={{ alignItems: 'center' }}>
               <Ionicons
                 name="add-circle-outline"
-                size={20}
+                size={22}
                 color={theme.blue10.val}
               />
-              <Text fontSize="$2" color="$blue10" fontWeight="500">
+              <Text fontSize="$3" color="$blue10" fontWeight="600">
                 新对话
               </Text>
             </XStack>
