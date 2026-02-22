@@ -1,5 +1,14 @@
 import { prisma } from '@/lib/prisma';
 
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: string }).code === 'P2002'
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -146,6 +155,66 @@ export async function saveMessages(
       data: { updatedAt: new Date() },
     }),
   ]);
+}
+
+/**
+ * 仅保存用户消息。
+ */
+export async function saveUserMessage(
+  conversationId: string,
+  userContent: string,
+  messageId?: string,
+): Promise<void> {
+  try {
+    await prisma.aiMessage.create({
+      data: {
+        ...(messageId ? { id: messageId } : {}),
+        conversationId,
+        role: 'USER',
+        content: userContent,
+      },
+    });
+  } catch (error) {
+    if (!isUniqueViolation(error)) {
+      throw error;
+    }
+  }
+
+  await prisma.aiConversation.update({
+    where: { id: conversationId },
+    data: { updatedAt: new Date() },
+  });
+}
+
+/**
+ * 仅保存模型消息。
+ */
+export async function saveModelMessage(
+  conversationId: string,
+  modelContent: string,
+  toolCalls?: unknown,
+  messageId?: string,
+): Promise<void> {
+  try {
+    await prisma.aiMessage.create({
+      data: {
+        ...(messageId ? { id: messageId } : {}),
+        conversationId,
+        role: 'MODEL',
+        content: modelContent,
+        toolCalls: toolCalls ? (toolCalls as object) : undefined,
+      },
+    });
+  } catch (error) {
+    if (!isUniqueViolation(error)) {
+      throw error;
+    }
+  }
+
+  await prisma.aiConversation.update({
+    where: { id: conversationId },
+    data: { updatedAt: new Date() },
+  });
 }
 
 /**

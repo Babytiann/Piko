@@ -4,7 +4,8 @@ import { createLocationRequest } from '@/lib/services/location-bridge';
 import { getUserId } from '@/lib/auth';
 import {
   createConversation,
-  saveMessages,
+  saveUserMessage,
+  saveModelMessage,
   autoTitle,
 } from '@/lib/services/ai/conversation';
 import type { AiChatRequest, SseEvent } from '@/types/ai';
@@ -26,6 +27,7 @@ import type { AiChatRequest, SseEvent } from '@/types/ai';
  */
 export async function POST(request: NextRequest) {
   const t0 = Date.now();
+  const fallbackErrorReply = '抱歉，刚刚生成回答时出错了，请重试。';
   const userId = getUserId(request);
 
   let body: AiChatRequest;
@@ -46,12 +48,25 @@ export async function POST(request: NextRequest) {
 
   // conversationId: "new" = 新建对话，已有值 = 追加到现有对话
   const conversationId = body.conversationId ?? null;
+  const requestId = body.requestId?.trim() || null;
   const isNewConversation = !conversationId || conversationId === 'new';
+
+  const toMessageId = (
+    reqId: string | null,
+    suffix: 'user' | 'model',
+  ): string | undefined => {
+    if (!reqId) return undefined;
+    const normalized = reqId.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 80);
+    return `ai_${normalized}_${suffix}`;
+  };
+
+  const userMessageId = toMessageId(requestId, 'user');
+  const modelMessageId = toMessageId(requestId, 'model');
 
   const msgCount = body.messages.length;
   const userText = lastMsg.content.slice(0, 80);
   console.log(
-    `[AI] ← 收到请求 (${msgCount} 条历史, conv=${conversationId ?? 'new'}) "${userText}${lastMsg.content.length > 80 ? '...' : ''}"`,
+    `[AI] ← 收到请求 (req=${requestId ?? '-'}, ${msgCount} 条历史, conv=${conversationId ?? 'new'}) "${userText}${lastMsg.content.length > 80 ? '...' : ''}"`,
   );
 
   const encoder = new TextEncoder();
@@ -59,10 +74,22 @@ export async function POST(request: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       let closed = false;
+      let clientDisconnected = false;
       let chunkCount = 0;
+      let savedConversationId: string | null = conversationId;
+
+      const onAbort = () => {
+        clientDisconnected = true;
+        closed = true;
+        console.log(
+          `[AI] 客户端连接已断开 (req=${requestId ?? '-'}, conv=${savedConversationId ?? 'new'})，停止 SSE 推送，继续后台生成并落库`,
+        );
+      };
+
+      request.signal.addEventListener('abort', onAbort);
 
       const enqueue = (event: SseEvent) => {
-        if (closed) return;
+        if (closed || clientDisconnected) return;
         try {
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify(event)}\n\n`),
@@ -83,6 +110,30 @@ export async function POST(request: NextRequest) {
       };
 
       try {
+        if (isNewConversation) {
+          const conv = await createConversation(userId);
+          savedConversationId = conv.id;
+          await autoTitle(conv.id, lastMsg.content);
+          console.log(
+            `[AI] 已创建会话 (req=${requestId ?? '-'}, conv=${savedConversationId})`,
+          );
+        }
+
+        if (savedConversationId && savedConversationId !== 'new') {
+          enqueue({
+            type: 'conversation',
+            conversationId: savedConversationId,
+          });
+          await saveUserMessage(
+            savedConversationId,
+            lastMsg.content,
+            userMessageId,
+          );
+          console.log(
+            `[AI] 用户消息已入库 (req=${requestId ?? '-'}, conv=${savedConversationId}, msg=${userMessageId ?? '-'})`,
+          );
+        }
+
         const tReact = Date.now();
         const result = await streamChatWithTools(body.messages, {
           onToolStart(tool, args, message) {
@@ -113,23 +164,16 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // ── 持久化到数据库（旁路存储，不影响流式响应） ──
-        let savedConversationId = conversationId;
-        try {
-          if (isNewConversation) {
-            const conv = await createConversation(userId);
-            savedConversationId = conv.id;
-            await autoTitle(conv.id, lastMsg.content);
-          }
-          if (savedConversationId && savedConversationId !== 'new') {
-            await saveMessages(
-              savedConversationId,
-              lastMsg.content,
-              fullModelResponse,
-            );
-          }
-        } catch (persistErr) {
-          console.error('[AI] 持久化失败（不影响响应）:', persistErr);
+        if (savedConversationId && savedConversationId !== 'new') {
+          await saveModelMessage(
+            savedConversationId,
+            fullModelResponse,
+            undefined,
+            modelMessageId,
+          );
+          console.log(
+            `[AI] 模型消息已入库 (req=${requestId ?? '-'}, conv=${savedConversationId}, msg=${modelMessageId ?? '-'})`,
+          );
         }
 
         enqueue({
@@ -140,14 +184,35 @@ export async function POST(request: NextRequest) {
             }),
         });
         console.log(
-          `[AI] → 完成 (${chunkCount} chunks, conv=${savedConversationId}, 总耗时 ${Date.now() - t0}ms)`,
+          `[AI] → 完成 (req=${requestId ?? '-'}, ${chunkCount} chunks, conv=${savedConversationId}, 总耗时 ${Date.now() - t0}ms)`,
         );
       } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : 'AI service unavailable';
-        console.error(`[AI] ✗ 错误 (${Date.now() - t0}ms):`, err);
+        console.error(
+          `[AI] ✗ 错误 (req=${requestId ?? '-'}, conv=${savedConversationId ?? 'new'}, ${Date.now() - t0}ms):`,
+          err,
+        );
+
+        if (savedConversationId && savedConversationId !== 'new') {
+          try {
+            await saveModelMessage(
+              savedConversationId,
+              fallbackErrorReply,
+              undefined,
+              modelMessageId,
+            );
+          } catch (persistErr) {
+            console.error(
+              `[AI] 错误占位消息持久化失败 (req=${requestId ?? '-'}, conv=${savedConversationId}):`,
+              persistErr,
+            );
+          }
+        }
+
         enqueue({ type: 'error', message });
       } finally {
+        request.signal.removeEventListener('abort', onAbort);
         close();
       }
     },

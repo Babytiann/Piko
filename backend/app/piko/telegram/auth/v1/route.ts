@@ -45,28 +45,13 @@ async function handleSendCode(phoneNumber: string) {
     phoneNumber,
   );
 
-  let codeType = 'unknown';
-  if (result.type instanceof Api.auth.SentCodeTypeApp) {
-    codeType = 'app';
-  } else if (result.type instanceof Api.auth.SentCodeTypeSms) {
-    codeType = 'sms';
-  } else if (result.type instanceof Api.auth.SentCodeTypeCall) {
-    codeType = 'call';
-  } else if (result.type instanceof Api.auth.SentCodeTypeFlashCall) {
-    codeType = 'flashCall';
-  } else if (result.type instanceof Api.auth.SentCodeTypeMissedCall) {
-    codeType = 'missedCall';
-  } else if (result.type instanceof Api.auth.SentCodeTypeFragmentSms) {
-    codeType = 'fragmentSms';
-  } else if (result.type instanceof Api.auth.SentCodeTypeEmailCode) {
-    codeType = 'emailCode';
-  }
+  const codeType = result.isCodeViaApp ? 'app' : 'sms';
 
   return NextResponse.json({
     success: true,
     phoneCodeHash: result.phoneCodeHash,
     codeType,
-    timeout: result.timeout ?? null,
+    timeout: null,
   });
 }
 
@@ -93,11 +78,13 @@ async function handleSignIn(
       );
     }
 
+    const authorization = result as Api.auth.Authorization;
+
     const session = (client.session as StringSession).save();
     removePendingClient(phoneNumber);
 
     // 持久化用户 + TG 绑定到数据库
-    const user = userPayload(result.user);
+    const user = userPayload(authorization.user);
     await ensureUser(userId);
     await bindTelegram(userId, {
       telegramUserId: BigInt(user.id ?? '0'),
@@ -137,11 +124,12 @@ async function handleCheckPassword(
   const result = await client.invoke(
     new Api.auth.CheckPassword({ password: srpPassword }),
   );
+  const authorization = result as Api.auth.Authorization;
 
   const newSession = (client.session as StringSession).save();
 
   // 持久化用户 + TG 绑定到数据库
-  const user = userPayload(result.user);
+  const user = userPayload(authorization.user);
   await ensureUser(userId);
   await bindTelegram(userId, {
     telegramUserId: BigInt(user.id ?? '0'),

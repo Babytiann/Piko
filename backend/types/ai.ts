@@ -14,6 +14,13 @@ export interface AiChatRequest {
   messages: ChatMessage[];
   /** 对话 ID。"new" 或不传 = 新建对话，已有值 = 追加到现有对话 */
   conversationId?: string;
+  /** 客户端请求 ID（用于重连幂等） */
+  requestId?: string;
+}
+
+export interface SseConversationEvent {
+  type: 'conversation';
+  conversationId: string;
 }
 
 /** SSE event data shapes. */
@@ -62,7 +69,8 @@ export type SseEvent =
   | SseErrorEvent
   | SseToolStartEvent
   | SseToolEndEvent
-  | SseRequestLocationEvent;
+  | SseRequestLocationEvent
+  | SseConversationEvent;
 
 /** Copywriting / text content for the AI chat page. */
 export interface AiCopywriting {

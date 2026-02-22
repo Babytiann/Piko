@@ -85,13 +85,19 @@ export interface SseRequestLocationEvent {
   requestId: string;
 }
 
+export interface SseConversationEvent {
+  type: 'conversation';
+  conversationId: string;
+}
+
 export type SseEvent =
   | SseChunkEvent
   | SseDoneEvent
   | SseErrorEvent
   | SseToolStartEvent
   | SseToolEndEvent
-  | SseRequestLocationEvent;
+  | SseRequestLocationEvent
+  | SseConversationEvent;
 
 export type MarkdownSegment =
   | { type: 'markdown'; content: string }

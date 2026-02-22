@@ -33,7 +33,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'no photo' }, { status: 404 });
     }
 
-    return new NextResponse(buffer, {
+    return new NextResponse(new Uint8Array(buffer), {
       headers: {
         'Content-Type': 'image/jpeg',
         'Cache-Control': 'public, max-age=3600, stale-while-revalidate=7200',

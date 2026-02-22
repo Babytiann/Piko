@@ -149,6 +149,7 @@ export function useAiChat(): UseAiChatReturn {
     cleanupRef.current = streamAiChat({
       messages: history,
       conversationId: conversationId ?? 'new',
+      requestId: aiMsgId,
       onChunk(chunk) {
         if (!hasReceivedChunk) {
           hasReceivedChunk = true;
@@ -180,6 +181,9 @@ export function useAiChat(): UseAiChatReturn {
       },
       onRequestLocation(requestId) {
         void handleRequestLocation(aiMsgId, requestId);
+      },
+      onConversation(savedConversationId) {
+        setConversationId((prev) => prev ?? savedConversationId);
       },
       onDone(savedConversationId) {
         clearFlushTimer();

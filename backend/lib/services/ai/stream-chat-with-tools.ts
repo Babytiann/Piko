@@ -8,15 +8,13 @@ import type { ChatMessage } from '@/types/ai';
 
 import { toolRegistry } from '../ai-tools';
 import { getGeminiClient, DEFAULT_MODEL, SYSTEM_INSTRUCTION } from './client';
-import { prependChunkToStream, createStreamFromText } from './stream-utils';
+import { prependChunkToStream } from './stream-utils';
 import type { ToolCallbacks } from './types';
 import { getToolStatusMessage } from './types';
 
 import '../tools/get-weather';
 import '../tools/plan-route';
 import '../tools/get-user-location';
-
-const MAX_REACT_STEPS = 5;
 
 const FRONTEND_COLLABORATIVE_TOOLS = new Set(['get_user_location']);
 
@@ -49,12 +47,14 @@ export async function streamChatWithTools(
   const chat = model.startChat({ history });
 
   let currentMessage: string | Part[] = lastMessage.content;
+  let step = 0;
 
-  console.log(`[AI] 开始 (最多 ${MAX_REACT_STEPS} 步)`);
+  console.log('[AI] 开始 (无步数上限)');
 
-  for (let step = 0; step < MAX_REACT_STEPS; step++) {
+  while (true) {
+    step += 1;
     const tStep = Date.now();
-    console.log(`[AI]   ── Step ${step + 1} ── 发送消息给 Gemini`);
+    console.log(`[AI]   ── Step ${step} ── 发送消息给 Gemini`);
 
     const streamResult = await chat.sendMessageStream(currentMessage);
 
@@ -91,7 +91,7 @@ export async function streamChatWithTools(
       );
 
       console.log(
-        `[AI]   Step ${step + 1}: AI 要求调用 ${functionCalls.length} 个工具 (${Date.now() - tStep}ms)`,
+        `[AI]   Step ${step}: AI 要求调用 ${functionCalls.length} 个工具 (${Date.now() - tStep}ms)`,
       );
 
       for (const fc of functionCalls) {
@@ -167,15 +167,12 @@ export async function streamChatWithTools(
       );
 
       currentMessage = functionResponseParts;
-      console.log(`[AI]   Step ${step + 1} 完成，把工具结果送回 AI...`);
+      console.log(`[AI]   Step ${step} 完成，把工具结果送回 AI...`);
     } else {
       console.log(
-        `[AI]   Step ${step + 1}: 无工具调用 → 返回真实流 (${Date.now() - tStep}ms)`,
+        `[AI]   Step ${step}: 无工具调用 → 返回真实流 (${Date.now() - tStep}ms)`,
       );
       return prependChunkToStream(firstChunk, iterator, new Promise(() => {}));
     }
   }
-
-  console.log(`[AI]   ⚠ 达到最大步数 (${MAX_REACT_STEPS})，强制结束`);
-  return createStreamFromText('抱歉，处理过程过于复杂，请尝试简化你的问题。');
 }

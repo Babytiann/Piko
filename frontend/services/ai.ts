@@ -27,9 +27,11 @@ interface ChatPayload {
 interface StreamOptions {
   messages: ChatPayload[];
   conversationId?: string | null;
+  requestId?: string;
   onChunk: (text: string) => void;
   onDone: (conversationId?: string) => void;
   onError: (error: string) => void;
+  onConversation?: (conversationId: string) => void;
   /** [模块 2] 工具开始调用，message 是后端下发的状态文案 */
   onToolStart?: (
     tool: string,
@@ -45,9 +47,11 @@ interface StreamOptions {
 export function streamAiChat({
   messages,
   conversationId,
+  requestId,
   onChunk,
   onDone,
   onError,
+  onConversation,
   onToolStart,
   onToolEnd,
   onRequestLocation,
@@ -88,6 +92,9 @@ export function streamAiChat({
           break;
         case 'request_location':
           onRequestLocation?.(parsed.requestId);
+          break;
+        case 'conversation':
+          onConversation?.(parsed.conversationId);
           break;
         case 'done':
           finished = true;
@@ -138,6 +145,7 @@ export function streamAiChat({
     JSON.stringify({
       messages,
       ...(conversationId && { conversationId }),
+      ...(requestId && { requestId }),
     }),
   );
 

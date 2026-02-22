@@ -46,11 +46,11 @@ const SIMULATED_CHUNK_SIZE = 18;
 const SIMULATED_CHUNK_DELAY_MS = 16;
 
 /**
- * 兜底用：当达到最大步数等异常情况时，把一段文本模拟成流式输出。
+ * 兜底用：当出现需要手动回退为文本流的异常场景时，把一段文本模拟成流式输出。
  *
  * 主路径已改用 sendMessageStream + peek 实现真流式，
  * 这个函数仅在以下场景使用：
- * - 达到 MAX_REACT_STEPS 上限时的错误提示
+ * - 后端主动降级为文本输出
  */
 export function createStreamFromText(
   text: string,
