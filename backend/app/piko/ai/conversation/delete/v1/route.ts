@@ -21,16 +21,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const deleted = await deleteConversation(userId, body.conversationId);
+    const { conversationId } = body;
+    console.log(
+      `[Conversation delete] accepted (user=${userId}, conversation=${conversationId})`,
+    );
 
-    if (!deleted) {
-      return NextResponse.json(
-        { success: false, error: 'Conversation not found' },
-        { status: 404 },
-      );
-    }
+    void deleteConversation(userId, conversationId)
+      .then((deleted) => {
+        console.log(
+          `[Conversation delete] done (user=${userId}, conversation=${conversationId}, deleted=${deleted})`,
+        );
+      })
+      .catch((error: unknown) => {
+        console.error(
+          `[Conversation delete] async error (user=${userId}, conversation=${conversationId}):`,
+          error,
+        );
+      });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, data: { accepted: true } });
   } catch (error: unknown) {
     const message =
       error instanceof Error ? error.message : 'Failed to delete conversation';

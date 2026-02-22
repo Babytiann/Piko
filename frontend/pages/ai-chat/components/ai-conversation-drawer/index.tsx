@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   Animated,
+  Alert,
   Dimensions,
   Pressable,
   StyleSheet,
@@ -89,7 +90,14 @@ export default function AiConversationDrawer({
           <Pressable
             onPress={(e) => {
               e.stopPropagation();
-              onDelete(item.id);
+              Alert.alert('确认删除', '删除后将无法恢复，是否继续？', [
+                { text: '取消', style: 'cancel' },
+                {
+                  text: '删除',
+                  style: 'destructive',
+                  onPress: () => onDelete(item.id),
+                },
+              ]);
             }}
             hitSlop={10}
           >

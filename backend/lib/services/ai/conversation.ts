@@ -114,14 +114,10 @@ export async function deleteConversation(
   userId: string,
   conversationId: string,
 ): Promise<boolean> {
-  const conversation = await prisma.aiConversation.findFirst({
+  const result = await prisma.aiConversation.deleteMany({
     where: { id: conversationId, userId },
   });
-
-  if (!conversation) return false;
-
-  await prisma.aiConversation.delete({ where: { id: conversationId } });
-  return true;
+  return result.count > 0;
 }
 
 /**

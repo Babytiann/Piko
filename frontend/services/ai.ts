@@ -1,5 +1,5 @@
 import { API_HOST } from '@/common/config';
-import { post } from '@/services';
+import { post, postSafe } from '@/services';
 import type {
   SseEvent,
   AiCopywriting,
@@ -205,8 +205,21 @@ export function createConversation(
 }
 
 /** 删除会话 */
-export function deleteConversation(conversationId: string): Promise<void> {
-  return post('ai/conversation/delete/v1', { conversationId });
+export async function deleteConversation(
+  conversationId: string,
+): Promise<void> {
+  const result = await postSafe<null>('ai/conversation/delete/v1', {
+    conversationId,
+  });
+
+  if (result.success) return;
+
+  const error = result.error ?? '';
+  if (error.includes('Conversation not found') || error.includes('(404)')) {
+    return;
+  }
+
+  throw new Error(error || '删除会话失败');
 }
 
 // ---------------------------------------------------------------------------
