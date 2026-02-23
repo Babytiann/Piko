@@ -56,11 +56,7 @@ class ToolRegistry {
   /** 注册一个工具 */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   register(tool: ToolDefinition<any>): void {
-    if (this.tools.has(tool.name)) {
-      console.warn(`[ToolRegistry] 工具 "${tool.name}" 已存在，将被覆盖`);
-    }
     this.tools.set(tool.name, tool);
-    console.log(`[ToolRegistry] 已注册工具: ${tool.name}`);
   }
 
   /**

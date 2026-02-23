@@ -14,14 +14,28 @@ import TgLoginTwoFaStep from '@/pages/telegram-login/components/tg-login-two-fa-
 export default function Verify2FAScreen(): ReactNode {
   const router = useRouter();
   const { login } = useAuth();
-  const { session } = useLocalSearchParams<{ session: string }>();
+  const { session, prefetchedTextJson } = useLocalSearchParams<{
+    session: string;
+    prefetchedTextJson?: string;
+  }>();
 
-  const [text, setText] = useState<VerifyTwoFAStepText | null>(null);
+  const [text, setText] = useState<VerifyTwoFAStepText | null>(() => {
+    if (prefetchedTextJson) {
+      try {
+        return JSON.parse(prefetchedTextJson) as VerifyTwoFAStepText;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    // 已有预取数据则跳过请求
+    if (text) return;
     let cancelled = false;
 
     async function load(): Promise<void> {
@@ -35,7 +49,7 @@ export default function Verify2FAScreen(): ReactNode {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [text]);
 
   const handleCheckPassword = async (): Promise<void> => {
     if (!text) return;

@@ -14,18 +14,31 @@ import TgLoginCodeStep from '@/pages/telegram-login/components/tg-login-code-ste
 export default function VerifyCodeScreen(): ReactNode {
   const router = useRouter();
   const { login } = useAuth();
-  const { phoneNumber, phoneCodeHash, pendingSession } = useLocalSearchParams<{
-    phoneNumber: string;
-    phoneCodeHash: string;
-    pendingSession: string;
-  }>();
+  const { phoneNumber, phoneCodeHash, pendingSession, prefetchedTextJson } =
+    useLocalSearchParams<{
+      phoneNumber: string;
+      phoneCodeHash: string;
+      pendingSession: string;
+      prefetchedTextJson?: string;
+    }>();
 
-  const [text, setText] = useState<VerifyCodeStepText | null>(null);
+  const [text, setText] = useState<VerifyCodeStepText | null>(() => {
+    if (prefetchedTextJson) {
+      try {
+        return JSON.parse(prefetchedTextJson) as VerifyCodeStepText;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
   const [phoneCode, setPhoneCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    // 已有预取数据则跳过请求
+    if (text) return;
     let cancelled = false;
 
     async function load(): Promise<void> {
@@ -39,7 +52,7 @@ export default function VerifyCodeScreen(): ReactNode {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [text]);
 
   const handleSignIn = async (): Promise<void> => {
     if (!text) return;
@@ -50,17 +63,24 @@ export default function VerifyCodeScreen(): ReactNode {
     setLoading(true);
     setError('');
     try {
-      const result = await telegramApi.signIn(
-        phoneNumber ?? '',
-        phoneCode,
-        phoneCodeHash ?? '',
-        pendingSession ?? '',
-      );
+      // signIn 和 2FA 文案并行，若跳转 2FA 页可秒显示
+      const [result, twoFAText] = await Promise.all([
+        telegramApi.signIn(
+          phoneNumber ?? '',
+          phoneCode,
+          phoneCodeHash ?? '',
+          pendingSession ?? '',
+        ),
+        telegramApi.fetchTelegramText(TelegramLoginStep.VERIFY_2FA),
+      ]);
 
       if (result.require2FA) {
         router.push({
           pathname: '/telegram_login/verify_2fa',
-          params: { session: result.session ?? '' },
+          params: {
+            session: result.session ?? '',
+            prefetchedTextJson: JSON.stringify(twoFAText),
+          },
         });
         return;
       }

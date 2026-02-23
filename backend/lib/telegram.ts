@@ -69,19 +69,23 @@ function evictLRU(): void {
     const entry = clientPool.get(oldestKey);
     clientPool.delete(oldestKey);
     if (entry) {
-      entry.client.disconnect().catch(() => {});
+      disconnectClient(entry.client);
     }
   }
 }
 
 /** Remove expired clients from the pool. */
 function sweepPool(): void {
-  const now = Date.now();
-  for (const [key, entry] of clientPool) {
-    if (now - entry.lastUsed > POOL_TTL) {
-      clientPool.delete(key);
-      entry.client.disconnect().catch(() => {});
+  try {
+    const now = Date.now();
+    for (const [key, entry] of clientPool) {
+      if (now - entry.lastUsed > POOL_TTL) {
+        clientPool.delete(key);
+        disconnectClient(entry.client);
+      }
     }
+  } catch {
+    // 防止 sweep 期间 libuv handle 竞态导致进程崩溃
   }
 }
 
@@ -110,19 +114,12 @@ export async function getPooledClient(
   if (existing) {
     // Reconnect if the connection dropped
     if (!existing.client.connected) {
-      try {
-        await existing.client.connect();
-      } catch {
-        // Connection failed — discard and create a fresh client below
-        clientPool.delete(key);
-        existing.client.disconnect().catch(() => {});
-      }
-    }
-    // Re-check after potential reconnect attempt
-    const stillValid = clientPool.get(key);
-    if (stillValid) {
-      stillValid.lastUsed = Date.now();
-      return stillValid.client;
+      // 把旧 client 从 pool 先移除，延迟断连（防止 libuv UV_HANDLE_CLOSING 竞态）
+      clientPool.delete(key);
+      disconnectClient(existing.client);
+    } else {
+      existing.lastUsed = Date.now();
+      return existing.client;
     }
   }
 
@@ -146,7 +143,7 @@ export async function removePooledClient(sessionString: string): Promise<void> {
   const entry = clientPool.get(key);
   if (entry) {
     clientPool.delete(key);
-    await entry.client.disconnect().catch(() => {});
+    disconnectClient(entry.client); // 延迟断连，避免 libuv 竞态
   }
 }
 
@@ -157,6 +154,7 @@ export function createClient(sessionString = ''): TelegramClient {
   const session = new StringSession(sessionString);
   return new TelegramClient(session, API_ID, API_HASH, {
     connectionRetries: 3,
+    autoReconnect: false, // 禁掉 GramJS 内部重连定时器，避免 libuv handle 竞态
   });
 }
 
@@ -181,7 +179,7 @@ export async function createFreshPendingClient(
   const existing = pendingClients.get(phoneNumber);
   if (existing) {
     pendingClients.delete(phoneNumber);
-    await disconnectClient(existing);
+    disconnectClient(existing);
   }
 
   const client = createClient();
@@ -273,11 +271,14 @@ export function resolveInputPeer(
 
 /**
  * Safely disconnect a client, swallowing errors.
+ *
+ * 延迟 500 ms 后再实际断开：GramJS 在 Windows 上通过 uv_async_t 与 worker 线程
+ * 通信，立即调用 disconnect() 会把 libuv handle 标记为 CLOSING，但 worker
+ * 可能仍有 pending 的 uv_async_send，导致 C 层断言崩溃（UV_HANDLE_CLOSING）。
+ * 短暂延迟让 worker 先跑完，彻底规避竞态。
  */
-export async function disconnectClient(client: TelegramClient): Promise<void> {
-  try {
-    await client.disconnect();
-  } catch {
-    // ignore disconnect errors
-  }
+export function disconnectClient(client: TelegramClient): void {
+  setTimeout(() => {
+    client.disconnect().catch(() => {});
+  }, 500);
 }

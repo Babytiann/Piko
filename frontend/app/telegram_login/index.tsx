@@ -49,13 +49,18 @@ export default function TelegramLoginScreen(): ReactNode {
     setLoading(true);
     setError('');
     try {
-      const result = await telegramApi.sendCode(fullPhoneNumber);
+      // sendCode 和下一步文案并行请求，减少等待时间
+      const [result, nextText] = await Promise.all([
+        telegramApi.sendCode(fullPhoneNumber),
+        telegramApi.fetchTelegramText(TelegramLoginStep.VERIFY_CODE),
+      ]);
       router.push({
         pathname: '/telegram_login/verify_code',
         params: {
           phoneNumber: fullPhoneNumber,
           phoneCodeHash: result.phoneCodeHash,
           pendingSession: result.pendingSession,
+          prefetchedTextJson: JSON.stringify(nextText),
         },
       });
     } catch (err) {

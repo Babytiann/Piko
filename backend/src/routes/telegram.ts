@@ -33,6 +33,7 @@ import {
   downloadPeerPhoto,
 } from '@/lib/services/telegram';
 import { clearPhotoCache } from '@/lib/services/telegram/photo';
+import { prefetchUserProfile } from '@/lib/services/telegram/prefetch';
 import {
   SessionTag,
   TelegramLoginStep,
@@ -146,6 +147,9 @@ telegramRoutes.post('/auth/v1', async (c) => {
             sessionString: session,
           });
 
+          // 后台预热 profile 缓存，用户返回 profile 页时可秒开
+          prefetchUserProfile(session);
+
           return c.json({ success: true, session, user });
         } catch (err: unknown) {
           if (
@@ -189,6 +193,9 @@ telegramRoutes.post('/auth/v1', async (c) => {
           phone: user.phone || undefined,
           sessionString: newSession,
         });
+
+        // 后台预热 profile 缓存，用户返回 profile 页时可秒开
+        prefetchUserProfile(newSession);
 
         return c.json({ success: true, session: newSession, user });
       }
@@ -345,6 +352,8 @@ telegramRoutes.post('/text_detail/v1', async (c) => {
     }
 
     const data = textMap[step as TelegramLoginStep];
+    // 文案为纯静态内容，缓存 1 小时
+    c.header('Cache-Control', 'public, max-age=3600');
     return c.json({ success: true, data });
   } catch (err: unknown) {
     const message =
