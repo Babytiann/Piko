@@ -60,7 +60,7 @@ export async function recognizePayment(
           {
             type: 'image',
             image: imageBase64,
-            mimeType: mimeType as 'image/jpeg' | 'image/png' | 'image/webp',
+            mediaType: mimeType as 'image/jpeg' | 'image/png' | 'image/webp',
           },
           { type: 'text', text: RECOGNIZE_PROMPT },
         ],

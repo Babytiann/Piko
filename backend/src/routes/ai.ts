@@ -12,7 +12,7 @@
  */
 
 import { Hono } from 'hono';
-import { type CoreMessage } from 'ai';
+import { type ModelMessage } from 'ai';
 import { getUserId } from '@/lib/auth';
 import { resolveLocationRequest } from '@/lib/services/location-bridge';
 import { recognizePayment } from '@/lib/services/tools/recognize-payment';
@@ -83,8 +83,8 @@ aiRoutes.post('/chat/v1', async (c) => {
     `[AI] ← 收到请求 (req=${requestId ?? '-'}, ${msgCount} 条历史, conv=${conversationId ?? 'new'}) "${userText}${lastMsg.content.length > 80 ? '...' : ''}"`,
   );
 
-  // ChatMessage.role 'model' → CoreMessage.role 'assistant'
-  const coreMessages: CoreMessage[] = body.messages.map((m) => ({
+  // ChatMessage.role 'model' → ModelMessage.role 'assistant'
+  const modelMessages: ModelMessage[] = body.messages.map((m) => ({
     role: m.role === 'model' ? 'assistant' : 'user',
     content: m.content,
   }));
@@ -94,8 +94,8 @@ aiRoutes.post('/chat/v1', async (c) => {
     ? null
     : (conversationId ?? null);
 
-  const response = streamChatWithTools(coreMessages, {
-    setup: async (dataStream) => {
+  const response = streamChatWithTools(modelMessages, {
+    setup: async (writeData) => {
       if (isNewConversation) {
         const conv = await createConversation(userId);
         savedConversationId = conv.id;
@@ -107,7 +107,7 @@ aiRoutes.post('/chat/v1', async (c) => {
 
       if (savedConversationId) {
         // 告知前端本次对话的 ID（新建会话时前端需要持久化）
-        dataStream.writeData({
+        writeData({
           type: 'conversation',
           conversationId: savedConversationId,
         });

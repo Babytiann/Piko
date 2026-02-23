@@ -13,7 +13,7 @@ import promptConfig from '../ai-prompt.json';
 // 模型配置
 // ---------------------------------------------------------------------------
 
-export const DEFAULT_MODEL_ID = 'gemini-2.0-flash';
+export const DEFAULT_MODEL_ID = 'gemini-3-flash-preview';
 
 /**
  * 获取 Google Gemini 模型实例。

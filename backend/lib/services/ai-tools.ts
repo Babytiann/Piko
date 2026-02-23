@@ -7,7 +7,7 @@
  * AI 模型收到工具定义后，会自主决定何时调用、传什么参数。
  */
 
-import { tool, type CoreTool } from 'ai';
+import { tool } from 'ai';
 import { z } from 'zod';
 
 // ---------------------------------------------------------------------------
@@ -65,13 +65,15 @@ class ToolRegistry {
    * @param context 注入到每个工具 execute 函数的上下文（含 writeData 等）
    * @returns `Record<string, CoreTool>` — 直接传给 `streamText({ tools: ... })`
    */
-  getToolsForAI(context: ToolContext): Record<string, CoreTool> {
-    const result: Record<string, CoreTool> = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getToolsForAI(context: ToolContext): Record<string, any> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result: Record<string, any> = {};
 
     for (const [name, def] of this.tools.entries()) {
       result[name] = tool({
         description: def.description,
-        parameters: def.parameters,
+        inputSchema: def.parameters, // v5+: parameters → inputSchema
         execute: (params) => def.execute(params, context),
       });
     }

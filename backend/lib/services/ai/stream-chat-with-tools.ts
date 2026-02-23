@@ -1,21 +1,22 @@
 /**
- * streamChatWithTools — Vercel AI SDK 版多步骤 Agent 流式对话。
+ * streamChatWithTools — Vercel AI SDK v6 版多步骤 Agent 流式对话。
  *
  * 核心流程：
- *   1. 接收对话历史（CoreMessage[]），通过 streamText 发起多步推理
+ *   1. 接收对话历史（ModelMessage[]），通过 streamText 发起多步推理
  *   2. 工具调用（weather / plan_route / get_user_location 等）由 Vercel AI SDK 自动处理
  *   3. get_user_location 等前端协作式工具通过 context.writeData 向数据流写
  *      request_location 事件，由前端 GPS 采集后 POST 回来
- *   4. 返回 Response（Vercel AI SDK Data Stream 协议）给 Hono 路由层
+ *   4. 对外保持 v4 Data Stream 协议格式（0/2/d/3），无需修改前端解析器
+ *
+ * 升级说明（v4 → v6）：
+ *   - CoreMessage      → ModelMessage
+ *   - createDataStreamResponse → 自建 ReadableStream，手动输出 v4 格式
+ *   - maxSteps         → stopWhen: stepCountIs(N)
+ *   - tool.parameters  → tool.inputSchema
+ *   - thought_signature 由 @ai-sdk/google@3.x 自动透传
  */
 
-import {
-  streamText,
-  createDataStreamResponse,
-  type CoreMessage,
-  type DataStreamWriter,
-  type JSONValue,
-} from 'ai';
+import { streamText, stepCountIs, type ModelMessage } from 'ai';
 import { getModel, SYSTEM_INSTRUCTION } from './client';
 import { toolRegistry } from '../ai-tools';
 import { getToolStatusMessage } from './types';
@@ -34,8 +35,10 @@ export interface StreamChatOptions {
    * 流开始前的钩子 — 路由层用于：
    * 1. 创建新会话、写 conversationId 数据部分
    * 2. 保存用户消息到 DB
+   *
+   * 入参 writeData 用于向数据流写入自定义 data 块（v4 协议 type=2）。
    */
-  setup?: (dataStream: DataStreamWriter) => Promise<void>;
+  setup?: (writeData: (data: unknown) => void) => Promise<void>;
   /** 流完成后的回调，用于保存 AI 消息到 DB */
   onFinish?: (result: { text: string }) => Promise<void>;
 }
@@ -45,73 +48,109 @@ export interface StreamChatOptions {
 // ---------------------------------------------------------------------------
 
 /**
- * 启动流式对话，返回标准 Web Response（Vercel AI SDK Data Stream 格式）。
- * Hono 路由层直接 `return streamChatWithTools(messages)` 即可。
+ * 启动流式对话，返回标准 Web Response。
+ * 输出格式保持 Vercel AI SDK v4 Data Stream 协议（0/2/d/3），前端无需改动。
  */
 export function streamChatWithTools(
-  messages: CoreMessage[],
+  messages: ModelMessage[],
   options: StreamChatOptions = {},
 ): Response {
   const { setup, onFinish } = options;
+  const encoder = new TextEncoder();
 
-  return createDataStreamResponse({
-    execute: async (dataStream) => {
-      // 路由层的预处理（建会话、保存用户消息等）
-      if (setup) {
-        await setup(dataStream);
+  const body = new ReadableStream({
+    async start(controller) {
+      const enqueue = (line: string): void => {
+        controller.enqueue(encoder.encode(line));
+      };
+
+      /** v4 协议: 0:"text chunk" */
+      const writeText = (text: string): void =>
+        enqueue(`0:${JSON.stringify(text)}\n`);
+
+      /** v4 协议: 2:[{...}] — 自定义 data */
+      const writeData = (data: unknown): void =>
+        enqueue(`2:${JSON.stringify([data])}\n`);
+
+      /** v4 协议: d:{finishReason,...} — 流结束 */
+      const writeFinish = (finishReason: string): void =>
+        enqueue(`d:${JSON.stringify({ finishReason })}\n`);
+
+      /** v4 协议: 3:"error message" */
+      const writeError = (msg: string): void =>
+        enqueue(`3:${JSON.stringify(msg)}\n`);
+
+      try {
+        // 路由层预处理（建会话、保存用户消息等）
+        if (setup) {
+          await setup(writeData);
+        }
+
+        const result = streamText({
+          model: getModel(),
+          system: SYSTEM_INSTRUCTION,
+          messages,
+          // 注入 writeData，前端协作式工具（如 get_user_location）需要
+          tools: toolRegistry.getToolsForAI({ writeData }),
+          // v6: maxSteps → stopWhen
+          stopWhen: stepCountIs(10),
+          temperature: 0,
+          // 全部步骤完成后回调（DB 持久化）
+          onFinish: async ({ text }) => {
+            if (onFinish) await onFinish({ text });
+          },
+        });
+
+        // 迭代 fullStream，按 v4 协议格式逐行输出
+        for await (const chunk of result.fullStream) {
+          switch (chunk.type) {
+            case 'text-delta':
+              // v6 fullStream: text-delta chunk 用 chunk.text
+              writeText(chunk.text);
+              break;
+
+            case 'tool-call':
+              // 工具开始执行 → 发 tool_start 事件
+              writeData({
+                type: 'tool_start',
+                tool: chunk.toolName,
+                message: getToolStatusMessage(chunk.toolName),
+              });
+              break;
+
+            case 'tool-result':
+              // 工具执行成功 → 发 tool_end 事件
+              writeData({
+                type: 'tool_end',
+                tool: chunk.toolName,
+                success: true,
+              });
+              break;
+
+            case 'finish':
+              writeFinish(chunk.finishReason);
+              break;
+
+            // 其余类型（text-start/text-end、tool-input-*、reasoning-* 等）忽略
+            default:
+              break;
+          }
+        }
+      } catch (error) {
+        console.error('[streamChatWithTools] 流式对话异常:', error);
+        writeError('抱歉，AI 服务暂时不可用，请稍后再试。');
+        writeFinish('error');
+      } finally {
+        controller.close();
       }
-
-      const result = streamText({
-        model: getModel(),
-        system: SYSTEM_INSTRUCTION,
-        messages,
-        // 注入 ToolContext.writeData，前端协作式工具需要
-        tools: toolRegistry.getToolsForAI({
-          writeData: (d) => dataStream.writeData(d as JSONValue),
-        }),
-        // 最多 10 步自主推理（避免死循环）
-        maxSteps: 10,
-
-        // ── 工具调用开始时发 tool_start 事件 ──────────────────────────
-        onChunk: ({ chunk }) => {
-          if (chunk.type === 'tool-call') {
-            dataStream.writeData({
-              type: 'tool_start',
-              tool: chunk.toolName,
-              message: getToolStatusMessage(chunk.toolName),
-            });
-          }
-        },
-
-        // ── 每步完成时发 tool_end 事件 ────────────────────────────────
-        onStepFinish: async ({ toolResults }) => {
-          for (const tr of toolResults as Array<{
-            toolName: string;
-            isError: boolean;
-          }>) {
-            dataStream.writeData({
-              type: 'tool_end',
-              tool: tr.toolName,
-              success: !tr.isError,
-            });
-          }
-        },
-
-        // ── 全部步骤完成后回调（用于 DB 持久化）─────────────────────
-        onFinish: async ({ text }) => {
-          if (onFinish) {
-            await onFinish({ text });
-          }
-        },
-      });
-
-      // 把 streamText 产出的文本/工具事件合并进 dataStream
-      result.mergeIntoDataStream(dataStream);
     },
+  });
 
-    onError: (error) => {
-      console.error('[streamChatWithTools] 流式对话异常:', error);
-      return '抱歉，AI 服务暂时不可用，请稍后再试。';
+  return new Response(body, {
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'X-Vercel-AI-Data-Stream': 'v1',
+      'Cache-Control': 'no-cache',
     },
   });
 }

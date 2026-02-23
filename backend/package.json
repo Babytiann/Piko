@@ -13,12 +13,12 @@
     "db:seed": "tsx db/seed.ts"
   },
   "dependencies": {
-    "@ai-sdk/google": "^1.0.0",
+    "@ai-sdk/google": "^3.0.30",
     "@aws-sdk/client-s3": "^3.995.0",
     "@hono/node-server": "^1.13.7",
     "@neondatabase/serverless": "^0.10.4",
     "@paralleldrive/cuid2": "^2.2.2",
-    "ai": "^4.0.0",
+    "ai": "^6.0.97",
     "better-auth": "^1.2.7",
     "dotenv": "^17.3.1",
     "drizzle-orm": "^0.44.0",
