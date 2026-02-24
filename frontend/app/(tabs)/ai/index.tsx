@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import {
   Animated,
@@ -8,12 +8,14 @@ import {
   Platform,
   Pressable,
   StyleSheet,
+  InteractionManager,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, useTheme } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
 
+import PageLoading from '@/common/components/page-loading';
 import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
 import { useAuth } from '@/common/hooks';
 import {
@@ -74,10 +76,11 @@ export default function AiScreen(): ReactNode {
     conversationId,
     sendMessage,
     clearMessages,
+    stopStreaming,
     requestLocationPermission,
     loadConversation,
   } = useAiChat();
-  const { copy } = useAiCopywriting();
+  const { copy, loading: copyLoading } = useAiCopywriting();
   const bottomInset = useKeyboardBottomInset();
   const { user } = useAuth();
   const convList = useConversationList(user?.id ?? null);
@@ -90,7 +93,22 @@ export default function AiScreen(): ReactNode {
     null,
   );
 
-  const handleOpenDrawer = useCallback(() => {
+  const animateClose = (): void => {
+    setDrawerVisible(false);
+    Animated.timing(contentTranslateX, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+    Animated.timing(backdropOpacity, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleOpenDrawer = (): void => {
+    Keyboard.dismiss();
     void convList.refresh();
     setDrawerVisible(true);
     Animated.timing(contentTranslateX, {
@@ -103,63 +121,77 @@ export default function AiScreen(): ReactNode {
       duration: 250,
       useNativeDriver: true,
     }).start();
-  }, [convList, contentTranslateX, backdropOpacity]);
+    InteractionManager.runAfterInteractions(() => {
+      void convList.refresh();
+    });
+  };
 
-  const animateClose = useCallback(() => {
-    setDrawerVisible(false);
-    Animated.timing(contentTranslateX, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-    Animated.timing(backdropOpacity, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-  }, [contentTranslateX, backdropOpacity]);
-
-  const handleCloseDrawer = useCallback(() => {
+  const handleCloseDrawer = (): void => {
     animateClose();
-  }, [animateClose]);
+  };
 
-  const handleSelectConversation = useCallback(
-    async (id: string) => {
-      animateClose();
-      try {
-        const detail = await fetchConversationDetail(id);
-        let nextId = 0;
-        const msgs: AiMessage[] = detail.messages.map((m) => {
-          nextId += 1;
-          return {
-            id: `hist_${nextId}`,
-            role: m.role === 'model' ? 'assistant' : 'user',
-            content: m.content,
-            timestamp: new Date(m.createdAt).getTime(),
-          };
-        });
-        loadConversation(msgs, id);
-      } catch (err) {
-        console.error('[AI] load conversation error:', err);
+  const handleSelectConversation = async (id: string): Promise<void> => {
+    animateClose();
+    try {
+      const detail = await fetchConversationDetail(id);
+      let nextSeq = 0;
+      const msgs: AiMessage[] = detail.messages.map((m) => {
+        nextSeq += 1;
+        return {
+          id: `hist_${nextSeq}`,
+          role: m.role === 'model' ? 'assistant' : 'user',
+          content: m.content,
+          timestamp: new Date(m.createdAt).getTime(),
+        };
+      });
+      loadConversation(msgs, id);
+    } catch (err) {
+      console.error('[AI] load conversation error:', err);
+    }
+  };
+
+  const handleDeleteConversation = (id: string): void => {
+    const list = convList.conversations;
+    const index = list.findIndex((c) => c.id === id);
+
+    let nextId: string | null = null;
+    if (id === conversationId && list.length > 1) {
+      nextId = index === 0 ? list[1].id : list[0].id;
+    }
+
+    convList.remove(id);
+
+    if (id === conversationId) {
+      if (nextId) {
+        void handleSelectConversation(nextId);
+      } else {
+        clearMessages();
       }
-    },
-    [loadConversation, animateClose],
-  );
+    }
+  };
 
-  const handleNewChat = useCallback(() => {
+  const handleNewChat = (): void => {
     animateClose();
     clearMessages();
-  }, [clearMessages, animateClose]);
+  };
 
-  const handleMessageLongPress = useCallback(
-    (message: AiMessage, layout: BubbleLayout) => {
-      setTooltipTarget({ message, layout });
-    },
-    [],
-  );
+  const handleMessageLongPress = (
+    message: AiMessage,
+    layout: BubbleLayout,
+  ): void => {
+    setTooltipTarget({ message, layout });
+  };
 
-  function handleTooltipClose(): void {
+  const handleTooltipClose = (): void => {
     setTooltipTarget(null);
+  };
+
+  if (copyLoading) {
+    return (
+      <YStack flex={1} bg="$background">
+        <PageLoading />
+      </YStack>
+    );
   }
 
   return (
@@ -167,12 +199,15 @@ export default function AiScreen(): ReactNode {
       <AiConversationDrawer
         visible={drawerVisible}
         onClose={handleCloseDrawer}
-        conversations={convList.conversations}
+        conversations={convList.visibleConversations}
         isLoading={convList.isLoading}
         activeId={conversationId}
         onSelect={handleSelectConversation}
-        onDelete={convList.remove}
+        onDelete={handleDeleteConversation}
         onNewChat={handleNewChat}
+        onLoadMore={convList.loadMore}
+        drawerTitle={copy.drawerTitle}
+        newChatLabel={copy.newChatLabel}
       />
 
       <Animated.View
@@ -226,19 +261,17 @@ export default function AiScreen(): ReactNode {
             </XStack>
 
             <XStack gap="$3" style={{ alignItems: 'center' }}>
-              {messages.length > 0 ? (
-                <YStack
-                  pressStyle={{ opacity: 0.6 }}
-                  onPress={clearMessages}
-                  hitSlop={8}
-                >
-                  <Ionicons
-                    name="trash-outline"
-                    size={20}
-                    color={theme.gray10.val}
-                  />
-                </YStack>
-              ) : null}
+              <YStack
+                pressStyle={{ opacity: 0.6 }}
+                onPress={clearMessages}
+                hitSlop={8}
+              >
+                <Ionicons
+                  name="create-outline"
+                  size={20}
+                  color={theme.gray10.val}
+                />
+              </YStack>
               <YStack
                 pressStyle={{ opacity: 0.6 }}
                 onPress={() => router.push('/telegram-dialog')}
@@ -265,7 +298,8 @@ export default function AiScreen(): ReactNode {
             />
             <AiChatInput
               onSend={sendMessage}
-              disabled={isStreaming}
+              isStreaming={isStreaming}
+              onStop={stopStreaming}
               placeholder={copy.inputPlaceholder}
             />
           </YStack>

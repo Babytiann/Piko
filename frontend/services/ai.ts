@@ -251,6 +251,19 @@ export function createConversation(
   return post('ai/conversation/create/v1', { title });
 }
 
+/** 保存被用户中断的 AI 消息 */
+export function saveInterruptedMessage(
+  conversationId: string,
+  messageId: string,
+  content: string,
+): Promise<void> {
+  return post('ai/conversation/save-interrupted/v1', {
+    conversationId,
+    messageId,
+    content,
+  });
+}
+
 /** 删除会话 */
 export async function deleteConversation(
   conversationId: string,

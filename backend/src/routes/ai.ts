@@ -236,6 +236,8 @@ aiRoutes.post('/copywriting/v1', async (c) => {
     emptyTitle: 'Hi，我是 Piko AI',
     emptySubtitle: '问我任何问题，我会尽力帮你解答。',
     inputPlaceholder: '问我任何问题...',
+    drawerTitle: '历史对话',
+    newChatLabel: '新对话',
   };
   return c.json({ success: true, data });
 });
@@ -307,6 +309,43 @@ aiRoutes.post('/conversation/detail/v1', async (c) => {
   }
 });
 
+// ── POST /conversation/save-interrupted/v1 ────────────────────────────────────
+aiRoutes.post('/conversation/save-interrupted/v1', async (c) => {
+  try {
+    const userId = getUserId(c.req.raw);
+    const body = (await c.req.json()) as {
+      conversationId: string;
+      messageId: string;
+      content: string;
+    };
+
+    if (!body.conversationId || !body.messageId) {
+      return c.json(
+        { success: false, error: 'conversationId and messageId are required' },
+        400,
+      );
+    }
+
+    await saveModelMessage(
+      body.conversationId,
+      body.content,
+      undefined,
+      body.messageId,
+    );
+
+    console.log(
+      `[Conversation save-interrupted] done (user=${userId}, conversation=${body.conversationId}, message=${body.messageId})`,
+    );
+
+    return c.json({ success: true });
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error ? err.message : 'Failed to save interrupted message';
+    console.error('[Conversation save-interrupted] error:', err);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
 // ── POST /conversation/delete/v1 ──────────────────────────────────────────────
 aiRoutes.post('/conversation/delete/v1', async (c) => {
   try {
@@ -325,20 +364,12 @@ aiRoutes.post('/conversation/delete/v1', async (c) => {
       `[Conversation delete] accepted (user=${userId}, conversation=${conversationId})`,
     );
 
-    void deleteConversation(userId, conversationId)
-      .then((deleted) => {
-        console.log(
-          `[Conversation delete] done (user=${userId}, conversation=${conversationId}, deleted=${deleted})`,
-        );
-      })
-      .catch((error: unknown) => {
-        console.error(
-          `[Conversation delete] async error (user=${userId}, conversation=${conversationId}):`,
-          error,
-        );
-      });
+    const deleted = await deleteConversation(userId, conversationId);
+    console.log(
+      `[Conversation delete] done (user=${userId}, conversation=${conversationId}, deleted=${deleted})`,
+    );
 
-    return c.json({ success: true, data: { accepted: true } });
+    return c.json({ success: true, data: { deleted } });
   } catch (err: unknown) {
     const message =
       err instanceof Error ? err.message : 'Failed to delete conversation';

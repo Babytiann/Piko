@@ -24,6 +24,9 @@ interface AiConversationDrawerProps {
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
   onNewChat: () => void;
+  onLoadMore: () => void;
+  drawerTitle: string;
+  newChatLabel: string;
 }
 
 export default function AiConversationDrawer({
@@ -35,6 +38,9 @@ export default function AiConversationDrawer({
   onSelect,
   onDelete,
   onNewChat,
+  onLoadMore,
+  drawerTitle,
+  newChatLabel,
 }: AiConversationDrawerProps): ReactNode {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -126,7 +132,7 @@ export default function AiConversationDrawer({
           style={{ alignItems: 'center', justifyContent: 'space-between' }}
         >
           <Text fontSize="$7" fontWeight="700" color="$color">
-            历史对话
+            {drawerTitle}
           </Text>
           <Pressable onPress={onNewChat} hitSlop={8}>
             <XStack gap="$2" style={{ alignItems: 'center' }}>
@@ -136,7 +142,7 @@ export default function AiConversationDrawer({
                 color={theme.blue10.val}
               />
               <Text fontSize="$3" color="$blue10" fontWeight="600">
-                新对话
+                {newChatLabel}
               </Text>
             </XStack>
           </Pressable>
@@ -167,6 +173,8 @@ export default function AiConversationDrawer({
             renderItem={renderItem}
             contentContainerStyle={{ paddingBottom: 32 }}
             showsVerticalScrollIndicator={false}
+            onEndReached={onLoadMore}
+            onEndReachedThreshold={0.3}
           />
         )}
       </Animated.View>

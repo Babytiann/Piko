@@ -82,4 +82,8 @@ export interface AiCopywriting {
   emptySubtitle: string;
   /** Input placeholder, e.g. "问我任何问题..." */
   inputPlaceholder: string;
+  /** Conversation drawer title, e.g. "历史对话" */
+  drawerTitle: string;
+  /** New chat button label in drawer, e.g. "新对话" */
+  newChatLabel: string;
 }
