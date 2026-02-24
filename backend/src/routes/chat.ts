@@ -9,7 +9,7 @@ import {
   getChatListPageData,
   getChatDetailPageData,
 } from '@/lib/services/chat';
-import { unbindTelegram } from '@/lib/services/user';
+import { unbindTelegram, getTelegramSession } from '@/lib/services/user';
 import { getUserId } from '@/lib/auth';
 
 export const chatRoutes = new Hono();
@@ -17,8 +17,19 @@ export const chatRoutes = new Hono();
 // ── POST /list/v1 ────────────────────────────────────────────────────────────
 chatRoutes.post('/list/v1', async (c) => {
   try {
-    const { session } = (await c.req.json()) as { session?: string };
-    const data = await getChatListPageData(session || undefined);
+    const userId = getUserId(c.req.raw);
+
+    // 从请求体获取前端传递的 session（可选）
+    let bodySession: string | undefined;
+
+    const body = (await c.req.json()) as { session?: string };
+    bodySession = body.session || undefined;
+
+    // 优先使用数据库中的 session，fallback 到前端传递的 session
+    const dbSession = await getTelegramSession(userId);
+    const session = dbSession ?? bodySession ?? undefined;
+
+    const data = await getChatListPageData(session);
     return c.json({ success: true, data });
   } catch (err: unknown) {
     const message =
@@ -49,15 +60,27 @@ chatRoutes.post('/list/v1', async (c) => {
 // ── POST /detail/v1 ──────────────────────────────────────────────────────────
 chatRoutes.post('/detail/v1', async (c) => {
   try {
-    const { session, chatId, chatType, accessHash, title, offsetId } =
-      (await c.req.json()) as {
-        session: string;
-        chatId: string;
-        chatType: string;
-        accessHash: string;
-        title: string;
-        offsetId?: number;
-      };
+    const userId = getUserId(c.req.raw);
+
+    const {
+      session: bodySession,
+      chatId,
+      chatType,
+      accessHash,
+      title,
+      offsetId,
+    } = (await c.req.json()) as {
+      session?: string;
+      chatId: string;
+      chatType: string;
+      accessHash: string;
+      title: string;
+      offsetId?: number;
+    };
+
+    // 优先使用数据库中的 session，fallback 到前端传递的 session
+    const dbSession = await getTelegramSession(userId);
+    const session = dbSession ?? bodySession ?? undefined;
 
     if (!session || !chatId) {
       return c.json(

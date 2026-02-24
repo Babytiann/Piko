@@ -6,14 +6,24 @@ import { createId } from '@paralleldrive/cuid2';
 // 辅助函数
 // ---------------------------------------------------------------------------
 
-/** 判断是否为唯一约束冲突（幂等入库时使用） */
+/** PostgreSQL 唯一约束冲突错误码 */
+const PG_UNIQUE_VIOLATION = '23505';
+
 function isUniqueViolation(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    (error as { code?: string }).code === '23505' // PostgreSQL unique violation
-  );
+  const hasCode = (obj: unknown): boolean =>
+    typeof obj === 'object' &&
+    obj !== null &&
+    'code' in obj &&
+    (obj as { code: unknown }).code === PG_UNIQUE_VIOLATION;
+
+  if (hasCode(error)) return true;
+
+  const cause =
+    typeof error === 'object' && error !== null && 'cause' in error
+      ? (error as { cause: unknown }).cause
+      : null;
+
+  return hasCode(cause);
 }
 
 // ---------------------------------------------------------------------------
