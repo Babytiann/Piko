@@ -206,8 +206,8 @@ export default function AiScreen(): ReactNode {
         onDelete={handleDeleteConversation}
         onNewChat={handleNewChat}
         onLoadMore={convList.loadMore}
-        drawerTitle={copy.drawerTitle}
-        newChatLabel={copy.newChatLabel}
+        drawerTitle={copy?.drawerTitle ?? ''}
+        newChatLabel={copy?.newChatLabel ?? ''}
       />
 
       <Animated.View
@@ -256,7 +256,7 @@ export default function AiScreen(): ReactNode {
                 color="$color"
                 letterSpacing={-0.5}
               >
-                {copy.headerTitle}
+                {copy?.headerTitle ?? ''}
               </Text>
             </XStack>
 
@@ -290,8 +290,8 @@ export default function AiScreen(): ReactNode {
             <AiChatMessageList
               messages={messages}
               contentPaddingBottom={16}
-              emptyTitle={copy.emptyTitle}
-              emptySubtitle={copy.emptySubtitle}
+              emptyTitle={copy?.emptyTitle ?? ''}
+              emptySubtitle={copy?.emptySubtitle ?? ''}
               tooltipMessageId={tooltipTarget?.message.id}
               onMessageLongPress={handleMessageLongPress}
               onRequestLocationPermission={requestLocationPermission}
@@ -300,7 +300,7 @@ export default function AiScreen(): ReactNode {
               onSend={sendMessage}
               isStreaming={isStreaming}
               onStop={stopStreaming}
-              placeholder={copy.inputPlaceholder}
+              placeholder={copy?.inputPlaceholder ?? ''}
             />
           </YStack>
 
