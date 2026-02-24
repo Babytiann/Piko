@@ -33,9 +33,4 @@ export const DEFAULT_PROFILE_COPY: ProfilePageCopy = {
   },
   logoutButton: '退出登录',
   logoutIngress: '退出中…',
-  footer: {
-    versionLabel: 'Ver',
-    uidLabel: 'UID',
-    didLabel: 'DID',
-  },
 };

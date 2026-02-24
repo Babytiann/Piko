@@ -7,16 +7,17 @@ import { YStack, XStack, Text } from 'tamagui';
 import Avatar from '@/common/components/avatar';
 import { authClient } from '@/services/auth-client';
 
-import type { ProfilePageCopy } from '@/common/typings/profile';
+import type { ProfilePageCopy, ProfileAppUser } from '@/common/typings/profile';
 
 interface ProfileAppleSectionProps {
+  appUser: ProfileAppUser | null;
   copy: ProfilePageCopy['userSection'];
 }
 
 export default function ProfileAppleSection({
+  appUser,
   copy,
 }: ProfileAppleSectionProps): ReactNode {
-  const { data: session, isPending } = authClient.useSession();
   const [isSigningIn, setIsSigningIn] = useState(false);
 
   const handleAppleSignIn = async (): Promise<void> => {
@@ -50,33 +51,23 @@ export default function ProfileAppleSection({
     }
   };
 
-  if (isPending) {
-    return (
-      <YStack bg="#FFFFFF" p="$4" gap="$3" style={{ borderRadius: 16 }}>
-        <Text fontSize="$2" color="$gray12">
-          {copy.loadingLabel}
-        </Text>
-      </YStack>
-    );
-  }
-
   return (
     <YStack bg="#FFFFFF" p="$4" gap="$3" style={{ borderRadius: 16 }}>
-      {session?.user ? (
+      {appUser ? (
         <XStack gap="$3" style={{ alignItems: 'center' }}>
           <Avatar
             url={undefined}
-            text={(session.user.name ?? session.user.email ?? '?').charAt(0)}
+            text={(appUser.name ?? appUser.email ?? '?').charAt(0)}
             color="#8E8E93"
             size={56}
           />
           <YStack flex={1} gap="$1">
             <Text fontSize="$5" fontWeight="600" color="$color">
-              {session.user.name ?? session.user.email ?? '—'}
+              {appUser.name ?? appUser.email ?? '—'}
             </Text>
-            {session.user.email ? (
+            {appUser.email ? (
               <Text fontSize="$3" color="$gray12">
-                {session.user.email}
+                {appUser.email}
               </Text>
             ) : null}
             <XStack gap="$2" style={{ alignItems: 'center' }}>

@@ -29,6 +29,13 @@ export interface ProfileCopyItem {
   description: string;
 }
 
+/** Apple / Better Auth 用户信息，由 profile 接口统一返回，供首屏 Apple 区块使用。 */
+export interface ProfileAppUser {
+  id: string;
+  name: string | null;
+  email: string | null;
+}
+
 /** All profile page copy (backend-driven). */
 export interface ProfilePageCopy {
   pageTitle: string;
@@ -55,15 +62,12 @@ export interface ProfilePageCopy {
   };
   logoutButton: string;
   logoutIngress: string;
-  footer: {
-    versionLabel: string;
-    uidLabel: string;
-    didLabel: string;
-  };
 }
 
 export interface ProfilePageData {
   header: { title: string };
+  /** 当前 Apple 登录用户，未登录为 null。首屏 Apple 区块据此渲染。 */
+  appUser: ProfileAppUser | null;
   copy: ProfilePageCopy;
   telegramSection: TelegramSection;
 }

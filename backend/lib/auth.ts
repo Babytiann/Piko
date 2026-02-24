@@ -72,3 +72,22 @@ export async function getUserId(request: Request): Promise<string> {
   }
   return session.user.id;
 }
+
+/**
+ * 从请求中获取 session（含 user），无登录时返回 null。用于 profile 等需「未登录也返回 200」的接口。
+ */
+export async function getSessionOrNull(
+  request: Request,
+): Promise<{
+  user: { id: string; name: string | null; email: string | null };
+} | null> {
+  const session = await auth.api.getSession({ headers: request.headers });
+  if (!session?.user?.id) return null;
+  return {
+    user: {
+      id: session.user.id,
+      name: session.user.name ?? null,
+      email: session.user.email ?? null,
+    },
+  };
+}

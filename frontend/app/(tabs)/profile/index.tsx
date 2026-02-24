@@ -2,7 +2,6 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Alert, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import Constants from 'expo-constants';
 import { YStack, XStack, Text, Spacer } from 'tamagui';
 
 import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
@@ -24,19 +23,11 @@ export default function ProfileScreen(): ReactNode {
   const router = useRouter();
   const { data: appSession } = authClient.useSession();
   const { session, logout } = useAuth();
-  const { isLoading, errorType, data, handleRetry } = useProfileData(session);
+  const { isLoading, errorType, data, handleRetry } = useProfileData(
+    session,
+    appSession?.user?.id,
+  );
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-  const copy = data?.copy ?? DEFAULT_PROFILE_COPY;
-
-  const handleAppLogout = async (): Promise<void> => {
-    setIsLoggingOut(true);
-    try {
-      await logout();
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
 
   useEffect(() => {
     if (errorType !== PageErrorType.AUTH || !appSession?.user) return;
@@ -56,6 +47,37 @@ export default function ProfileScreen(): ReactNode {
     );
   }, [errorType, appSession?.user, logout]);
 
+  const copy = data?.copy ?? DEFAULT_PROFILE_COPY;
+  const appUser =
+    data?.appUser ??
+    (appSession?.user
+      ? {
+          id: appSession.user.id,
+          name: appSession.user.name ?? null,
+          email: appSession.user.email ?? null,
+        }
+      : null);
+
+  const hasAppSession = !!appUser;
+
+  if (isLoading && !data) {
+    return (
+      <YStack flex={1} bg="$background">
+        <PageLoading />
+      </YStack>
+    );
+  }
+
+  const handleAppLogout = async (): Promise<void> => {
+    setIsLoggingOut(true);
+    try {
+      await authClient.signOut();
+      await logout();
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
   const handleTelegramPress = (): void => {
     const user = telegramSectionData?.isLoggedIn
       ? telegramSectionData?.user
@@ -74,7 +96,6 @@ export default function ProfileScreen(): ReactNode {
     }
   };
 
-  const hasAppSession = !!appSession?.user;
   const showProfileData = hasAppSession && data && !errorType;
   const showProfileError =
     hasAppSession && errorType && errorType !== PageErrorType.AUTH;
@@ -115,7 +136,7 @@ export default function ProfileScreen(): ReactNode {
         </XStack>
 
         <YStack px="$4" gap="$4">
-          <ProfileAppleSection copy={copy.userSection} />
+          <ProfileAppleSection appUser={appUser} copy={copy.userSection} />
 
           {showProfileError ? (
             <PageStatusView errorType={errorType} onRetry={handleRetry} />
@@ -127,8 +148,6 @@ export default function ProfileScreen(): ReactNode {
               data={telegramSectionData}
               onPress={handleTelegramPress}
             />
-          ) : hasAppSession && isLoading ? (
-            <PageLoading />
           ) : !hasAppSession ? (
             <YStack bg="#FFFFFF" p="$4" gap="$3" style={{ borderRadius: 16 }}>
               <Text fontSize="$4" fontWeight="600" color="$color">
@@ -140,9 +159,7 @@ export default function ProfileScreen(): ReactNode {
             </YStack>
           ) : null}
 
-          {hasAppSession && data ? (
-            <ProfileSettingsSection copy={copy} />
-          ) : null}
+          <ProfileSettingsSection copy={copy} />
 
           {hasAppSession ? (
             <YStack
@@ -170,19 +187,6 @@ export default function ProfileScreen(): ReactNode {
               </XStack>
             </YStack>
           ) : null}
-
-          <YStack py="$4" gap="$1" style={{ alignItems: 'center' }}>
-            <Text fontSize="$2" color="$gray12">
-              {copy.footer.versionLabel}{' '}
-              {Constants.expoConfig?.version ?? '1.0.0'}
-            </Text>
-            <Text fontSize="$2" color="$gray12">
-              {copy.footer.uidLabel}: {appSession?.user?.id ?? '—'}
-            </Text>
-            <Text fontSize="$2" color="$gray12">
-              {copy.footer.didLabel}: —
-            </Text>
-          </YStack>
         </YStack>
       </ScrollView>
     </YStack>

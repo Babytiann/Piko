@@ -14,7 +14,14 @@ interface UseProfileDataReturn {
   handleRetry: () => void;
 }
 
-export function useProfileData(session: string | null): UseProfileDataReturn {
+/**
+ * @param session Telegram session（来自 useAuth），可选
+ * @param appSessionUserId Apple 登录用户 id（来自 authClient.useSession()），用于 Apple 登录后自动 refetch，换设备后能拿到最新绑定状态
+ */
+export function useProfileData(
+  session: string | null,
+  appSessionUserId?: string | null,
+): UseProfileDataReturn {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorType, setErrorType] = useState<PageErrorType | undefined>(
     undefined,
@@ -52,7 +59,7 @@ export function useProfileData(session: string | null): UseProfileDataReturn {
     return () => {
       cancelled = true;
     };
-  }, [session, fetchKey]);
+  }, [session, fetchKey, appSessionUserId]);
 
   const handleRetry = (): void => {
     setFetchKey((k) => k + 1);

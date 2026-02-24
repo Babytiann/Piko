@@ -1,7 +1,9 @@
-import type { ProfilePageCopy, ProfilePageData } from '@/types/profile';
-import { getUserInfo } from './telegram';
-import { getProfilePhoto } from './telegram/photo';
-import { getUserWithBinding, getTelegramSession, unbindTelegram } from './user';
+import type {
+  ProfilePageCopy,
+  ProfilePageData,
+  ProfileAppUser,
+} from '@/types/profile';
+import { getUserWithBinding } from './user';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -59,16 +61,12 @@ const PROFILE_COPY: ProfilePageCopy = {
   },
   logoutButton: '退出登录',
   logoutIngress: '退出中…',
-  footer: {
-    versionLabel: 'Ver',
-    uidLabel: 'UID',
-    didLabel: 'DID',
-  },
 };
 
-function buildUnboundPageData(): ProfilePageData {
+function buildUnboundPageData(appUser: ProfileAppUser | null): ProfilePageData {
   return {
     header: { title: PROFILE_COPY.pageTitle },
+    appUser,
     copy: PROFILE_COPY,
     telegramSection: {
       title: 'Telegram 账号',
@@ -85,65 +83,48 @@ function buildUnboundPageData(): ProfilePageData {
 
 /**
  * Aggregate all data needed by the Profile page.
+ * 首屏单接口：同时返回 appUser（Apple 登录态）、copy、telegramSection。
  *
- * 优先从 DB 查询 TG 绑定的 sessionString；
- * 若 DB 无记录则 fallback 到前端传入的 session（向后兼容）。
+ * @param appUser 当前 Better Auth 用户，未登录为 null
+ * @param _fallbackSession 前端传入的 Telegram session（保留兼容，已绑定状态仅以 DB 为准）
  */
 export async function getProfilePageData(
-  userId: string,
-  fallbackSession?: string,
+  appUser: ProfileAppUser | null,
+  _fallbackSession?: string,
 ): Promise<ProfilePageData> {
+  const userId = appUser?.id ?? null;
+  if (!userId) return buildUnboundPageData(null);
+
   const dbUser = await getUserWithBinding(userId);
+  const binding = dbUser?.telegramBinding ?? null;
 
-  // 尝试从 DB 拿 session，兜底用前端传入的
-  const session =
-    dbUser?.telegramBinding?.sessionString ?? fallbackSession ?? null;
+  if (!binding) return buildUnboundPageData(appUser);
 
-  if (!session) return buildUnboundPageData();
+  // 已绑定状态仅由 DB 决定，用 DB 已有字段立即返回，不请求 Telegram API
+  const displayName =
+    [binding.firstName, binding.username].filter(Boolean).join(' ') ||
+    '未知用户';
+  const avatarText = (binding.firstName || binding.username || '?')
+    .charAt(0)
+    .toUpperCase();
 
-  try {
-    // 两次调用复用同一个 GramJS client 实例，必须串行，防止并发导致 libuv handle 错乱。
-    // 有缓存时两步都是内存命中，实际耗时可忽略不计。
-    const userInfo = await getUserInfo(session);
-    const photoResult = userInfo.hasPhoto
-      ? await getProfilePhoto(session)
-      : null;
-
-    const img_url = photoResult?.buffer
-      ? `data:image/jpeg;base64,${photoResult.buffer.toString('base64')}`
-      : undefined;
-
-    const displayName =
-      [userInfo.firstName, userInfo.lastName].filter(Boolean).join(' ') ||
-      '未知用户';
-
-    const boundAt = dbUser?.telegramBinding?.createdAt;
-    return {
-      header: { title: PROFILE_COPY.pageTitle },
-      copy: PROFILE_COPY,
-      telegramSection: {
-        title: 'Telegram 账号',
-        isLoggedIn: true,
-        user: {
-          displayName,
-          username: userInfo.username ? `@${userInfo.username}` : '',
-          phone: userInfo.phone,
-          img_url,
-          avatarText: (userInfo.firstName || userInfo.username || '?')
-            .charAt(0)
-            .toUpperCase(),
-          avatarColor: getAvatarColor(userInfo.id),
-          telegramUserId: userInfo.id,
-          boundAt: boundAt ? boundAt.toISOString() : undefined,
-        },
-        unbindButtonText: '解除绑定',
+  return {
+    header: { title: PROFILE_COPY.pageTitle },
+    appUser,
+    copy: PROFILE_COPY,
+    telegramSection: {
+      title: 'Telegram 账号',
+      isLoggedIn: true,
+      user: {
+        displayName,
+        username: binding.username ? `@${binding.username}` : '',
+        phone: binding.phone ?? '',
+        avatarText,
+        avatarColor: getAvatarColor(String(binding.telegramUserId)),
+        telegramUserId: String(binding.telegramUserId),
+        boundAt: binding.createdAt.toISOString(),
       },
-    };
-  } catch (err: unknown) {
-    // TG session 失效时自动清理 DB 绑定
-    if (err instanceof Error && err.message.includes('AUTH_KEY_UNREGISTERED')) {
-      await unbindTelegram(userId).catch(() => {});
-    }
-    throw err;
-  }
+      unbindButtonText: '解除绑定',
+    },
+  };
 }
