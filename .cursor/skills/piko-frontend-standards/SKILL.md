@@ -434,6 +434,18 @@ MUST:  同组内按字母排序
 MUST:  common/hooks 用 barrel import: from '@/common/hooks'
 ```
 
+## 依赖管理 (Dependency Management)
+
+```
+NEVER: 通过直接编辑 package.json 添加或删除依赖
+MUST:  使用包管理器官方命令添加/删除依赖（与本项目一致）
+       例如: pnpm add <pkg> / pnpm add -D <pkg>、pnpm remove <pkg>
+       或: npm install <pkg>、yarn add <pkg>（以项目根目录 package.json 或文档为准）
+MUST:  添加依赖前确认当前项目使用的包管理器（看 lockfile: pnpm-lock.yaml / package-lock.json / yarn.lock）
+```
+
+无论何时需要新增或移除依赖，都必须通过终端执行官方命令，不得手改 `package.json`。
+
 ## Enforcement
 
 写代码时自动检查:
@@ -448,6 +460,7 @@ MUST:  common/hooks 用 barrel import: from '@/common/hooks'
 8. 不等待的 Promise 是否加了 void？
 9. 样式是否用 Tamagui token？→ 不用 className/硬编码
 10. import 是否按规范分组？
+11. 新增/删除依赖是否通过包管理器命令？→ 禁止直接编辑 package.json
 
 ## References
 
