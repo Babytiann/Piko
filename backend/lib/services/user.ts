@@ -60,6 +60,7 @@ export async function getUserWithBinding(userId: string): Promise<{
     firstName: string | null;
     username: string | null;
     phone: string | null;
+    createdAt: Date;
   } | null;
 } | null> {
   const [user] = await db
@@ -81,6 +82,7 @@ export async function getUserWithBinding(userId: string): Promise<{
       firstName: telegramBindings.firstName,
       username: telegramBindings.username,
       phone: telegramBindings.phone,
+      createdAt: telegramBindings.createdAt,
     })
     .from(telegramBindings)
     .where(eq(telegramBindings.userId, userId))

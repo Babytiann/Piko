@@ -1,41 +1,72 @@
 import type { ReactNode } from 'react';
-import { YStack, Text } from 'tamagui';
+import { Ionicons } from '@expo/vector-icons';
+import { XStack, YStack, Text } from 'tamagui';
 
-import type { TelegramSection as TelegramSectionData } from '@/common/typings/profile';
-
-import ProfileTelegramBound from './profile-telegram-bound';
-import ProfileTelegramUnbound from './profile-telegram-unbound';
+import type {
+  ProfilePageCopy,
+  TelegramSection as TelegramSectionData,
+} from '@/common/typings/profile';
 
 interface ProfileTelegramSectionProps {
+  copy: ProfilePageCopy['linkedAccount'];
   data: TelegramSectionData;
-  onBind: () => void;
-  onUnbind: () => void;
+  onPress: () => void;
 }
 
 export default function ProfileTelegramSection({
+  copy,
   data,
-  onBind,
-  onUnbind,
+  onPress,
 }: ProfileTelegramSectionProps): ReactNode {
-  return (
-    <YStack bg="#FFFFFF" p="$4" gap="$3" style={{ borderRadius: 16 }}>
-      <Text fontSize="$4" fontWeight="600" color="$color">
-        {data.title}
-      </Text>
+  const isBound = data.isLoggedIn && !!data.user;
 
-      {data.isLoggedIn && data.user ? (
-        <ProfileTelegramBound
-          user={data.user}
-          unbindButtonText={data.unbindButtonText ?? '解除绑定'}
-          onUnbind={onUnbind}
-        />
-      ) : (
-        <ProfileTelegramUnbound
-          prompt={data.bindPrompt ?? ''}
-          buttonText={data.bindButtonText ?? '绑定'}
-          onBind={onBind}
-        />
-      )}
+  return (
+    <YStack gap="$0">
+      <Text
+        fontSize="$2"
+        fontWeight="600"
+        color="$gray12"
+        px="$4"
+        py="$2"
+        textTransform="uppercase"
+      >
+        {copy.title}
+      </Text>
+      <YStack
+        bg="#FFFFFF"
+        style={{ borderRadius: 16 }}
+        pl="$4"
+        pr="$2"
+        pressStyle={{ opacity: 0.8 }}
+        onPress={onPress}
+      >
+        <XStack
+          gap="$3"
+          py="$3"
+          style={{ minHeight: 56, alignItems: 'center' }}
+        >
+          <Ionicons name="paper-plane-outline" size={22} color="#8E8E93" />
+          <YStack flex={1} gap="$0.5">
+            <XStack gap="$2" style={{ alignItems: 'center' }}>
+              <Text fontSize="$4" fontWeight="600" color="$color">
+                Telegram
+              </Text>
+              {isBound ? (
+                <>
+                  <Text fontSize="$3" color="$green10">
+                    {copy.boundLabel}
+                  </Text>
+                  <Ionicons name="checkmark-circle" size={18} color="#34C759" />
+                </>
+              ) : null}
+            </XStack>
+            <Text fontSize="$2" color="$gray12">
+              {isBound ? copy.boundHint : copy.unboundHint}
+            </Text>
+          </YStack>
+          <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
+        </XStack>
+      </YStack>
     </YStack>
   );
 }

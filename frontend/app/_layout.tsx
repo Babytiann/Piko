@@ -62,6 +62,13 @@ export default function RootLayout() {
                   gestureDirection: 'horizontal',
                 }}
               />
+              <Stack.Screen
+                name="telegram_binding/index"
+                options={{
+                  headerShown: false,
+                  animation: 'slide_from_right',
+                }}
+              />
             </Stack>
           </AuthProvider>
         </PortalProvider>

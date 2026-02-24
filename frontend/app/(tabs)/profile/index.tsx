@@ -1,7 +1,8 @@
-import { useState, useEffect, type ReactNode } from 'react';
-import { Alert } from 'react-native';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Alert, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import Constants from 'expo-constants';
 import { YStack, XStack, Text, Spacer } from 'tamagui';
 
 import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
@@ -11,11 +12,12 @@ import PageStatusView, {
 } from '@/common/components/page-status-view';
 import { useAuth } from '@/common/hooks';
 import { authClient } from '@/services/auth-client';
-import { unbindTelegram } from '@/services/telegram';
 
+import { DEFAULT_PROFILE_COPY } from '@/pages/profile/consts/default-copy';
 import { useProfileData } from '@/pages/profile/hooks/useProfileData';
 import ProfileAppleSection from '@/pages/profile/components/profile-apple-section';
 import ProfileTelegramSection from '@/pages/profile/components/profile-telegram-section';
+import ProfileSettingsSection from '@/pages/profile/components/profile-settings-section';
 
 export default function ProfileScreen(): ReactNode {
   const insets = useSafeAreaInsets();
@@ -23,13 +25,19 @@ export default function ProfileScreen(): ReactNode {
   const { data: appSession } = authClient.useSession();
   const { session, logout } = useAuth();
   const { isLoading, errorType, data, handleRetry } = useProfileData(session);
-  const [isUnbinding, setIsUnbinding] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const copy = data?.copy ?? DEFAULT_PROFILE_COPY;
 
   const handleAppLogout = async (): Promise<void> => {
-    await logout();
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
-  // 已登录 Apple 且接口返回 AUTH 时，视为 Telegram 失效，弹窗并清除
   useEffect(() => {
     if (errorType !== PageErrorType.AUTH || !appSession?.user) return;
 
@@ -48,100 +56,135 @@ export default function ProfileScreen(): ReactNode {
     );
   }, [errorType, appSession?.user, logout]);
 
-  const handleBind = (): void => {
-    router.push('/telegram_login');
-  };
-
-  const handleUnbind = (): void => {
-    Alert.alert(
-      '解除绑定',
-      '确定要解除 Telegram 账号绑定吗？解绑后将注销当前 Telegram 会话。',
-      [
-        { text: '取消', style: 'cancel' },
-        {
-          text: '确定',
-          style: 'destructive',
-          onPress: async () => {
-            setIsUnbinding(true);
-            try {
-              if (session) {
-                await unbindTelegram(session);
-              }
-            } catch (err) {
-              console.error('unbind error:', err);
-            } finally {
-              await logout();
-              setIsUnbinding(false);
-            }
-          },
+  const handleTelegramPress = (): void => {
+    const user = telegramSectionData?.isLoggedIn
+      ? telegramSectionData?.user
+      : null;
+    if (user) {
+      router.push({
+        pathname: '/telegram_binding',
+        params: {
+          username: user.username || '—',
+          telegramUserId: user.telegramUserId || '—',
+          boundAt: user.boundAt ?? '',
         },
-      ],
-    );
+      });
+    } else {
+      router.push('/telegram_login');
+    }
   };
-
-  if (isUnbinding) return <PageLoading />;
 
   const hasAppSession = !!appSession?.user;
   const showProfileData = hasAppSession && data && !errorType;
   const showProfileError =
     hasAppSession && errorType && errorType !== PageErrorType.AUTH;
 
+  const telegramSectionData = showProfileData
+    ? data!.telegramSection
+    : hasAppSession
+      ? {
+          title: 'Telegram 账号',
+          isLoggedIn: false,
+          bindPrompt: '',
+          bindButtonText: '',
+        }
+      : null;
+
+  const contentPadding = {
+    paddingTop: insets.top,
+    paddingBottom: insets.bottom + TAB_BAR_CONTENT_HEIGHT,
+  };
+
   return (
-    <YStack
-      flex={1}
-      pt={insets.top}
-      pb={insets.bottom + TAB_BAR_CONTENT_HEIGHT}
-      bg="$background"
-    >
-      <XStack px="$4" py="$3">
-        <Text
-          fontSize="$7"
-          fontWeight="700"
-          color="$color"
-          letterSpacing={-0.5}
-        >
-          个人中心
-        </Text>
-        <Spacer flex={1} />
-      </XStack>
+    <YStack flex={1} bg="$background">
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={contentPadding}
+        showsVerticalScrollIndicator={false}
+      >
+        <XStack px="$4" py="$3">
+          <Text
+            fontSize="$7"
+            fontWeight="700"
+            color="$color"
+            letterSpacing={-0.5}
+          >
+            {copy.pageTitle}
+          </Text>
+          <Spacer flex={1} />
+        </XStack>
 
-      <YStack px="$4" gap="$4" flex={1}>
-        <ProfileAppleSection onLogout={handleAppLogout} />
+        <YStack px="$4" gap="$4">
+          <ProfileAppleSection copy={copy.userSection} />
 
-        {showProfileError ? (
-          <PageStatusView errorType={errorType} onRetry={handleRetry} />
-        ) : null}
-        {showProfileData ? (
-          <ProfileTelegramSection
-            data={data!.telegramSection}
-            onBind={handleBind}
-            onUnbind={handleUnbind}
-          />
-        ) : hasAppSession && isLoading ? (
-          <PageLoading />
-        ) : hasAppSession ? (
-          <ProfileTelegramSection
-            data={{
-              title: 'Telegram 账号',
-              isLoggedIn: false,
-              bindPrompt:
-                '绑定 Telegram 账号后，可以查看和管理你的 Telegram 消息。',
-              bindButtonText: '绑定 Telegram 账号',
-            }}
-            onBind={handleBind}
-            onUnbind={handleUnbind}
-          />
-        ) : (
-          <YStack bg="$gray2" p="$4" gap="$3" style={{ borderRadius: 16 }}>
-            <Text fontSize="$4" fontWeight="600" color="$color">
-              Telegram 账号
+          {showProfileError ? (
+            <PageStatusView errorType={errorType} onRetry={handleRetry} />
+          ) : null}
+
+          {telegramSectionData ? (
+            <ProfileTelegramSection
+              copy={copy.linkedAccount}
+              data={telegramSectionData}
+              onPress={handleTelegramPress}
+            />
+          ) : hasAppSession && isLoading ? (
+            <PageLoading />
+          ) : !hasAppSession ? (
+            <YStack bg="#FFFFFF" p="$4" gap="$3" style={{ borderRadius: 16 }}>
+              <Text fontSize="$4" fontWeight="600" color="$color">
+                {copy.linkedAccount.title}
+              </Text>
+              <Text fontSize="$2" color="$gray12">
+                {copy.linkedAccount.loginFirstHint}
+              </Text>
+            </YStack>
+          ) : null}
+
+          {hasAppSession && data ? (
+            <ProfileSettingsSection copy={copy} />
+          ) : null}
+
+          {hasAppSession ? (
+            <YStack
+              py="$2"
+              bg="#FFFFFF"
+              style={{
+                borderRadius: 16,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+              pressStyle={isLoggingOut ? undefined : { opacity: 0.8 }}
+              onPress={isLoggingOut ? undefined : () => void handleAppLogout()}
+              height={50}
+              opacity={isLoggingOut ? 0.7 : 1}
+            >
+              <XStack gap="$2" style={{ alignItems: 'center' }}>
+                <Text color="$red10" fontWeight="600" fontSize="$4">
+                  {isLoggingOut ? copy.logoutIngress : copy.logoutButton}
+                </Text>
+                {isLoggingOut ? null : (
+                  <Text color="$red10" fontSize="$4">
+                    →
+                  </Text>
+                )}
+              </XStack>
+            </YStack>
+          ) : null}
+
+          <YStack py="$4" gap="$1" style={{ alignItems: 'center' }}>
+            <Text fontSize="$2" color="$gray12">
+              {copy.footer.versionLabel}{' '}
+              {Constants.expoConfig?.version ?? '1.0.0'}
             </Text>
-            <Text fontSize="$2" color="$gray11">
-              登录后可在此绑定 Telegram 账号。
+            <Text fontSize="$2" color="$gray12">
+              {copy.footer.uidLabel}: {appSession?.user?.id ?? '—'}
+            </Text>
+            <Text fontSize="$2" color="$gray12">
+              {copy.footer.didLabel}: —
             </Text>
           </YStack>
-        )}
-      </YStack>
+        </YStack>
+      </ScrollView>
     </YStack>
   );
 }

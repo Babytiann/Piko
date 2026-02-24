@@ -1,20 +1,23 @@
 import { useState, type ReactNode } from 'react';
 import { Platform } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import { Ionicons } from '@expo/vector-icons';
 import { YStack, XStack, Text } from 'tamagui';
 
+import Avatar from '@/common/components/avatar';
 import { authClient } from '@/services/auth-client';
 
+import type { ProfilePageCopy } from '@/common/typings/profile';
+
 interface ProfileAppleSectionProps {
-  onLogout: () => Promise<void>;
+  copy: ProfilePageCopy['userSection'];
 }
 
 export default function ProfileAppleSection({
-  onLogout,
+  copy,
 }: ProfileAppleSectionProps): ReactNode {
   const { data: session, isPending } = authClient.useSession();
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleAppleSignIn = async (): Promise<void> => {
     if (Platform.OS !== 'ios') return;
@@ -47,62 +50,47 @@ export default function ProfileAppleSection({
     }
   };
 
-  const handleSignOut = async (): Promise<void> => {
-    setIsSigningOut(true);
-    try {
-      await authClient.signOut();
-      await onLogout();
-    } finally {
-      setIsSigningOut(false);
-    }
-  };
-
   if (isPending) {
     return (
-      <YStack bg="$gray2" p="$4" gap="$3" style={{ borderRadius: 16 }}>
-        <Text fontSize="$4" fontWeight="600" color="$color">
-          Apple 账号
-        </Text>
-        <Text fontSize="$2" color="$gray11">
-          加载中…
+      <YStack bg="#FFFFFF" p="$4" gap="$3" style={{ borderRadius: 16 }}>
+        <Text fontSize="$2" color="$gray12">
+          {copy.loadingLabel}
         </Text>
       </YStack>
     );
   }
 
   return (
-    <YStack bg="$gray2" p="$4" gap="$3" style={{ borderRadius: 16 }}>
-      <Text fontSize="$4" fontWeight="600" color="$color">
-        Apple 账号
-      </Text>
-
+    <YStack bg="#FFFFFF" p="$4" gap="$3" style={{ borderRadius: 16 }}>
       {session?.user ? (
-        <>
-          <XStack gap="$2" flexWrap="wrap">
-            <Text fontSize="$3" color="$color">
-              {session.user.email ?? '已通过 Apple 登录'}
+        <XStack gap="$3" style={{ alignItems: 'center' }}>
+          <Avatar
+            url={undefined}
+            text={(session.user.name ?? session.user.email ?? '?').charAt(0)}
+            color="#8E8E93"
+            size={56}
+          />
+          <YStack flex={1} gap="$1">
+            <Text fontSize="$5" fontWeight="600" color="$color">
+              {session.user.name ?? session.user.email ?? '—'}
             </Text>
-          </XStack>
-          <YStack
-            height={44}
-            bg="$red2"
-            pressStyle={{ opacity: 0.8 }}
-            onPress={() => void handleSignOut()}
-            style={{
-              borderRadius: 12,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <Text color="$red10" fontWeight="600" fontSize="$3">
-              {isSigningOut ? '退出中…' : '退出登录'}
-            </Text>
+            {session.user.email ? (
+              <Text fontSize="$3" color="$gray12">
+                {session.user.email}
+              </Text>
+            ) : null}
+            <XStack gap="$2" style={{ alignItems: 'center' }}>
+              <Text fontSize="$2" color="$gray12">
+                {copy.appleLoginLabel}
+              </Text>
+              <Ionicons name="logo-apple" size={14} color="#8E8E93" />
+            </XStack>
           </YStack>
-        </>
+        </XStack>
       ) : (
         <>
-          <Text fontSize="$2" color="$gray11">
-            使用 Apple 账号登录后可使用 AI 聊天等功能。
+          <Text fontSize="$2" color="$gray12">
+            {copy.signInPrompt}
           </Text>
           {Platform.OS === 'ios' ? (
             <AppleAuthentication.AppleAuthenticationButton
@@ -115,11 +103,10 @@ export default function ProfileAppleSection({
               cornerRadius={12}
               style={{ height: 44, width: '100%' }}
               onPress={() => void handleAppleSignIn()}
-              disabled={isSigningIn}
             />
           ) : (
-            <Text fontSize="$2" color="$gray11">
-              请在 iOS 设备上使用 Apple 登录。
+            <Text fontSize="$2" color="$gray12">
+              {copy.iosOnlyHint}
             </Text>
           )}
         </>
