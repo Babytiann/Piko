@@ -29,7 +29,7 @@ export function useProfileData(session: string | null): UseProfileDataReturn {
 
     async function load(): Promise<void> {
       try {
-        const response = await fetchProfilePage();
+        const response = await fetchProfilePage(session);
         if (cancelled) return;
 
         const mappedError = getPageErrorType(response);
