@@ -1,19 +1,24 @@
 import type { ApiResponse } from '@/common/typings/api';
 import { API_HOST } from '@/common/config';
+import { authClient } from '@/services/auth-client';
 
 const API_BASE = `${API_HOST}/piko`;
 
-/**
- * 返回认证相关的 HTTP headers。
- *
- * Mock 阶段：发送 X-Mock-User-Id。
- * Apple Sign In 接入后：改为发送 Authorization: Bearer <jwt>。
- */
+/** 请求失败时抛出，便于按 status 做 UI 分支（如 409 账户已被绑定）。 */
+export class HttpError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = 'HttpError';
+  }
+}
+
+/** 返回认证相关的 HTTP headers（better-auth Cookie）。 */
 function getAuthHeaders(): Record<string, string> {
-  // TODO: Apple 登录接入后替换为：
-  // const token = await getToken(); // 从 expo-secure-store 读取
-  // return token ? { Authorization: `Bearer ${token}` } : {};
-  return { 'X-Mock-User-Id': 'mock-user-001' };
+  const cookie = authClient.getCookie();
+  return cookie ? { Cookie: cookie } : {};
 }
 
 export async function post<T>(
@@ -81,11 +86,11 @@ export async function postDirect<T>(
 
   if (!response.ok) {
     const errorData = data as Record<string, unknown>;
-    throw new Error(
+    const message =
       typeof errorData.error === 'string'
         ? errorData.error
-        : `Request failed (${response.status})`,
-    );
+        : `Request failed (${response.status})`;
+    throw new HttpError(message, response.status);
   }
 
   return data as T;

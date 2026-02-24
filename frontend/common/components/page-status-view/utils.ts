@@ -17,7 +17,12 @@ export const getPageErrorType = <T>(
   response: ApiResponse<T>,
 ): PageErrorType | undefined => {
   if (!response.success) {
-    if (response.errorCode === 'AUTH_EXPIRED') return PageErrorType.AUTH;
+    if (
+      response.errorCode === 'AUTH_EXPIRED' ||
+      response.error === 'Unauthorized'
+    ) {
+      return PageErrorType.AUTH;
+    }
     return PageErrorType.NETWORK;
   }
   return undefined;

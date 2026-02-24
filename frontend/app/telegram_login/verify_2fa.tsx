@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { useAuth } from '@/common/hooks';
 import PageLoading from '@/common/components/page-loading';
+import { HttpError } from '@/services';
 import * as telegramApi from '@/services/telegram';
 import { TelegramLoginStep } from '@/common/typings/telegram-login';
 import type { VerifyTwoFAStepText } from '@/common/typings/telegram-login';
@@ -14,14 +15,28 @@ import TgLoginTwoFaStep from '@/pages/telegram-login/components/tg-login-two-fa-
 export default function Verify2FAScreen(): ReactNode {
   const router = useRouter();
   const { login } = useAuth();
-  const { session } = useLocalSearchParams<{ session: string }>();
+  const { session, prefetchedTextJson } = useLocalSearchParams<{
+    session: string;
+    prefetchedTextJson?: string;
+  }>();
 
-  const [text, setText] = useState<VerifyTwoFAStepText | null>(null);
+  const [text, setText] = useState<VerifyTwoFAStepText | null>(() => {
+    if (prefetchedTextJson) {
+      try {
+        return JSON.parse(prefetchedTextJson) as VerifyTwoFAStepText;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    // 已有预取数据则跳过请求
+    if (text) return;
     let cancelled = false;
 
     async function load(): Promise<void> {
@@ -35,7 +50,7 @@ export default function Verify2FAScreen(): ReactNode {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [text]);
 
   const handleCheckPassword = async (): Promise<void> => {
     if (!text) return;
@@ -53,9 +68,13 @@ export default function Verify2FAScreen(): ReactNode {
         router.back();
       }
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : text.errors.checkPasswordFail,
-      );
+      if (err instanceof HttpError && err.status === 409) {
+        setError('该账户已被绑定');
+      } else {
+        setError(
+          err instanceof Error ? err.message : text.errors.checkPasswordFail,
+        );
+      }
     } finally {
       setLoading(false);
     }

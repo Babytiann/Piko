@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import {
   Animated,
@@ -8,13 +8,16 @@ import {
   Platform,
   Pressable,
   StyleSheet,
+  InteractionManager,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, useTheme } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
 
+import PageLoading from '@/common/components/page-loading';
 import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
+import { authClient } from '@/services/auth-client';
 import {
   useAiChat,
   useAiCopywriting,
@@ -73,12 +76,14 @@ export default function AiScreen(): ReactNode {
     conversationId,
     sendMessage,
     clearMessages,
+    stopStreaming,
     requestLocationPermission,
     loadConversation,
   } = useAiChat();
-  const { copy } = useAiCopywriting();
+  const { data: appSession } = authClient.useSession();
+  const { copy, loading: copyLoading } = useAiCopywriting();
   const bottomInset = useKeyboardBottomInset();
-  const convList = useConversationList();
+  const convList = useConversationList(appSession?.user?.id ?? null);
 
   const contentTranslateX = useRef(new Animated.Value(0)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
@@ -88,7 +93,22 @@ export default function AiScreen(): ReactNode {
     null,
   );
 
-  const handleOpenDrawer = useCallback(() => {
+  const animateClose = (): void => {
+    setDrawerVisible(false);
+    Animated.timing(contentTranslateX, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+    Animated.timing(backdropOpacity, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleOpenDrawer = (): void => {
+    Keyboard.dismiss();
     void convList.refresh();
     setDrawerVisible(true);
     Animated.timing(contentTranslateX, {
@@ -101,63 +121,119 @@ export default function AiScreen(): ReactNode {
       duration: 250,
       useNativeDriver: true,
     }).start();
-  }, [convList, contentTranslateX, backdropOpacity]);
+    InteractionManager.runAfterInteractions(() => {
+      void convList.refresh();
+    });
+  };
 
-  const animateClose = useCallback(() => {
-    setDrawerVisible(false);
-    Animated.timing(contentTranslateX, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-    Animated.timing(backdropOpacity, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-  }, [contentTranslateX, backdropOpacity]);
-
-  const handleCloseDrawer = useCallback(() => {
+  const handleCloseDrawer = (): void => {
     animateClose();
-  }, [animateClose]);
+  };
 
-  const handleSelectConversation = useCallback(
-    async (id: string) => {
-      animateClose();
-      try {
-        const detail = await fetchConversationDetail(id);
-        let nextId = 0;
-        const msgs: AiMessage[] = detail.messages.map((m) => {
-          nextId += 1;
-          return {
-            id: `hist_${nextId}`,
-            role: m.role === 'model' ? 'assistant' : 'user',
-            content: m.content,
-            timestamp: new Date(m.createdAt).getTime(),
-          };
-        });
-        loadConversation(msgs, id);
-      } catch (err) {
-        console.error('[AI] load conversation error:', err);
+  const handleSelectConversation = async (id: string): Promise<void> => {
+    animateClose();
+    try {
+      const detail = await fetchConversationDetail(id);
+      let nextSeq = 0;
+      const msgs: AiMessage[] = detail.messages.map((m) => {
+        nextSeq += 1;
+        return {
+          id: `hist_${nextSeq}`,
+          role: m.role === 'model' ? 'assistant' : 'user',
+          content: m.content,
+          timestamp: new Date(m.createdAt).getTime(),
+        };
+      });
+      loadConversation(msgs, id);
+    } catch (err) {
+      console.error('[AI] load conversation error:', err);
+    }
+  };
+
+  const handleDeleteConversation = (id: string): void => {
+    const list = convList.conversations;
+    const index = list.findIndex((c) => c.id === id);
+
+    let nextId: string | null = null;
+    if (id === conversationId && list.length > 1) {
+      nextId = index === 0 ? list[1].id : list[0].id;
+    }
+
+    convList.remove(id);
+
+    if (id === conversationId) {
+      if (nextId) {
+        void handleSelectConversation(nextId);
+      } else {
+        clearMessages();
       }
-    },
-    [loadConversation, animateClose],
-  );
+    }
+  };
 
-  const handleNewChat = useCallback(() => {
+  const handleNewChat = (): void => {
     animateClose();
     clearMessages();
-  }, [clearMessages, animateClose]);
+  };
 
-  const handleMessageLongPress = useCallback(
-    (message: AiMessage, layout: BubbleLayout) => {
-      setTooltipTarget({ message, layout });
-    },
-    [],
-  );
+  const handleMessageLongPress = (
+    message: AiMessage,
+    layout: BubbleLayout,
+  ): void => {
+    setTooltipTarget({ message, layout });
+  };
 
-  function handleTooltipClose(): void {
+  const handleTooltipClose = (): void => {
     setTooltipTarget(null);
+  };
+
+  if (copyLoading) {
+    return (
+      <YStack flex={1} bg="$background">
+        <PageLoading />
+      </YStack>
+    );
+  }
+
+  if (!appSession?.user) {
+    return (
+      <YStack
+        flex={1}
+        bg="$background"
+        pt={insets.top}
+        pb={insets.bottom + TAB_BAR_CONTENT_HEIGHT}
+        px="$4"
+        gap="$4"
+        style={{ justifyContent: 'center', alignItems: 'center' }}
+      >
+        <Text
+          fontSize="$5"
+          fontWeight="600"
+          color="$color"
+          style={{ textAlign: 'center' }}
+        >
+          请使用 Apple 登录
+        </Text>
+        <Text fontSize="$3" color="$gray11" style={{ textAlign: 'center' }}>
+          登录后即可使用 AI 聊天、对话历史等功能。
+        </Text>
+        <YStack
+          height={48}
+          bg="$color"
+          pressStyle={{ opacity: 0.8 }}
+          onPress={() => router.push('/(tabs)/profile')}
+          style={{
+            borderRadius: 12,
+            justifyContent: 'center',
+            alignItems: 'center',
+            minWidth: 160,
+          }}
+        >
+          <Text color="$background" fontWeight="600" fontSize="$3">
+            去登录
+          </Text>
+        </YStack>
+      </YStack>
+    );
   }
 
   return (
@@ -165,12 +241,15 @@ export default function AiScreen(): ReactNode {
       <AiConversationDrawer
         visible={drawerVisible}
         onClose={handleCloseDrawer}
-        conversations={convList.conversations}
+        conversations={convList.visibleConversations}
         isLoading={convList.isLoading}
         activeId={conversationId}
         onSelect={handleSelectConversation}
-        onDelete={convList.remove}
+        onDelete={handleDeleteConversation}
         onNewChat={handleNewChat}
+        onLoadMore={convList.loadMore}
+        drawerTitle={copy?.drawerTitle ?? ''}
+        newChatLabel={copy?.newChatLabel ?? ''}
       />
 
       <Animated.View
@@ -219,24 +298,22 @@ export default function AiScreen(): ReactNode {
                 color="$color"
                 letterSpacing={-0.5}
               >
-                {copy.headerTitle}
+                {copy?.headerTitle ?? ''}
               </Text>
             </XStack>
 
             <XStack gap="$3" style={{ alignItems: 'center' }}>
-              {messages.length > 0 ? (
-                <YStack
-                  pressStyle={{ opacity: 0.6 }}
-                  onPress={clearMessages}
-                  hitSlop={8}
-                >
-                  <Ionicons
-                    name="trash-outline"
-                    size={20}
-                    color={theme.gray10.val}
-                  />
-                </YStack>
-              ) : null}
+              <YStack
+                pressStyle={{ opacity: 0.6 }}
+                onPress={clearMessages}
+                hitSlop={8}
+              >
+                <Ionicons
+                  name="create-outline"
+                  size={20}
+                  color={theme.gray10.val}
+                />
+              </YStack>
               <YStack
                 pressStyle={{ opacity: 0.6 }}
                 onPress={() => router.push('/telegram-dialog')}
@@ -255,16 +332,17 @@ export default function AiScreen(): ReactNode {
             <AiChatMessageList
               messages={messages}
               contentPaddingBottom={16}
-              emptyTitle={copy.emptyTitle}
-              emptySubtitle={copy.emptySubtitle}
+              emptyTitle={copy?.emptyTitle ?? ''}
+              emptySubtitle={copy?.emptySubtitle ?? ''}
               tooltipMessageId={tooltipTarget?.message.id}
               onMessageLongPress={handleMessageLongPress}
               onRequestLocationPermission={requestLocationPermission}
             />
             <AiChatInput
               onSend={sendMessage}
-              disabled={isStreaming}
-              placeholder={copy.inputPlaceholder}
+              isStreaming={isStreaming}
+              onStop={stopStreaming}
+              placeholder={copy?.inputPlaceholder ?? ''}
             />
           </YStack>
 

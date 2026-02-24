@@ -28,6 +28,8 @@ export interface TelegramAuthRequest {
   phoneCode?: string;
   /** signIn */
   phoneCodeHash?: string;
+  /** signIn — sendCode 阶段序列化的 session 字符串，用于恢复同一 auth key */
+  pendingSession?: string;
   /** checkPassword */
   session?: string;
   /** checkPassword */
@@ -45,6 +47,8 @@ export interface TelegramUser {
 export interface SendCodeResult {
   success: boolean;
   phoneCodeHash: string;
+  /** 序列化的 session 字符串，需透传给 signIn 以保证 auth key 一致 */
+  pendingSession: string;
   codeType: string;
   timeout: number | null;
 }

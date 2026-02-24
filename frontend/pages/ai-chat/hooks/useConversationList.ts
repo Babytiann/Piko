@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {
@@ -7,11 +7,15 @@ import {
 } from '@/services/ai';
 import type { ConversationItem } from '../types';
 
+const PAGE_SIZE = 20;
+
 interface UseConversationListReturn {
   conversations: ConversationItem[];
+  visibleConversations: ConversationItem[];
   isLoading: boolean;
   refresh: () => Promise<void>;
   remove: (id: string) => void;
+  loadMore: () => void;
 }
 
 const CONVERSATION_CACHE_KEY = 'ai:conversation:list:v1';
@@ -39,11 +43,29 @@ async function loadConversationCache(): Promise<ConversationItem[]> {
   });
 }
 
-export function useConversationList(): UseConversationListReturn {
+export function useConversationList(
+  userId: string | null,
+): UseConversationListReturn {
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  const pendingDeleteIds = useRef(new Set<string>());
+  const hasFetchedForUser = useRef(false);
+  const refreshRef = useRef<(() => Promise<void>) | null>(null);
 
   useEffect(() => {
+    if (!userId) {
+      hasFetchedForUser.current = false;
+      setConversations([]);
+      setVisibleCount(PAGE_SIZE);
+      pendingDeleteIds.current.clear();
+      void AsyncStorage.removeItem(CONVERSATION_CACHE_KEY).catch((err) => {
+        console.error('[ConversationList] clear cache error:', err);
+      });
+      return;
+    }
+
     const bootstrap = async (): Promise<void> => {
       try {
         const cached = await loadConversationCache();
@@ -55,42 +77,66 @@ export function useConversationList(): UseConversationListReturn {
       }
     };
 
-    void bootstrap();
-  }, []);
+    void bootstrap().then(() => {
+      if (hasFetchedForUser.current) return;
+      hasFetchedForUser.current = true;
+      void refreshRef.current?.();
+    });
+  }, [userId]);
 
-  const refresh = useCallback(async (): Promise<void> => {
+  const refresh = async (): Promise<void> => {
     setIsLoading(true);
     try {
       const list = await fetchConversationList();
-      setConversations(list);
-      await saveConversationCache(list);
+      const filtered = list.filter((c) => !pendingDeleteIds.current.has(c.id));
+      setConversations(filtered);
+      setVisibleCount(PAGE_SIZE);
+      await saveConversationCache(filtered);
     } catch (err) {
       console.error('[ConversationList] refresh error:', err);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  };
 
-  const remove = useCallback(
-    (id: string): void => {
-      setConversations((prev) => {
-        const next = prev.filter((c) => c.id !== id);
-        void saveConversationCache(next).catch((err) => {
-          console.error(
-            '[ConversationList] save cache after delete error:',
-            err,
-          );
-        });
-        return next;
+  refreshRef.current = refresh;
+
+  const remove = (id: string): void => {
+    pendingDeleteIds.current.add(id);
+
+    setConversations((prev) => {
+      const next = prev.filter((c) => c.id !== id);
+      void saveConversationCache(next).catch((err) => {
+        console.error('[ConversationList] save cache after delete error:', err);
       });
+      return next;
+    });
 
-      void deleteConversationApi(id).catch((err) => {
+    void deleteConversationApi(id)
+      .then(() => {
+        pendingDeleteIds.current.delete(id);
+      })
+      .catch((err) => {
         console.error('[ConversationList] delete error:', err);
-        void refresh();
+        pendingDeleteIds.current.delete(id);
+        void refreshRef.current?.();
       });
-    },
-    [refresh],
-  );
+  };
 
-  return { conversations, isLoading, refresh, remove };
+  const loadMore = (): void => {
+    setVisibleCount((prev) =>
+      prev >= conversations.length ? prev : prev + PAGE_SIZE,
+    );
+  };
+
+  const visibleConversations = conversations.slice(0, visibleCount);
+
+  return {
+    conversations,
+    visibleConversations,
+    isLoading,
+    refresh,
+    remove,
+    loadMore,
+  };
 }

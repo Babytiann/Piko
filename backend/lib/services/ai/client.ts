@@ -1,27 +1,46 @@
 /**
- * Gemini client 单例 + model 配置。
+ * AI 模型配置 — 使用 Vercel AI SDK (@ai-sdk/google)。
  *
- * 用全局变量保存实例，防止 Next.js 热更新时重复创建。
+ * 替换原有的 @google/generative-ai 直接调用，
+ * 统一由 Vercel AI SDK 管理 provider 和模型实例。
  */
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import type { LanguageModel } from 'ai';
 import promptConfig from '../ai-prompt.json';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? '';
+// ---------------------------------------------------------------------------
+// 模型配置
+// ---------------------------------------------------------------------------
 
-export const DEFAULT_MODEL = 'gemini-3-flash-preview';
+export const DEFAULT_MODEL_ID = 'gemini-3-flash-preview';
 
+/**
+ * 获取 Google Gemini 模型实例。
+ * 用全局变量缓存 provider，避免开发模式热重载时重复初始化。
+ */
 const globalForAi = globalThis as unknown as {
-  __geminiClient?: GoogleGenerativeAI;
+  __googleProvider?: ReturnType<typeof createGoogleGenerativeAI>;
 };
 
-export function getGeminiClient(): GoogleGenerativeAI {
-  if (!globalForAi.__geminiClient) {
-    globalForAi.__geminiClient = new GoogleGenerativeAI(GEMINI_API_KEY);
+function getGoogleProvider(): ReturnType<typeof createGoogleGenerativeAI> {
+  if (!globalForAi.__googleProvider) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error('[AI] GEMINI_API_KEY 环境变量未配置');
+    }
+    globalForAi.__googleProvider = createGoogleGenerativeAI({ apiKey });
   }
-  return globalForAi.__geminiClient;
+  return globalForAi.__googleProvider;
 }
+
+export function getModel(): LanguageModel {
+  return getGoogleProvider()(DEFAULT_MODEL_ID);
+}
+
+// ---------------------------------------------------------------------------
+// System Instruction 构建
+// ---------------------------------------------------------------------------
 
 /**
  * 从 ai-prompt.json 构建 system instruction。
@@ -37,13 +56,16 @@ function buildSystemInstruction(): string {
     '',
   ];
 
-  for (const tool of Object.values(promptConfig.toolGuidelines)) {
-    lines.push(tool.instruction);
-    for (const hint of Object.values(tool.routing)) {
+  for (const toolGuideline of Object.values(promptConfig.toolGuidelines)) {
+    lines.push(toolGuideline.instruction);
+    for (const hint of Object.values(toolGuideline.routing)) {
       lines.push(`- ${hint}`);
     }
-    if ('outputRule' in tool && typeof tool.outputRule === 'string') {
-      lines.push(tool.outputRule);
+    if (
+      'outputRule' in toolGuideline &&
+      typeof toolGuideline.outputRule === 'string'
+    ) {
+      lines.push(toolGuideline.outputRule);
     }
   }
 

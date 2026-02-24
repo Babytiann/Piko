@@ -5,7 +5,8 @@
  * 这是 Tool Calling 的延伸：输入从文本变成了图片。
  */
 
-import { getGeminiClient, DEFAULT_MODEL } from '../ai/client';
+import { generateText } from 'ai';
+import { getModel } from '../ai/client';
 import type { RecognizeResult, ExpenseCategory } from '@/types/expense';
 import { EXPENSE_CATEGORIES } from '@/types/expense';
 
@@ -50,21 +51,22 @@ export async function recognizePayment(
   imageBase64: string,
   mimeType: string,
 ): Promise<RecognizeResult> {
-  const client = getGeminiClient();
-
-  const model = client.getGenerativeModel({
-    model: DEFAULT_MODEL,
+  const { text } = await generateText({
+    model: getModel(),
+    messages: [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'image',
+            image: imageBase64,
+            mediaType: mimeType as 'image/jpeg' | 'image/png' | 'image/webp',
+          },
+          { type: 'text', text: RECOGNIZE_PROMPT },
+        ],
+      },
+    ],
   });
-
-  const imagePart = {
-    inlineData: {
-      data: imageBase64,
-      mimeType,
-    },
-  };
-
-  const result = await model.generateContent([RECOGNIZE_PROMPT, imagePart]);
-  const text = result.response.text();
 
   // 清理可能的 markdown 代码块包裹
   const cleaned = text

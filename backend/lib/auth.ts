@@ -1,27 +1,74 @@
-import type { NextRequest } from 'next/server';
+/**
+ * Auth 层 — 基于 better-auth + Drizzle adapter。
+ *
+ * 架构说明：
+ *   - `auth` 实例：better-auth 主入口，处理 /api/auth/* 路由
+ *   - `getUserId(request)`：所有业务路由的鉴权入口，从 session 解析，无 session 抛错
+ */
+
+import { betterAuth } from 'better-auth';
+import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { expo } from '@better-auth/expo';
+import { db, users, accounts, sessions, verifications } from '@/db';
+
+// ---------------------------------------------------------------------------
+// better-auth 实例
+// ---------------------------------------------------------------------------
+
+export const auth = betterAuth({
+  database: drizzleAdapter(db, {
+    provider: 'pg',
+    schema: {
+      user: users,
+      account: accounts,
+      session: sessions,
+      verification: verifications,
+    },
+  }),
+
+  plugins: [expo()],
+
+  socialProviders: {
+    apple: {
+      clientId: process.env.APPLE_CLIENT_ID ?? '',
+      clientSecret: process.env.APPLE_CLIENT_SECRET ?? '',
+      appBundleIdentifier: process.env.APPLE_APP_BUNDLE_IDENTIFIER ?? undefined,
+    },
+  },
+
+  trustedOrigins: [
+    'https://appleid.apple.com',
+    'piko://',
+    'exp://localhost:8081',
+    'http://localhost:3000',
+    'http://localhost:8081',
+    // Expo 开发时设备请求的 Origin 多为 exp://<本机 IP>:8081，用前缀匹配
+    ...(process.env.NODE_ENV !== 'production'
+      ? ['exp://', 'exp://**', 'http://192.168.0.0/16', 'http://10.0.0.0/8']
+      : []),
+    ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
+  ],
+});
+
+// ---------------------------------------------------------------------------
+// 鉴权：从 session 解析 userId，无 session 抛错
+// ---------------------------------------------------------------------------
+
+export class UnauthorizedError extends Error {
+  constructor() {
+    super('Unauthorized');
+    this.name = 'UnauthorizedError';
+  }
+}
 
 /**
- * 默认 Mock 用户 ID。
- * 数据库 seed 时需要预先创建这个用户记录。
+ * 从请求中提取当前用户的 ID。依赖 better-auth 的 Cookie session。
+ * 无 session 时抛出 UnauthorizedError，调用方应返回 401。
  */
-const MOCK_USER_ID = 'mock-user-001';
-
-/**
- * 从请求中提取用户 ID。
- *
- * **Mock 阶段**（当前）：
- *   从 `X-Mock-User-Id` header 读取，无则返回默认 `mock-user-001`。
- *
- * **Apple Sign In 接入后**（TODO）：
- *   从 `Authorization: Bearer <jwt>` 解析真实 userId。
- *   切换时只需修改此函数，所有路由自动生效。
- */
-export function getUserId(request: NextRequest): string {
-  // TODO: Apple Sign In 接入后替换为 JWT 解析
-  // const token = request.headers.get('Authorization')?.replace('Bearer ', '');
-  // if (!token) throw new AuthError('Missing authorization token');
-  // const payload = await verifyJwt(token);
-  // return payload.userId;
-
-  return request.headers.get('X-Mock-User-Id') ?? MOCK_USER_ID;
+export async function getUserId(request: Request): Promise<string> {
+  const session = await auth.api.getSession({ headers: request.headers });
+  if (!session?.user?.id) {
+    throw new UnauthorizedError();
+  }
+  return session.user.id;
 }

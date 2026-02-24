@@ -1,11 +1,11 @@
 /**
- * 天气查询工具定义 — 薄包装层。
+ * 天气查询工具定义 — 薄包装层（Vercel AI SDK 版）。
  *
  * 只负责：向 AI 描述工具 schema + 调用 weather 服务。
  * 实际的 API 调用逻辑在 weather/ 服务模块中。
  */
 
-import { SchemaType } from '@google/generative-ai';
+import { z } from 'zod';
 import { toolRegistry, type ToolDefinition } from '../ai-tools';
 import {
   fetchCurrentWeather,
@@ -16,14 +16,32 @@ import {
 } from '../weather';
 
 // ---------------------------------------------------------------------------
-// 工具参数
+// 参数 Schema（Zod）
 // ---------------------------------------------------------------------------
 
-interface GetWeatherParams {
-  city: string;
-  type?: WeatherQueryType;
-  days?: number;
-}
+const parametersSchema = z.object({
+  city: z
+    .string()
+    .describe(
+      '城市名称（使用英文，如 Beijing、Shanghai、Hangzhou、Tokyo、London）',
+    ),
+  type: z
+    .enum(['current', 'forecast', 'air_pollution'])
+    .optional()
+    .describe(
+      '查询类型: current（实时天气，默认）、forecast（1~16天预报）、air_pollution（空气质量）',
+    ),
+  days: z
+    .number()
+    .min(1)
+    .max(16)
+    .optional()
+    .describe(
+      '预报天数（1~16），仅 type=forecast 时生效。今天=1，明天=2，后天=3，一周=7，默认=7',
+    ),
+});
+
+type GetWeatherParams = z.infer<typeof parametersSchema>;
 
 // ---------------------------------------------------------------------------
 // 执行入口
@@ -36,7 +54,7 @@ async function execute(params: GetWeatherParams): Promise<WeatherResult> {
     throw new Error('OPENWEATHER_API_KEY 未配置');
   }
 
-  const queryType = params.type ?? 'current';
+  const queryType: WeatherQueryType = params.type ?? 'current';
 
   switch (queryType) {
     case 'current':
@@ -45,8 +63,10 @@ async function execute(params: GetWeatherParams): Promise<WeatherResult> {
       return fetchForecast(params.city, params.days ?? 7);
     case 'air_pollution':
       return fetchAirPollution(params.city);
-    default:
-      throw new Error(`不支持的查询类型: ${queryType}`);
+    default: {
+      const _exhaustive: never = queryType;
+      throw new Error(`不支持的查询类型: ${_exhaustive}`);
+    }
   }
 }
 
@@ -54,7 +74,7 @@ async function execute(params: GetWeatherParams): Promise<WeatherResult> {
 // 工具定义 & 注册
 // ---------------------------------------------------------------------------
 
-const getWeatherTool: ToolDefinition<GetWeatherParams, WeatherResult> = {
+const getWeatherTool: ToolDefinition<typeof parametersSchema> = {
   name: 'get_weather',
   description: [
     '查询指定城市的天气信息。支持三种查询类型：',
@@ -68,27 +88,7 @@ const getWeatherTool: ToolDefinition<GetWeatherParams, WeatherResult> = {
     '- 用户问"未来X天天气" → type=forecast, days=X',
     '- 用户问"空气质量/PM2.5/雾霾" → type=air_pollution',
   ].join('\n'),
-  parameters: {
-    type: SchemaType.OBJECT,
-    properties: {
-      city: {
-        type: SchemaType.STRING,
-        description:
-          '城市名称（使用英文，如 Beijing、Shanghai、Hangzhou、Tokyo、London）',
-      },
-      type: {
-        type: SchemaType.STRING,
-        description:
-          '查询类型: current（实时天气，默认）、forecast（1~16天预报）、air_pollution（空气质量）',
-      },
-      days: {
-        type: SchemaType.NUMBER,
-        description:
-          '预报天数（1~16），仅 type=forecast 时生效。今天=1，明天=2，后天=3，一周=7，默认=7',
-      },
-    },
-    required: ['city'],
-  },
+  parameters: parametersSchema,
   execute: async (params) => execute(params),
 };
 

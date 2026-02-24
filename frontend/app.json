@@ -10,7 +10,8 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.peiqi927.piko",
+      "bundleIdentifier": "com.test.piko" /*com.peiqi927.piko才是最终使用的*/,
+      "usesAppleSignIn": true,
       "infoPlist": {
         "LSApplicationQueriesSchemes": ["amapuri", "iosamap", "comgooglemaps"]
       }
@@ -51,7 +52,8 @@
           "locationAlwaysAndWhenInUsePermission": "Piko 需要你的位置来推荐合适的地图应用",
           "locationWhenInUsePermission": "Piko 需要你的位置来推荐合适的地图应用"
         }
-      ]
+      ],
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true,

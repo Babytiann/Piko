@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 
-import { streamAiChat, postLocationResponse } from '@/services/ai';
+import {
+  streamAiChat,
+  postLocationResponse,
+  saveInterruptedMessage,
+} from '@/services/ai';
 import type { AiMessage, ToolCallInfo } from '../types';
 import { FLUSH_INTERVAL_MS } from '../consts';
 import { useLocation } from './useLocation';
@@ -23,9 +27,12 @@ interface UseAiChatReturn {
   conversationId: string | null;
   sendMessage: (text: string) => void;
   clearMessages: () => void;
+  stopStreaming: () => void;
   requestLocationPermission: (messageId: string) => void;
   loadConversation: (msgs: AiMessage[], convId: string) => void;
 }
+
+const INTERRUPTED_SUFFIX = '\n\n---\n*输出中断*';
 
 export function useAiChat(): UseAiChatReturn {
   const [messages, setMessages] = useState<AiMessage[]>([]);
@@ -36,6 +43,7 @@ export function useAiChat(): UseAiChatReturn {
   const chunkBufferRef = useRef('');
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retryRef = useRef<RetryPayload | null>(null);
+  const streamingMsgIdRef = useRef<string | null>(null);
 
   const { getLocation, wasDenied, resetDenied, requestPermissionAgain } =
     useLocation();
@@ -90,16 +98,14 @@ export function useAiChat(): UseAiChatReturn {
     aiMsgId: string,
     requestId: string,
   ): Promise<void> => {
+    const locationDeniedHint =
+      '📍 未获取到地理位置信息，推荐结果可能不准确。点击此处授予位置权限';
+
     if (wasDenied()) {
       setMessages((prev) =>
         prev.map((m) =>
           m.id === aiMsgId
-            ? {
-                ...m,
-                locationDeniedHint:
-                  '📍 未获取到地理位置信息，推荐的地图应用可能不准确',
-                locationRequestId: requestId,
-              }
+            ? { ...m, locationDeniedHint, locationRequestId: requestId }
             : m,
         ),
       );
@@ -108,21 +114,20 @@ export function useAiChat(): UseAiChatReturn {
     }
 
     const location = await getLocation();
-    if (!location) {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === aiMsgId
-            ? {
-                ...m,
-                locationDeniedHint:
-                  '📍 未获取到地理位置信息，推荐的地图应用可能不准确',
-                locationRequestId: requestId,
-              }
-            : m,
-        ),
-      );
+
+    if (location) {
+      postLocationResponse(requestId, location);
+      return;
     }
-    postLocationResponse(requestId, location);
+
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === aiMsgId
+          ? { ...m, locationDeniedHint, locationRequestId: requestId }
+          : m,
+      ),
+    );
+    postLocationResponse(requestId, null);
   };
 
   const startStream = (
@@ -130,6 +135,7 @@ export function useAiChat(): UseAiChatReturn {
     aiMsgId: string,
   ): void => {
     setIsStreaming(true);
+    streamingMsgIdRef.current = aiMsgId;
     chunkBufferRef.current = '';
     let hasReceivedChunk = false;
 
@@ -198,6 +204,7 @@ export function useAiChat(): UseAiChatReturn {
           ),
         );
         setIsStreaming(false);
+        streamingMsgIdRef.current = null;
         cleanupRef.current = null;
       },
       onError(error) {
@@ -222,6 +229,7 @@ export function useAiChat(): UseAiChatReturn {
           ),
         );
         setIsStreaming(false);
+        streamingMsgIdRef.current = null;
         cleanupRef.current = null;
       },
     });
@@ -250,6 +258,48 @@ export function useAiChat(): UseAiChatReturn {
     const sub = AppState.addEventListener('change', handleAppState);
     return () => sub.remove();
   }, []);
+
+  const stopStreaming = (): void => {
+    if (!isStreaming) return;
+
+    cleanupRef.current?.();
+    cleanupRef.current = null;
+
+    clearFlushTimer();
+    const remainingChunks = chunkBufferRef.current;
+    chunkBufferRef.current = '';
+
+    const stoppedMsgId = streamingMsgIdRef.current;
+    retryRef.current = null;
+
+    setMessages((prev) => {
+      let interruptedContent = '';
+      const next = prev.map((m) => {
+        if (m.id !== stoppedMsgId) return m;
+        interruptedContent = m.content + remainingChunks;
+        return {
+          ...m,
+          content: interruptedContent + INTERRUPTED_SUFFIX,
+          isStreaming: false,
+        };
+      });
+
+      if (stoppedMsgId && conversationId && interruptedContent) {
+        void saveInterruptedMessage(
+          conversationId,
+          stoppedMsgId,
+          interruptedContent + INTERRUPTED_SUFFIX,
+        ).catch((err) => {
+          console.error('[AI] save interrupted message error:', err);
+        });
+      }
+
+      return next;
+    });
+
+    setIsStreaming(false);
+    streamingMsgIdRef.current = null;
+  };
 
   const sendMessage = (text: string): void => {
     const trimmed = text.trim();
@@ -290,6 +340,7 @@ export function useAiChat(): UseAiChatReturn {
     setMessages([]);
     setIsStreaming(false);
     setConversationId(null);
+    streamingMsgIdRef.current = null;
   };
 
   const requestLocationPermission = (messageId: string): void => {
@@ -308,7 +359,6 @@ export function useAiChat(): UseAiChatReturn {
 
       if (location) {
         resetDenied();
-        postLocationResponse(requestId, location);
       }
     })();
   };
@@ -322,6 +372,7 @@ export function useAiChat(): UseAiChatReturn {
     setMessages(msgs);
     setIsStreaming(false);
     setConversationId(convId);
+    streamingMsgIdRef.current = null;
   };
 
   return {
@@ -330,6 +381,7 @@ export function useAiChat(): UseAiChatReturn {
     conversationId,
     sendMessage,
     clearMessages,
+    stopStreaming,
     requestLocationPermission,
     loadConversation,
   };

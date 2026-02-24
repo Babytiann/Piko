@@ -1,5 +1,6 @@
 import type { ProfilePageData } from '@/types/profile';
-import { getUserInfo, getProfilePhotoBase64 } from './telegram';
+import { getUserInfo } from './telegram';
+import { getProfilePhoto } from './telegram/photo';
 import { getUserWithBinding, getTelegramSession, unbindTelegram } from './user';
 
 // ---------------------------------------------------------------------------
@@ -63,9 +64,15 @@ export async function getProfilePageData(
   if (!session) return buildUnboundPageData(nickname);
 
   try {
+    // 两次调用复用同一个 GramJS client 实例，必须串行，防止并发导致 libuv handle 错乱。
+    // 有缓存时两步都是内存命中，实际耗时可忽略不计。
     const userInfo = await getUserInfo(session);
-    const img_url = userInfo.hasPhoto
-      ? await getProfilePhotoBase64(session)
+    const photoResult = userInfo.hasPhoto
+      ? await getProfilePhoto(session)
+      : null;
+
+    const img_url = photoResult?.buffer
+      ? `data:image/jpeg;base64,${photoResult.buffer.toString('base64')}`
       : undefined;
 
     const displayName =

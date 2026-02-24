@@ -111,6 +111,8 @@ export interface AiCopywriting {
   emptyTitle: string;
   emptySubtitle: string;
   inputPlaceholder: string;
+  drawerTitle: string;
+  newChatLabel: string;
 }
 
 /** 会话列表项 */

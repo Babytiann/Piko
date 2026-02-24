@@ -75,6 +75,9 @@ frontend/
 │   ├── profile.ts                # 个人资料数据获取
 │   └── telegram.ts               # Telegram 认证 & 消息 API
 │
+├── lib/                           # 框架级配置（如认证客户端）
+│   └── auth-client.ts            # Better Auth 客户端 (createAuthClient)，session/Cookie 与后端一致
+│
 ├── contexts/                      # Context 定义
 └── utils/                         # 全局工具函数
 ```
@@ -434,6 +437,29 @@ MUST:  同组内按字母排序
 MUST:  common/hooks 用 barrel import: from '@/common/hooks'
 ```
 
+## 认证 (Better Auth)
+
+Piko 统一使用 **Better Auth** 做登录与鉴权。
+
+```
+MUST:  登录、session、OAuth（如 Apple 登录）使用 frontend/lib/auth-client.ts 的 createAuthClient 实例
+MUST:  需要带登录态请求时，用 authClient.getSession() / getCookie() 等注入；若在 fetch 里手动设置 Cookie，使用 credentials: 'omit'（与 Better Auth 文档一致）
+MUST:  鉴权/登录相关逻辑以 Better Auth 文档与项目 PRD（如 docs/PRD-Apple-Login-Better-Auth-Alignment.md）为准
+NEVER: 引入或教学其他认证库（如 Next-Auth）替代 Better Auth
+```
+
+## 依赖管理 (Dependency Management)
+
+```
+NEVER: 通过直接编辑 package.json 添加或删除依赖
+MUST:  使用包管理器官方命令添加/删除依赖（与本项目一致）
+       例如: pnpm add <pkg> / pnpm add -D <pkg>、pnpm remove <pkg>
+       或: npm install <pkg>、yarn add <pkg>（以项目根目录 package.json 或文档为准）
+MUST:  添加依赖前确认当前项目使用的包管理器（看 lockfile: pnpm-lock.yaml / package-lock.json / yarn.lock）
+```
+
+无论何时需要新增或移除依赖，都必须通过终端执行官方命令，不得手改 `package.json`。
+
 ## Enforcement
 
 写代码时自动检查:
@@ -448,6 +474,8 @@ MUST:  common/hooks 用 barrel import: from '@/common/hooks'
 8. 不等待的 Promise 是否加了 void？
 9. 样式是否用 Tamagui token？→ 不用 className/硬编码
 10. import 是否按规范分组？
+11. 新增/删除依赖是否通过包管理器命令？→ 禁止直接编辑 package.json
+12. 登录/鉴权相关是否使用 Better Auth（auth-client、credentials: 'omit' 当手动设 Cookie）？→ 见「认证 (Better Auth)」节
 
 ## References
 

@@ -10,21 +10,28 @@ import PageStatusView, {
   PageErrorType,
 } from '@/common/components/page-status-view';
 import { useAuth } from '@/common/hooks';
+import { authClient } from '@/services/auth-client';
 import { unbindTelegram } from '@/services/telegram';
 
 import { useProfileData } from '@/pages/profile/hooks/useProfileData';
+import ProfileAppleSection from '@/pages/profile/components/profile-apple-section';
 import ProfileTelegramSection from '@/pages/profile/components/profile-telegram-section';
 
 export default function ProfileScreen(): ReactNode {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { data: appSession } = authClient.useSession();
   const { session, logout } = useAuth();
   const { isLoading, errorType, data, handleRetry } = useProfileData(session);
   const [isUnbinding, setIsUnbinding] = useState(false);
 
-  // 检测到 AUTH 错误时自动弹窗提示并清除本地 session
+  const handleAppLogout = async (): Promise<void> => {
+    await logout();
+  };
+
+  // 已登录 Apple 且接口返回 AUTH 时，视为 Telegram 失效，弹窗并清除
   useEffect(() => {
-    if (errorType !== PageErrorType.AUTH) return;
+    if (errorType !== PageErrorType.AUTH || !appSession?.user) return;
 
     Alert.alert(
       '登录已失效',
@@ -39,7 +46,7 @@ export default function ProfileScreen(): ReactNode {
       ],
       { cancelable: false },
     );
-  }, [errorType, logout]);
+  }, [errorType, appSession?.user, logout]);
 
   const handleBind = (): void => {
     router.push('/telegram_login');
@@ -72,10 +79,12 @@ export default function ProfileScreen(): ReactNode {
     );
   };
 
-  if (isLoading || isUnbinding) return <PageLoading />;
-  if (errorType && errorType !== PageErrorType.AUTH)
-    return <PageStatusView errorType={errorType} onRetry={handleRetry} />;
-  if (!data) return <></>;
+  if (isUnbinding) return <PageLoading />;
+
+  const hasAppSession = !!appSession?.user;
+  const showProfileData = hasAppSession && data && !errorType;
+  const showProfileError =
+    hasAppSession && errorType && errorType !== PageErrorType.AUTH;
 
   return (
     <YStack
@@ -91,17 +100,47 @@ export default function ProfileScreen(): ReactNode {
           color="$color"
           letterSpacing={-0.5}
         >
-          {data.header.title}
+          个人中心
         </Text>
         <Spacer flex={1} />
       </XStack>
 
       <YStack px="$4" gap="$4" flex={1}>
-        <ProfileTelegramSection
-          data={data.telegramSection}
-          onBind={handleBind}
-          onUnbind={handleUnbind}
-        />
+        <ProfileAppleSection onLogout={handleAppLogout} />
+
+        {showProfileError ? (
+          <PageStatusView errorType={errorType} onRetry={handleRetry} />
+        ) : null}
+        {showProfileData ? (
+          <ProfileTelegramSection
+            data={data!.telegramSection}
+            onBind={handleBind}
+            onUnbind={handleUnbind}
+          />
+        ) : hasAppSession && isLoading ? (
+          <PageLoading />
+        ) : hasAppSession ? (
+          <ProfileTelegramSection
+            data={{
+              title: 'Telegram 账号',
+              isLoggedIn: false,
+              bindPrompt:
+                '绑定 Telegram 账号后，可以查看和管理你的 Telegram 消息。',
+              bindButtonText: '绑定 Telegram 账号',
+            }}
+            onBind={handleBind}
+            onUnbind={handleUnbind}
+          />
+        ) : (
+          <YStack bg="$gray2" p="$4" gap="$3" style={{ borderRadius: 16 }}>
+            <Text fontSize="$4" fontWeight="600" color="$color">
+              Telegram 账号
+            </Text>
+            <Text fontSize="$2" color="$gray11">
+              登录后可在此绑定 Telegram 账号。
+            </Text>
+          </YStack>
+        )}
       </YStack>
     </YStack>
   );
