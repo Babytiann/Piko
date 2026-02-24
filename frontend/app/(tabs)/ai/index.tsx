@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import PageLoading from '@/common/components/page-loading';
 import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
-import { useAuth } from '@/common/hooks';
+import { authClient } from '@/services/auth-client';
 import {
   useAiChat,
   useAiCopywriting,
@@ -80,10 +80,10 @@ export default function AiScreen(): ReactNode {
     requestLocationPermission,
     loadConversation,
   } = useAiChat();
+  const { data: appSession } = authClient.useSession();
   const { copy, loading: copyLoading } = useAiCopywriting();
   const bottomInset = useKeyboardBottomInset();
-  const { user } = useAuth();
-  const convList = useConversationList(user?.id ?? null);
+  const convList = useConversationList(appSession?.user?.id ?? null);
 
   const contentTranslateX = useRef(new Animated.Value(0)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
@@ -190,6 +190,48 @@ export default function AiScreen(): ReactNode {
     return (
       <YStack flex={1} bg="$background">
         <PageLoading />
+      </YStack>
+    );
+  }
+
+  if (!appSession?.user) {
+    return (
+      <YStack
+        flex={1}
+        bg="$background"
+        pt={insets.top}
+        pb={insets.bottom + TAB_BAR_CONTENT_HEIGHT}
+        px="$4"
+        gap="$4"
+        style={{ justifyContent: 'center', alignItems: 'center' }}
+      >
+        <Text
+          fontSize="$5"
+          fontWeight="600"
+          color="$color"
+          style={{ textAlign: 'center' }}
+        >
+          请使用 Apple 登录
+        </Text>
+        <Text fontSize="$3" color="$gray11" style={{ textAlign: 'center' }}>
+          登录后即可使用 AI 聊天、对话历史等功能。
+        </Text>
+        <YStack
+          height={48}
+          bg="$color"
+          pressStyle={{ opacity: 0.8 }}
+          onPress={() => router.push('/(tabs)/profile')}
+          style={{
+            borderRadius: 12,
+            justifyContent: 'center',
+            alignItems: 'center',
+            minWidth: 160,
+          }}
+        >
+          <Text color="$background" fontWeight="600" fontSize="$3">
+            去登录
+          </Text>
+        </YStack>
       </YStack>
     );
   }

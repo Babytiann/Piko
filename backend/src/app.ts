@@ -11,10 +11,12 @@
  */
 
 import 'dotenv/config';
+import type { MiddlewareHandler } from 'hono';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 
+import { auth } from '@/lib/auth';
 import { aiRoutes } from './routes/ai';
 import { expenseRoutes } from './routes/expense';
 import { homepageRoutes } from './routes/homepage';
@@ -27,7 +29,6 @@ const app = new Hono();
 // ── 全局中间件 ────────────────────────────────────────────────────────────────
 
 app.use(
-  '*',
   cors({
     origin: [
       'http://localhost:8081', // Expo Metro dev
@@ -35,17 +36,21 @@ app.use(
       'https://piko.vercel.app', // Production（按实际调整）
     ],
     allowMethods: ['GET', 'POST', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'X-Mock-User-Id', 'Authorization'],
+    allowHeaders: ['Content-Type', 'X-Mock-User-Id', 'Authorization', 'Cookie'],
     credentials: true,
     maxAge: 86400,
-  }),
+  }) as unknown as MiddlewareHandler,
 );
 
-app.use('*', logger());
+app.use(logger() as unknown as MiddlewareHandler);
 
 // ── 健康检查 ─────────────────────────────────────────────────────────────────
 
 app.get('/', (c) => c.json({ status: 'ok', service: 'piko-backend' }));
+
+// ── better-auth（Apple 登录等）────────────────────────────────────────────────
+
+app.on(['GET', 'POST'], '/api/auth/*', (c) => auth.handler(c.req.raw));
 
 // ── 路由模块 ─────────────────────────────────────────────────────────────────
 

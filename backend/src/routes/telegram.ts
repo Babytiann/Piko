@@ -21,12 +21,13 @@ import {
   getPooledClient,
   resolveInputPeer,
 } from '@/lib/telegram';
-import { getUserId } from '@/lib/auth';
+import { getUserId, UnauthorizedError } from '@/lib/auth';
 import {
   ensureUser,
   bindTelegram,
   unbindTelegram,
   getTelegramSession,
+  TelegramAlreadyBoundError,
 } from '@/lib/services/user';
 import {
   downloadMessageMedia,
@@ -61,7 +62,7 @@ function userPayload(user: Api.TypeUser): TelegramUser {
 // ── POST /auth/v1 ─────────────────────────────────────────────────────────────
 telegramRoutes.post('/auth/v1', async (c) => {
   try {
-    const userId = getUserId(c.req.raw);
+    const userId = await getUserId(c.req.raw);
     const body = (await c.req.json()) as TelegramAuthRequest;
     const { session_tag } = body;
 
@@ -207,6 +208,12 @@ telegramRoutes.post('/auth/v1', async (c) => {
         );
     }
   } catch (err: unknown) {
+    if (err instanceof UnauthorizedError) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    if (err instanceof TelegramAlreadyBoundError) {
+      return c.json({ success: false, error: err.message }, 409);
+    }
     const message =
       err instanceof Error ? err.message : 'Authentication failed';
     console.error('telegram auth error:', err);
@@ -217,7 +224,7 @@ telegramRoutes.post('/auth/v1', async (c) => {
 // ── POST /unbind/v1 ───────────────────────────────────────────────────────────
 telegramRoutes.post('/unbind/v1', async (c) => {
   try {
-    const userId = getUserId(c.req.raw);
+    const userId = await getUserId(c.req.raw);
 
     let bodySession: string | undefined;
     try {
@@ -248,6 +255,9 @@ telegramRoutes.post('/unbind/v1', async (c) => {
 
     return c.json({ success: true });
   } catch (err: unknown) {
+    if (err instanceof UnauthorizedError) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
     const message = err instanceof Error ? err.message : 'Failed to unbind';
     console.error('telegram unbind error:', err);
     return c.json({ success: false, error: message }, 500);

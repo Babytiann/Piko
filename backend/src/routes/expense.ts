@@ -5,7 +5,7 @@
  */
 
 import { Hono } from 'hono';
-import { getUserId } from '@/lib/auth';
+import { getUserId, UnauthorizedError } from '@/lib/auth';
 import {
   createExpense,
   listExpenses,
@@ -18,7 +18,7 @@ export const expenseRoutes = new Hono();
 // ── POST /upload/v1 ──────────────────────────────────────────────────────────
 expenseRoutes.post('/upload/v1', async (c) => {
   try {
-    const userId = getUserId(c.req.raw);
+    const userId = await getUserId(c.req.raw);
     const body = (await c.req.json()) as Record<string, unknown>;
 
     const source = (body.source as string) ?? 'manual';
@@ -64,6 +64,9 @@ expenseRoutes.post('/upload/v1', async (c) => {
       },
     });
   } catch (err: unknown) {
+    if (err instanceof UnauthorizedError) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
     const message =
       err instanceof Error ? err.message : 'Failed to upload expense';
     console.error('[Expense upload] error:', err);
@@ -74,7 +77,7 @@ expenseRoutes.post('/upload/v1', async (c) => {
 // ── POST /list/v1 ────────────────────────────────────────────────────────────
 expenseRoutes.post('/list/v1', async (c) => {
   try {
-    const userId = getUserId(c.req.raw);
+    const userId = await getUserId(c.req.raw);
     const body = (await c.req.json()) as Record<string, unknown>;
 
     const result = await listExpenses(userId, {
@@ -86,6 +89,9 @@ expenseRoutes.post('/list/v1', async (c) => {
 
     return c.json({ success: true, data: result });
   } catch (err: unknown) {
+    if (err instanceof UnauthorizedError) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
     const message =
       err instanceof Error ? err.message : 'Failed to list expenses';
     console.error('[Expense list] error:', err);

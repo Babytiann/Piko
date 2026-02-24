@@ -4,14 +4,14 @@
  */
 
 import { Hono } from 'hono';
-import { getUserId } from '@/lib/auth';
+import { getUserId, UnauthorizedError } from '@/lib/auth';
 import { getProfilePageData } from '@/lib/services/profile';
 
 export const profileRoutes = new Hono();
 
 profileRoutes.post('/detail/v1', async (c) => {
   try {
-    const userId = getUserId(c.req.raw);
+    const userId = await getUserId(c.req.raw);
 
     let bodySession: string | undefined;
     try {
@@ -24,6 +24,9 @@ profileRoutes.post('/detail/v1', async (c) => {
     const data = await getProfilePageData(userId, bodySession);
     return c.json({ success: true, data });
   } catch (err: unknown) {
+    if (err instanceof UnauthorizedError) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
     const message =
       err instanceof Error ? err.message : 'Failed to load profile';
     console.error('profile/detail error:', err);

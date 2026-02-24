@@ -13,7 +13,7 @@
 
 import { Hono } from 'hono';
 import { type ModelMessage } from 'ai';
-import { getUserId } from '@/lib/auth';
+import { getUserId, UnauthorizedError } from '@/lib/auth';
 import { resolveLocationRequest } from '@/lib/services/location-bridge';
 import { recognizePayment } from '@/lib/services/tools/recognize-payment';
 import { streamChatWithTools } from '@/lib/services/ai/stream-chat-with-tools';
@@ -34,7 +34,15 @@ export const aiRoutes = new Hono();
 // Vercel AI SDK Data Stream 协议。前端需解析 0:text / 2:[data] 格式。
 aiRoutes.post('/chat/v1', async (c) => {
   const t0 = Date.now();
-  const userId = getUserId(c.req.raw);
+  let userId: string;
+  try {
+    userId = await getUserId(c.req.raw);
+  } catch (e) {
+    if (e instanceof UnauthorizedError) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    throw e;
+  }
 
   let body: AiChatRequest;
   try {
@@ -245,10 +253,13 @@ aiRoutes.post('/copywriting/v1', async (c) => {
 // ── POST /conversation/list/v1 ────────────────────────────────────────────────
 aiRoutes.post('/conversation/list/v1', async (c) => {
   try {
-    const userId = getUserId(c.req.raw);
+    const userId = await getUserId(c.req.raw);
     const conversations = await listConversations(userId);
     return c.json({ success: true, data: conversations });
   } catch (err: unknown) {
+    if (err instanceof UnauthorizedError) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
     const message =
       err instanceof Error ? err.message : 'Failed to list conversations';
     console.error('[Conversation list] error:', err);
@@ -259,7 +270,7 @@ aiRoutes.post('/conversation/list/v1', async (c) => {
 // ── POST /conversation/create/v1 ──────────────────────────────────────────────
 aiRoutes.post('/conversation/create/v1', async (c) => {
   try {
-    const userId = getUserId(c.req.raw);
+    const userId = await getUserId(c.req.raw);
     const body = (await c.req.json()) as { title?: string };
     const conversation = await createConversation(userId, body.title);
     return c.json({
@@ -271,6 +282,9 @@ aiRoutes.post('/conversation/create/v1', async (c) => {
       },
     });
   } catch (err: unknown) {
+    if (err instanceof UnauthorizedError) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
     const message =
       err instanceof Error ? err.message : 'Failed to create conversation';
     console.error('[Conversation create] error:', err);
@@ -281,7 +295,7 @@ aiRoutes.post('/conversation/create/v1', async (c) => {
 // ── POST /conversation/detail/v1 ──────────────────────────────────────────────
 aiRoutes.post('/conversation/detail/v1', async (c) => {
   try {
-    const userId = getUserId(c.req.raw);
+    const userId = await getUserId(c.req.raw);
     const body = (await c.req.json()) as { conversationId: string };
 
     if (!body.conversationId) {
@@ -302,6 +316,9 @@ aiRoutes.post('/conversation/detail/v1', async (c) => {
 
     return c.json({ success: true, data: detail });
   } catch (err: unknown) {
+    if (err instanceof UnauthorizedError) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
     const message =
       err instanceof Error ? err.message : 'Failed to get conversation detail';
     console.error('[Conversation detail] error:', err);
@@ -312,7 +329,7 @@ aiRoutes.post('/conversation/detail/v1', async (c) => {
 // ── POST /conversation/save-interrupted/v1 ────────────────────────────────────
 aiRoutes.post('/conversation/save-interrupted/v1', async (c) => {
   try {
-    const userId = getUserId(c.req.raw);
+    const userId = await getUserId(c.req.raw);
     const body = (await c.req.json()) as {
       conversationId: string;
       messageId: string;
@@ -339,6 +356,9 @@ aiRoutes.post('/conversation/save-interrupted/v1', async (c) => {
 
     return c.json({ success: true });
   } catch (err: unknown) {
+    if (err instanceof UnauthorizedError) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
     const message =
       err instanceof Error ? err.message : 'Failed to save interrupted message';
     console.error('[Conversation save-interrupted] error:', err);
@@ -349,7 +369,7 @@ aiRoutes.post('/conversation/save-interrupted/v1', async (c) => {
 // ── POST /conversation/delete/v1 ──────────────────────────────────────────────
 aiRoutes.post('/conversation/delete/v1', async (c) => {
   try {
-    const userId = getUserId(c.req.raw);
+    const userId = await getUserId(c.req.raw);
     const body = (await c.req.json()) as { conversationId: string };
 
     if (!body.conversationId) {
@@ -371,6 +391,9 @@ aiRoutes.post('/conversation/delete/v1', async (c) => {
 
     return c.json({ success: true, data: { deleted } });
   } catch (err: unknown) {
+    if (err instanceof UnauthorizedError) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
     const message =
       err instanceof Error ? err.message : 'Failed to delete conversation';
     console.error('[Conversation delete] error:', err);

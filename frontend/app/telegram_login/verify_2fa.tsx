@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { useAuth } from '@/common/hooks';
 import PageLoading from '@/common/components/page-loading';
+import { HttpError } from '@/services';
 import * as telegramApi from '@/services/telegram';
 import { TelegramLoginStep } from '@/common/typings/telegram-login';
 import type { VerifyTwoFAStepText } from '@/common/typings/telegram-login';
@@ -67,9 +68,13 @@ export default function Verify2FAScreen(): ReactNode {
         router.back();
       }
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : text.errors.checkPasswordFail,
-      );
+      if (err instanceof HttpError && err.status === 409) {
+        setError('该账户已被绑定');
+      } else {
+        setError(
+          err instanceof Error ? err.message : text.errors.checkPasswordFail,
+        );
+      }
     } finally {
       setLoading(false);
     }

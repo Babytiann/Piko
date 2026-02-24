@@ -2,6 +2,14 @@ import { eq } from 'drizzle-orm';
 import { db, users, telegramBindings } from '@/db';
 import { createId } from '@paralleldrive/cuid2';
 
+/** 该 Telegram 已被其他账号绑定时抛出，便于路由返回 409 */
+export class TelegramAlreadyBoundError extends Error {
+  constructor() {
+    super('该 Telegram 已被其他账号绑定，请先在对应账号解绑后再绑定到当前账号');
+    this.name = 'TelegramAlreadyBoundError';
+  }
+}
+
 // ---------------------------------------------------------------------------
 // User Service — 用户管理
 // ---------------------------------------------------------------------------
@@ -86,6 +94,7 @@ export async function getUserWithBinding(userId: string): Promise<{
 
 /**
  * 绑定 Telegram 账号到用户。
+ * 若该 Telegram 已被其他账号绑定，抛出 TelegramAlreadyBoundError（路由可返回 409）。
  */
 export async function bindTelegram(
   userId: string,
@@ -97,6 +106,30 @@ export async function bindTelegram(
     sessionString: string;
   },
 ): Promise<void> {
+  const [existing] = await db
+    .select({ userId: telegramBindings.userId })
+    .from(telegramBindings)
+    .where(eq(telegramBindings.telegramUserId, data.telegramUserId))
+    .limit(1);
+
+  if (existing) {
+    if (existing.userId !== userId) {
+      throw new TelegramAlreadyBoundError();
+    }
+    // 同一用户重新绑定（如刷新 session），只更新
+    await db
+      .update(telegramBindings)
+      .set({
+        username: data.username ?? null,
+        firstName: data.firstName ?? null,
+        phone: data.phone ?? null,
+        sessionString: data.sessionString,
+        updatedAt: new Date(),
+      })
+      .where(eq(telegramBindings.userId, userId));
+    return;
+  }
+
   await db
     .insert(telegramBindings)
     .values({

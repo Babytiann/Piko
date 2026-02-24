@@ -10,14 +10,14 @@ import {
   getChatDetailPageData,
 } from '@/lib/services/chat';
 import { unbindTelegram, getTelegramSession } from '@/lib/services/user';
-import { getUserId } from '@/lib/auth';
+import { getUserId, UnauthorizedError } from '@/lib/auth';
 
 export const chatRoutes = new Hono();
 
 // ── POST /list/v1 ────────────────────────────────────────────────────────────
 chatRoutes.post('/list/v1', async (c) => {
   try {
-    const userId = getUserId(c.req.raw);
+    const userId = await getUserId(c.req.raw);
 
     // 从请求体获取前端传递的 session（可选）
     let bodySession: string | undefined;
@@ -32,6 +32,9 @@ chatRoutes.post('/list/v1', async (c) => {
     const data = await getChatListPageData(session);
     return c.json({ success: true, data });
   } catch (err: unknown) {
+    if (err instanceof UnauthorizedError) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
     const message =
       err instanceof Error ? err.message : 'Failed to load chat list';
     console.error('chat/list error:', err);
@@ -40,7 +43,8 @@ chatRoutes.post('/list/v1', async (c) => {
       message.includes('AUTH_KEY_UNREGISTERED') ||
       message.includes('AUTH_BYTES_INVALID')
     ) {
-      void unbindTelegram(getUserId(c.req.raw)).catch((e) => {
+      const userId = await getUserId(c.req.raw);
+      void unbindTelegram(userId).catch((e) => {
         console.error('chat/list unbind error:', e);
       });
       return c.json(
@@ -60,7 +64,7 @@ chatRoutes.post('/list/v1', async (c) => {
 // ── POST /detail/v1 ──────────────────────────────────────────────────────────
 chatRoutes.post('/detail/v1', async (c) => {
   try {
-    const userId = getUserId(c.req.raw);
+    const userId = await getUserId(c.req.raw);
 
     const {
       session: bodySession,
@@ -100,6 +104,9 @@ chatRoutes.post('/detail/v1', async (c) => {
     );
     return c.json({ success: true, data });
   } catch (err: unknown) {
+    if (err instanceof UnauthorizedError) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
     const message =
       err instanceof Error ? err.message : 'Failed to load chat detail';
     console.error('chat/detail error:', err);
@@ -108,9 +115,14 @@ chatRoutes.post('/detail/v1', async (c) => {
       message.includes('AUTH_KEY_UNREGISTERED') ||
       message.includes('AUTH_BYTES_INVALID')
     ) {
-      void unbindTelegram(getUserId(c.req.raw)).catch((e) => {
-        console.error('chat/detail unbind error:', e);
-      });
+      try {
+        const uid = await getUserId(c.req.raw);
+        void unbindTelegram(uid).catch((e) => {
+          console.error('chat/detail unbind error:', e);
+        });
+      } catch {
+        // ignore
+      }
       return c.json(
         {
           success: false,

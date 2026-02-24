@@ -3,15 +3,12 @@
  *
  * 架构说明：
  *   - `auth` 实例：better-auth 主入口，处理 /api/auth/* 路由
- *   - `getUserId(request)`：所有业务路由的鉴权入口，接口签名稳定
- *
- * 当前状态（Mock 阶段）：
- *   持续读取 `X-Mock-User-Id` header，确保开发期间无需真实 Apple 凭据。
- *   Apple Sign In 接入后只需在此文件启用 apple provider 并更新 getUserId。
+ *   - `getUserId(request)`：所有业务路由的鉴权入口，从 session 解析，无 session 抛错
  */
 
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { expo } from '@better-auth/expo';
 import { db, users, accounts, sessions, verifications } from '@/db';
 
 // ---------------------------------------------------------------------------
@@ -29,51 +26,49 @@ export const auth = betterAuth({
     },
   }),
 
-  // ── Apple Sign In（凭据待填充，结构已预置） ──────────────────────────────
-  // 接入步骤:
-  //   1. 在 App Store Connect 生成 Service ID 和 Key
-  //   2. 填充以下环境变量: APPLE_CLIENT_ID / APPLE_CLIENT_SECRET
-  //   3. 取消下面的注释块
-  //
-  // socialProviders: {
-  //   apple: {
-  //     clientId: process.env.APPLE_CLIENT_ID!,
-  //     clientSecret: process.env.APPLE_CLIENT_SECRET!,
-  //   },
-  // },
+  plugins: [expo()],
+
+  socialProviders: {
+    apple: {
+      clientId: process.env.APPLE_CLIENT_ID ?? '',
+      clientSecret: process.env.APPLE_CLIENT_SECRET ?? '',
+      appBundleIdentifier: process.env.APPLE_APP_BUNDLE_IDENTIFIER ?? undefined,
+    },
+  },
 
   trustedOrigins: [
-    process.env.FRONTEND_URL ?? 'exp://localhost:8081',
+    'https://appleid.apple.com',
+    'piko://',
+    'exp://localhost:8081',
     'http://localhost:3000',
+    'http://localhost:8081',
+    // Expo 开发时设备请求的 Origin 多为 exp://<本机 IP>:8081，用前缀匹配
+    ...(process.env.NODE_ENV !== 'production'
+      ? ['exp://', 'exp://**', 'http://192.168.0.0/16', 'http://10.0.0.0/8']
+      : []),
+    ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
   ],
 });
 
 // ---------------------------------------------------------------------------
-// 默认 Mock 用户 ID（seed.ts 已预创建此记录）
+// 鉴权：从 session 解析 userId，无 session 抛错
 // ---------------------------------------------------------------------------
 
-const MOCK_USER_ID = 'mock-user-001';
+export class UnauthorizedError extends Error {
+  constructor() {
+    super('Unauthorized');
+    this.name = 'UnauthorizedError';
+  }
+}
 
 /**
- * 从请求中提取当前用户的 ID。
- *
- * **Mock 阶段**（当前）：
- *   从 `X-Mock-User-Id` header 读取，无则返回 `mock-user-001`。
- *
- * **Apple Sign In 接入后**（TODO）：
- *   调用 better-auth session API 验证 Bearer token：
- *   ```ts
- *   const session = await auth.api.getSession({ headers: request.headers });
- *   if (!session?.user?.id) throw new Error('Unauthorized');
- *   return session.user.id;
- *   ```
- *   切换时只需修改此函数，所有路由自动生效。
+ * 从请求中提取当前用户的 ID。依赖 better-auth 的 Cookie session。
+ * 无 session 时抛出 UnauthorizedError，调用方应返回 401。
  */
-export function getUserId(request: Request): string {
-  // TODO: Apple Sign In 接入后替换为:
-  // const session = await auth.api.getSession({ headers: request.headers });
-  // if (!session?.user?.id) throw new Error('Unauthorized');
-  // return session.user.id;
-
-  return request.headers.get('X-Mock-User-Id') ?? MOCK_USER_ID;
+export async function getUserId(request: Request): Promise<string> {
+  const session = await auth.api.getSession({ headers: request.headers });
+  if (!session?.user?.id) {
+    throw new UnauthorizedError();
+  }
+  return session.user.id;
 }

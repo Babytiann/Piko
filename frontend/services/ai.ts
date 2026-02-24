@@ -1,5 +1,6 @@
 import { API_HOST } from '@/common/config';
 import { post, postSafe } from '@/services';
+import { authClient } from '@/services/auth-client';
 import type {
   AiCopywriting,
   ConversationItem,
@@ -160,8 +161,8 @@ export function streamAiChat({
   xhr.open('POST', SSE_URL);
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.setRequestHeader('Accept', 'text/event-stream');
-  // Mock Auth header（Apple 登录接入后改为 Authorization: Bearer <jwt>）
-  xhr.setRequestHeader('X-Mock-User-Id', 'mock-user-001');
+  const cookie = authClient.getCookie();
+  if (cookie) xhr.setRequestHeader('Cookie', cookie);
   xhr.timeout = 120_000;
 
   xhr.onprogress = processNewData;
@@ -210,8 +211,8 @@ export function postLocationResponse(
   const xhr = new XMLHttpRequest();
   xhr.open('POST', LOCATION_URL);
   xhr.setRequestHeader('Content-Type', 'application/json');
-  // Mock Auth header（Apple 登录接入后改为 Authorization: Bearer <jwt>）
-  xhr.setRequestHeader('X-Mock-User-Id', 'mock-user-001');
+  const cookie = authClient.getCookie();
+  if (cookie) xhr.setRequestHeader('Cookie', cookie);
   xhr.send(JSON.stringify({ requestId, location }));
 }
 
