@@ -8,7 +8,7 @@ import type { ProfilePageData } from '@/common/typings/profile';
 import { fetchProfilePage } from '@/services/profile';
 
 interface UseProfileDataReturn {
-  isLoading: boolean;
+  isPageLoading: boolean;
   errorType: PageErrorType | undefined;
   data: ProfilePageData | null;
   handleRetry: () => void;
@@ -22,7 +22,7 @@ export function useProfileData(
   session: string | null,
   appSessionUserId?: string | null,
 ): UseProfileDataReturn {
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isPageLoading, setIsPageLoading] = useState<boolean>(true);
   const [errorType, setErrorType] = useState<PageErrorType | undefined>(
     undefined,
   );
@@ -31,7 +31,7 @@ export function useProfileData(
 
   useEffect(() => {
     let cancelled = false;
-    setIsLoading(true);
+    setIsPageLoading(true);
     setErrorType(undefined);
 
     async function load(): Promise<void> {
@@ -51,7 +51,7 @@ export function useProfileData(
         setErrorType(PageErrorType.NETWORK);
         setData(null);
       } finally {
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled) setIsPageLoading(false);
       }
     }
 
@@ -62,8 +62,10 @@ export function useProfileData(
   }, [session, fetchKey, appSessionUserId]);
 
   const handleRetry = (): void => {
+    setIsPageLoading(true);
+    setErrorType(undefined);
     setFetchKey((k) => k + 1);
   };
 
-  return { isLoading, errorType, data, handleRetry };
+  return { isPageLoading, errorType, data, handleRetry };
 }

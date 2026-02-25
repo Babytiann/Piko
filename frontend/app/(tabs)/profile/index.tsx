@@ -23,14 +23,16 @@ export default function ProfileScreen(): ReactNode {
   const router = useRouter();
   const { data: appSession } = authClient.useSession();
   const { session, logout } = useAuth();
-  const { isLoading, errorType, data, handleRetry } = useProfileData(
-    session,
-    appSession?.user?.id,
-  );
+  const {
+    isPageLoading,
+    errorType: copyErrorType,
+    data,
+    handleRetry: handleCopyRetry,
+  } = useProfileData(session, appSession?.user?.id);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
-    if (errorType !== PageErrorType.AUTH || !appSession?.user) return;
+    if (copyErrorType !== PageErrorType.AUTH || !appSession?.user) return;
 
     Alert.alert(
       '登录已失效',
@@ -45,7 +47,7 @@ export default function ProfileScreen(): ReactNode {
       ],
       { cancelable: false },
     );
-  }, [errorType, appSession?.user, logout]);
+  }, [copyErrorType, appSession?.user, logout]);
 
   const copy = data?.copy ?? DEFAULT_PROFILE_COPY;
   const appUser =
@@ -59,22 +61,20 @@ export default function ProfileScreen(): ReactNode {
       : null);
 
   const hasAppSession = !!appUser;
+  const showProfileData = hasAppSession && data && !copyErrorType;
+  const showProfileError =
+    hasAppSession && copyErrorType && copyErrorType !== PageErrorType.AUTH;
 
-  if (isLoading && !data) {
-    return (
-      <YStack flex={1} bg="$background">
-        <PageLoading />
-      </YStack>
-    );
-  }
-
-  if (errorType && errorType !== PageErrorType.AUTH) {
-    return (
-      <YStack flex={1} bg="$background">
-        <PageStatusView errorType={errorType} onRetry={handleRetry} />
-      </YStack>
-    );
-  }
+  const telegramSectionData = showProfileData
+    ? data!.telegram_section
+    : hasAppSession
+      ? {
+          title: 'Telegram 账号',
+          is_logged_in: false,
+          bind_prompt: '',
+          bind_button_text: '',
+        }
+      : null;
 
   const handleAppLogout = async (): Promise<void> => {
     setIsLoggingOut(true);
@@ -116,20 +116,21 @@ export default function ProfileScreen(): ReactNode {
     }
   };
 
-  const showProfileData = hasAppSession && data && !errorType;
-  const showProfileError =
-    hasAppSession && errorType && errorType !== PageErrorType.AUTH;
+  if (isPageLoading && !data) {
+    return (
+      <YStack flex={1} bg="$background">
+        <PageLoading />
+      </YStack>
+    );
+  }
 
-  const telegramSectionData = showProfileData
-    ? data!.telegram_section
-    : hasAppSession
-      ? {
-          title: 'Telegram 账号',
-          is_logged_in: false,
-          bind_prompt: '',
-          bind_button_text: '',
-        }
-      : null;
+  if (copyErrorType && copyErrorType !== PageErrorType.AUTH) {
+    return (
+      <YStack flex={1} bg="$background">
+        <PageStatusView errorType={copyErrorType} onRetry={handleCopyRetry} />
+      </YStack>
+    );
+  }
 
   const contentPadding = {
     paddingTop: insets.top,
@@ -159,7 +160,10 @@ export default function ProfileScreen(): ReactNode {
           <ProfileAppleSection appUser={appUser} copy={copy.user_section} />
 
           {showProfileError ? (
-            <PageStatusView errorType={errorType} onRetry={handleRetry} />
+            <PageStatusView
+              errorType={copyErrorType}
+              onRetry={handleCopyRetry}
+            />
           ) : null}
 
           {telegramSectionData ? (
