@@ -41,9 +41,6 @@ importers:
       '@openrouter/ai-sdk-provider':
         specifier: ^2.2.3
         version: 2.2.3(ai@6.0.97(zod@4.3.6))(zod@4.3.6)
-      '@openrouter/sdk':
-        specifier: ^0.9.11
-        version: 0.9.11
       '@paralleldrive/cuid2':
         specifier: ^2.2.2
         version: 2.3.1
@@ -2078,9 +2075,6 @@ packages:
     peerDependencies:
       ai: ^6.0.0
       zod: ^3.25.0 || ^4.0.0
-
-  '@openrouter/sdk@0.9.11':
-    resolution: {integrity: sha512-BgFu6NcIJO4a9aVjr04y3kZ8pyM71j15I+bzfVAGEvxnj+KQNIkBYQGgwrG3D+aT1QpDKLki8btcQmpaxUas6A==}
 
   '@opentelemetry/api@1.9.0':
     resolution: {integrity: sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg==}
@@ -10035,10 +10029,6 @@ snapshots:
   '@openrouter/ai-sdk-provider@2.2.3(ai@6.0.97(zod@4.3.6))(zod@4.3.6)':
     dependencies:
       ai: 6.0.97(zod@4.3.6)
-      zod: 4.3.6
-
-  '@openrouter/sdk@0.9.11':
-    dependencies:
       zod: 4.3.6
 
   '@opentelemetry/api@1.9.0': {}
