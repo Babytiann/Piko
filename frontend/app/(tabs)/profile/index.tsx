@@ -68,6 +68,14 @@ export default function ProfileScreen(): ReactNode {
     );
   }
 
+  if (errorType && errorType !== PageErrorType.AUTH) {
+    return (
+      <YStack flex={1} bg="$background">
+        <PageStatusView errorType={errorType} onRetry={handleRetry} />
+      </YStack>
+    );
+  }
+
   const handleAppLogout = async (): Promise<void> => {
     setIsLoggingOut(true);
     try {

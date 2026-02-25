@@ -1,3 +1,4 @@
+import type { ApiResponse } from '@/common/typings/api';
 import { API_HOST } from '@/common/config';
 import { post, postSafe } from '@/services';
 import { authClient } from '@/services/auth-client';
@@ -13,9 +14,10 @@ const LOCATION_URL = `${API_HOST}/piko/ai/location/v1`;
 
 /**
  * Fetch all user-facing copywriting for the AI chat page.
+ * Uses postSafe so network errors return { success: false } instead of throwing.
  */
-export function fetchAiCopywriting(): Promise<AiCopywriting> {
-  return post<AiCopywriting>('ai/copywriting/v1');
+export function fetchAiCopywriting(): Promise<ApiResponse<AiCopywriting>> {
+  return postSafe<AiCopywriting>('ai/copywriting/v1');
 }
 
 /** Message shape sent to the backend. */

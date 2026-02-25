@@ -16,6 +16,7 @@ import { YStack, XStack, Text, useTheme } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
 
 import PageLoading from '@/common/components/page-loading';
+import PageStatusView from '@/common/components/page-status-view';
 import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
 import { authClient } from '@/services/auth-client';
 import {
@@ -81,7 +82,12 @@ export default function AiScreen(): ReactNode {
     loadConversation,
   } = useAiChat();
   const { data: appSession } = authClient.useSession();
-  const { copy, loading: copyLoading } = useAiCopywriting();
+  const {
+    copy,
+    loading: copyLoading,
+    errorType: copyErrorType,
+    handleRetry: handleCopyRetry,
+  } = useAiCopywriting();
   const bottomInset = useKeyboardBottomInset();
   const convList = useConversationList(appSession?.user?.id ?? null);
 
@@ -187,6 +193,22 @@ export default function AiScreen(): ReactNode {
   };
 
   if (copyLoading) {
+    return (
+      <YStack flex={1} bg="$background">
+        <PageLoading />
+      </YStack>
+    );
+  }
+
+  if (copyErrorType) {
+    return (
+      <YStack flex={1} bg="$background">
+        <PageStatusView errorType={copyErrorType} onRetry={handleCopyRetry} />
+      </YStack>
+    );
+  }
+
+  if (appSession === undefined) {
     return (
       <YStack flex={1} bg="$background">
         <PageLoading />
