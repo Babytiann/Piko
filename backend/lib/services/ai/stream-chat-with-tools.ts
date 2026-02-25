@@ -32,6 +32,10 @@ import '../tools/get-user-location';
 
 export interface StreamChatOptions {
   /**
+   * 客户端断开时中止生成；onFinish 仅在未中止时执行，避免覆盖前端的「回答中断」持久化。
+   */
+  abortSignal?: AbortSignal;
+  /**
    * 流开始前的钩子 — 路由层用于：
    * 1. 创建新会话、写 conversationId 数据部分
    * 2. 保存用户消息到 DB
@@ -39,7 +43,7 @@ export interface StreamChatOptions {
    * 入参 writeData 用于向数据流写入自定义 data 块（v4 协议 type=2）。
    */
   setup?: (writeData: (data: unknown) => void) => Promise<void>;
-  /** 流完成后的回调，用于保存 AI 消息到 DB */
+  /** 流完成后的回调，用于保存 AI 消息到 DB（客户端已断开时不执行） */
   onFinish?: (result: { text: string }) => Promise<void>;
 }
 
@@ -55,7 +59,7 @@ export function streamChatWithTools(
   messages: ModelMessage[],
   options: StreamChatOptions = {},
 ): Response {
-  const { setup, onFinish } = options;
+  const { abortSignal, setup, onFinish } = options;
   const encoder = new TextEncoder();
 
   const body = new ReadableStream({
@@ -90,19 +94,24 @@ export function streamChatWithTools(
           model: getModel(),
           system: SYSTEM_INSTRUCTION,
           messages,
-          // 注入 writeData，前端协作式工具（如 get_user_location）需要
           tools: toolRegistry.getToolsForAI({ writeData }),
-          // v6: maxSteps → stopWhen
           stopWhen: stepCountIs(10),
           temperature: 0,
-          // 全部步骤完成后回调（DB 持久化）
+          ...(abortSignal && { abortSignal }),
           onFinish: async ({ text }) => {
+            if (abortSignal?.aborted) {
+              console.log(
+                '[streamChatWithTools] 客户端已断开，跳过 onFinish 保存',
+              );
+              return;
+            }
             if (onFinish) await onFinish({ text });
           },
         });
 
-        // 迭代 fullStream，按 v4 协议格式逐行输出
+        // 迭代 fullStream，按 v4 协议格式逐行输出；客户端断开则退出
         for await (const chunk of result.fullStream) {
+          if (abortSignal?.aborted) break;
           switch (chunk.type) {
             case 'text-delta':
               // v6 fullStream: text-delta chunk 用 chunk.text

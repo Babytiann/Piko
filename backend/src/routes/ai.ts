@@ -24,6 +24,7 @@ import {
   deleteConversation,
   saveUserMessage,
   saveModelMessage,
+  upsertModelMessage,
   autoTitle,
 } from '@/lib/services/ai/conversation';
 import type { AiChatRequest, AiCopywriting } from '@/types/ai';
@@ -102,7 +103,24 @@ aiRoutes.post('/chat/v1', async (c) => {
     ? null
     : (conversationId ?? null);
 
+  // 客户端断开时中止流，避免 onFinish 写入完整回复覆盖前端的「回答中断」
+  const abortController = new AbortController();
+  const raw = c.req.raw as unknown;
+  if (
+    raw &&
+    typeof (raw as { on?: (e: string, fn: () => void) => void }).on ===
+      'function'
+  ) {
+    const req = raw as { on: (e: string, fn: () => void) => void };
+    const onClose = (): void => {
+      abortController.abort();
+    };
+    req.on('close', onClose);
+    req.on('aborted', onClose);
+  }
+
   const response = streamChatWithTools(modelMessages, {
+    abortSignal: abortController.signal,
     setup: async (writeData) => {
       if (isNewConversation) {
         const conv = await createConversation(userId);
@@ -343,12 +361,7 @@ aiRoutes.post('/conversation/save-interrupted/v1', async (c) => {
       );
     }
 
-    await saveModelMessage(
-      body.conversationId,
-      body.content,
-      undefined,
-      body.messageId,
-    );
+    await upsertModelMessage(body.conversationId, body.messageId, body.content);
 
     console.log(
       `[Conversation save-interrupted] done (user=${userId}, conversation=${body.conversationId}, message=${body.messageId})`,

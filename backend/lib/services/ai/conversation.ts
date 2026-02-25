@@ -232,6 +232,36 @@ export async function saveModelMessage(
 }
 
 /**
+ * 插入或更新模型消息（用于「回答中断」：若 onFinish 已写入完整内容，则覆盖为截断内容）。
+ */
+export async function upsertModelMessage(
+  conversationId: string,
+  messageId: string,
+  content: string,
+): Promise<void> {
+  const now = new Date();
+  await db
+    .insert(aiMessages)
+    .values({
+      id: messageId,
+      conversationId,
+      role: 'MODEL',
+      content,
+      toolCalls: null,
+      createdAt: now,
+    })
+    .onConflictDoUpdate({
+      target: aiMessages.id,
+      set: { content },
+    });
+
+  await db
+    .update(aiConversations)
+    .set({ updatedAt: now })
+    .where(eq(aiConversations.id, conversationId));
+}
+
+/**
  * 用首条用户消息自动生成对话标题（截取前 20 字）。
  */
 export async function autoTitle(

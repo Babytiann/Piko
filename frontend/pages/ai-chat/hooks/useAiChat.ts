@@ -5,6 +5,7 @@ import {
   streamAiChat,
   postLocationResponse,
   saveInterruptedMessage,
+  createConversation,
 } from '@/services/ai';
 import type { AiMessage, ToolCallInfo } from '../types';
 import { FLUSH_INTERVAL_MS } from '../consts';
@@ -133,6 +134,7 @@ export function useAiChat(): UseAiChatReturn {
   const startStream = (
     history: { role: 'user' | 'model'; content: string }[],
     aiMsgId: string,
+    requestConversationId?: string | null,
   ): void => {
     setIsStreaming(true);
     streamingMsgIdRef.current = aiMsgId;
@@ -152,9 +154,12 @@ export function useAiChat(): UseAiChatReturn {
       );
     };
 
+    const resolvedConversationId =
+      requestConversationId ?? conversationId ?? 'new';
+
     cleanupRef.current = streamAiChat({
       messages: history,
-      conversationId: conversationId ?? 'new',
+      conversationId: resolvedConversationId,
       requestId: aiMsgId,
       onChunk(chunk) {
         if (!hasReceivedChunk) {
@@ -328,7 +333,21 @@ export function useAiChat(): UseAiChatReturn {
       content: m.content,
     }));
 
-    startStream(history, aiMsgId);
+    if (conversationId) {
+      startStream(history, aiMsgId);
+      return;
+    }
+
+    void (async (): Promise<void> => {
+      try {
+        const { id } = await createConversation();
+        setConversationId(id);
+        startStream(history, aiMsgId, id);
+      } catch (err) {
+        console.error('[AI] create conversation error:', err);
+        startStream(history, aiMsgId, 'new');
+      }
+    })();
   };
 
   const clearMessages = (): void => {
