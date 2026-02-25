@@ -53,10 +53,10 @@ export async function getDialogList(
       title,
       type,
       username,
-      accessHash,
-      unreadCount: dialog.unreadCount,
-      lastMessage,
-      lastMessageDate,
+      access_hash: accessHash,
+      unread_count: dialog.unreadCount,
+      last_message: lastMessage,
+      last_message_date: lastMessageDate,
       pinned: dialog.pinned,
     };
   });

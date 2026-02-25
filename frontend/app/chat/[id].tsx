@@ -113,14 +113,14 @@ export default function ChatScreen(): ReactNode {
       id: Date.now(),
       text,
       time: timeStr,
-      senderName: '',
-      isMe: true,
-      hasMedia: false,
-      mediaType: null,
-      mediaUrl: null,
-      replyToMsgId: replyTo?.id ?? null,
-      replyToText: replyTo?.text ?? null,
-      replyToSenderName: replyTo?.senderName ?? null,
+      sender_name: '',
+      is_me: true,
+      has_media: false,
+      media_type: null,
+      media_url: null,
+      reply_to_msg_id: replyTo?.id ?? null,
+      reply_to_text: replyTo?.text ?? null,
+      reply_to_sender_name: replyTo?.sender_name ?? null,
     };
 
     prependOptimistic(optimisticMsg);
@@ -215,7 +215,7 @@ export default function ChatScreen(): ReactNode {
         )}
 
         <ChatDetailMessageInput
-          placeholder={pageData.inputPlaceholder}
+          placeholder={pageData.input_placeholder}
           onSend={handleSend}
           bottomInset={insets.bottom}
           replyTo={replyTo}

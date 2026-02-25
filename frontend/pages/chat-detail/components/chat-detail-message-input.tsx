@@ -66,10 +66,10 @@ export default function ChatDetailMessageInput({
               color="$blue10"
               numberOfLines={1}
             >
-              {replyTo.senderName || '消息'}
+              {replyTo.sender_name || '消息'}
             </Text>
             <Text fontSize="$1" color="$gray11" numberOfLines={1}>
-              {replyTo.text || (replyTo.hasMedia ? '[媒体]' : '')}
+              {replyTo.text || (replyTo.has_media ? '[媒体]' : '')}
             </Text>
           </YStack>
           <Text

@@ -22,13 +22,11 @@ expenseRoutes.post('/upload/v1', async (c) => {
     const body = (await c.req.json()) as Record<string, unknown>;
 
     const source = (body.source as string) ?? 'manual';
+    const mimeType = (body.mime_type as string) ?? 'image/jpeg';
 
     let recognizeResult = null;
     if (body.image && !body.amount) {
-      recognizeResult = await recognizePayment(
-        body.image as string,
-        (body.mimeType as string) ?? 'image/jpeg',
-      );
+      recognizeResult = await recognizePayment(body.image as string, mimeType);
     }
 
     const input: CreateExpenseInput = {
@@ -44,7 +42,7 @@ expenseRoutes.post('/upload/v1', async (c) => {
       confidence: (body.confidence as number) ?? recognizeResult?.confidence,
       source: source as 'camera' | 'album' | 'manual',
       imageBase64: body.image as string | undefined,
-      imageMimeType: body.mimeType as string | undefined,
+      imageMimeType: mimeType,
       rawResult: recognizeResult ?? undefined,
     };
 
@@ -59,8 +57,8 @@ expenseRoutes.post('/upload/v1', async (c) => {
         category: expense.category,
         date: expense.date.toISOString(),
         source: expense.source,
-        imageUrl: expense.imageUrl,
-        createdAt: expense.createdAt.toISOString(),
+        image_url: expense.imageUrl,
+        created_at: expense.createdAt.toISOString(),
       },
     });
   } catch (err: unknown) {
@@ -81,13 +79,36 @@ expenseRoutes.post('/list/v1', async (c) => {
     const body = (await c.req.json()) as Record<string, unknown>;
 
     const result = await listExpenses(userId, {
-      page: body.page as number | undefined,
-      pageSize: body.pageSize as number | undefined,
-      startDate: body.startDate as string | undefined,
-      endDate: body.endDate as string | undefined,
+      page: (body.page as number) ?? undefined,
+      pageSize:
+        (body.page_size as number) ?? (body.pageSize as number | undefined),
+      startDate:
+        (body.start_date as string) ?? (body.startDate as string | undefined),
+      endDate:
+        (body.end_date as string) ?? (body.endDate as string | undefined),
     });
 
-    return c.json({ success: true, data: result });
+    return c.json({
+      success: true,
+      data: {
+        expenses: result.expenses.map((e) => ({
+          id: e.id,
+          amount: e.amount,
+          merchant: e.merchant,
+          category: e.category,
+          date: e.date,
+          items: e.items,
+          source: e.source,
+          image_url: e.imageUrl,
+          confidence: e.confidence,
+          created_at: e.createdAt,
+        })),
+        total: result.total,
+        page: result.page,
+        page_size: result.pageSize,
+        total_pages: result.totalPages,
+      },
+    });
   } catch (err: unknown) {
     if (err instanceof UnauthorizedError) {
       return c.json({ success: false, error: 'Unauthorized' }, 401);

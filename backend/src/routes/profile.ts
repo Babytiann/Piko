@@ -35,7 +35,7 @@ profileRoutes.post('/detail/v1', async (c) => {
         {
           success: false,
           error: 'Telegram 登录已失效，请重新绑定',
-          errorCode: 'AUTH_EXPIRED',
+          error_code: 'AUTH_EXPIRED',
         },
         401,
       );

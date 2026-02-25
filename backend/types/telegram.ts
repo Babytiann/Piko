@@ -1,10 +1,10 @@
 export interface TelegramUserInfo {
   id: string;
-  firstName: string;
-  lastName: string;
+  first_name: string;
+  last_name: string;
   username: string;
   phone: string;
-  hasPhoto: boolean;
+  has_photo: boolean;
 }
 
 export interface RawDialog {
@@ -12,10 +12,10 @@ export interface RawDialog {
   title: string;
   type: 'user' | 'group' | 'channel';
   username: string;
-  accessHash: string;
-  unreadCount: number;
-  lastMessage: string;
-  lastMessageDate: number | null;
+  access_hash: string;
+  unread_count: number;
+  last_message: string;
+  last_message_date: number | null;
   pinned: boolean;
 }
 
@@ -23,13 +23,13 @@ export interface RawMessage {
   id: number;
   text: string;
   date: number;
-  senderId: string;
-  senderName: string;
-  senderType: 'user' | 'group' | 'channel';
-  senderAccessHash: string;
-  isOutgoing: boolean;
-  isMe: boolean;
-  replyToMsgId: number | null;
-  hasMedia: boolean;
-  mediaType: string | null;
+  sender_id: string;
+  sender_name: string;
+  sender_type: 'user' | 'group' | 'channel';
+  sender_access_hash: string;
+  is_outgoing: boolean;
+  is_me: boolean;
+  reply_to_msg_id: number | null;
+  has_media: boolean;
+  media_type: string | null;
 }

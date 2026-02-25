@@ -11,7 +11,7 @@ import type { ProfilePageCopy, ProfileAppUser } from '@/common/typings/profile';
 
 interface ProfileAppleSectionProps {
   appUser: ProfileAppUser | null;
-  copy: ProfilePageCopy['userSection'];
+  copy: ProfilePageCopy['user_section'];
 }
 
 export default function ProfileAppleSection({
@@ -72,7 +72,7 @@ export default function ProfileAppleSection({
             ) : null}
             <XStack gap="$2" style={{ alignItems: 'center' }}>
               <Text fontSize="$2" color="$gray12">
-                {copy.appleLoginLabel}
+                {copy.apple_login_label}
               </Text>
               <Ionicons name="logo-apple" size={14} color="#8E8E93" />
             </XStack>
@@ -81,7 +81,7 @@ export default function ProfileAppleSection({
       ) : (
         <>
           <Text fontSize="$2" color="$gray12">
-            {copy.signInPrompt}
+            {copy.sign_in_prompt}
           </Text>
           {Platform.OS === 'ios' ? (
             <AppleAuthentication.AppleAuthenticationButton
@@ -97,7 +97,7 @@ export default function ProfileAppleSection({
             />
           ) : (
             <Text fontSize="$2" color="$gray12">
-              {copy.iosOnlyHint}
+              {copy.ios_only_hint}
             </Text>
           )}
         </>

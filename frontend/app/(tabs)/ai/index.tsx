@@ -113,7 +113,7 @@ export default function AiScreen(): ReactNode {
           id: `hist_${nextSeq}`,
           role: m.role === 'model' ? 'assistant' : 'user',
           content: m.content,
-          timestamp: new Date(m.createdAt).getTime(),
+          timestamp: new Date(m.created_at).getTime(),
         };
       });
       loadConversation(msgs, id);
@@ -236,8 +236,8 @@ export default function AiScreen(): ReactNode {
         onDelete={handleDeleteConversation}
         onNewChat={handleNewChat}
         onLoadMore={convList.loadMore}
-        drawerTitle={data?.drawerTitle ?? ''}
-        newChatLabel={data?.newChatLabel ?? ''}
+        drawerTitle={data?.drawer_title ?? ''}
+        newChatLabel={data?.new_chat_label ?? ''}
       />
 
       <Animated.View
@@ -286,7 +286,7 @@ export default function AiScreen(): ReactNode {
                 color="$color"
                 letterSpacing={-0.5}
               >
-                {data?.headerTitle ?? ''}
+                {data?.header_title ?? ''}
               </Text>
             </XStack>
 
@@ -320,8 +320,8 @@ export default function AiScreen(): ReactNode {
             <AiChatMessageList
               messages={messages}
               contentPaddingBottom={16}
-              emptyTitle={data?.emptyTitle ?? ''}
-              emptySubtitle={data?.emptySubtitle ?? ''}
+              emptyTitle={data?.empty_title ?? ''}
+              emptySubtitle={data?.empty_subtitle ?? ''}
               tooltipMessageId={tooltipTarget?.message.id}
               onMessageLongPress={handleMessageLongPress}
               onRequestLocationPermission={requestLocationPermission}
@@ -330,7 +330,7 @@ export default function AiScreen(): ReactNode {
               onSend={sendMessage}
               isStreaming={isStreaming}
               onStop={stopStreaming}
-              placeholder={data?.inputPlaceholder ?? ''}
+              placeholder={data?.input_placeholder ?? ''}
             />
           </YStack>
 

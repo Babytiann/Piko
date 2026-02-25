@@ -47,7 +47,7 @@ export interface RecognizeRequest {
   /** Base64 编码的图片数据 */
   image: string;
   /** 图片 MIME 类型 */
-  mimeType: string;
+  mime_type: string;
 }
 
 /** POST /piko/ai/recognize/v1 响应体 */

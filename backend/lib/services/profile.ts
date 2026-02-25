@@ -30,19 +30,19 @@ function getAvatarColor(id: string): string {
 // ---------------------------------------------------------------------------
 
 const PROFILE_COPY: ProfilePageCopy = {
-  pageTitle: '个人主页',
-  userSection: {
-    appleLoginLabel: '通过 Apple 登录',
-    signInPrompt: '使用 Apple 账号登录后可使用 AI 聊天等功能。',
-    iosOnlyHint: '请在 iOS 设备上使用 Apple 登录。',
-    loadingLabel: '加载中…',
+  page_title: '个人主页',
+  user_section: {
+    apple_login_label: '通过 Apple 登录',
+    sign_in_prompt: '使用 Apple 账号登录后可使用 AI 聊天等功能。',
+    ios_only_hint: '请在 iOS 设备上使用 Apple 登录。',
+    loading_label: '加载中…',
   },
-  linkedAccount: {
+  linked_account: {
     title: '关联账号',
-    boundLabel: '已绑定',
-    boundHint: '点击管理绑定设置',
-    unboundHint: '点击绑定',
-    loginFirstHint: '登录后可在此绑定 Telegram 账号。',
+    bound_label: '已绑定',
+    bound_hint: '点击管理绑定设置',
+    unbound_hint: '点击绑定',
+    login_first_hint: '登录后可在此绑定 Telegram 账号。',
   },
   settings: {
     title: '设置',
@@ -59,20 +59,20 @@ const PROFILE_COPY: ProfilePageCopy = {
       { title: '联系我们', description: '反馈问题或建议' },
     ],
   },
-  logoutButton: '退出登录',
-  logoutIngress: '退出中…',
+  logout_button: '退出登录',
+  logout_ingress: '退出中…',
 };
 
 function buildUnboundPageData(appUser: ProfileAppUser | null): ProfilePageData {
   return {
-    header: { title: PROFILE_COPY.pageTitle },
-    appUser,
+    header: { title: PROFILE_COPY.page_title },
+    app_user: appUser,
     copy: PROFILE_COPY,
-    telegramSection: {
+    telegram_section: {
       title: 'Telegram 账号',
-      isLoggedIn: false,
-      bindPrompt: '绑定 Telegram 账号后，可以查看和管理你的 Telegram 消息。',
-      bindButtonText: '绑定 Telegram 账号',
+      is_logged_in: false,
+      bind_prompt: '绑定 Telegram 账号后，可以查看和管理你的 Telegram 消息。',
+      bind_button_text: '绑定 Telegram 账号',
     },
   };
 }
@@ -109,22 +109,22 @@ export async function getProfilePageData(
     .toUpperCase();
 
   return {
-    header: { title: PROFILE_COPY.pageTitle },
-    appUser,
+    header: { title: PROFILE_COPY.page_title },
+    app_user: appUser,
     copy: PROFILE_COPY,
-    telegramSection: {
+    telegram_section: {
       title: 'Telegram 账号',
-      isLoggedIn: true,
+      is_logged_in: true,
       user: {
-        displayName,
+        display_name: displayName,
         username: binding.username ? `@${binding.username}` : '',
         phone: binding.phone ?? '',
-        avatarText,
-        avatarColor: getAvatarColor(String(binding.telegramUserId)),
-        telegramUserId: String(binding.telegramUserId),
-        boundAt: binding.createdAt.toISOString(),
+        avatar_text: avatarText,
+        avatar_color: getAvatarColor(String(binding.telegramUserId)),
+        telegram_user_id: String(binding.telegramUserId),
+        bound_at: binding.createdAt.toISOString(),
       },
-      unbindButtonText: '解除绑定',
+      unbind_button_text: '解除绑定',
     },
   };
 }

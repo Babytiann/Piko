@@ -25,7 +25,7 @@ export default function HomeScreen(): ReactNode {
         {data.header.title}
       </Text>
       <Spacer size="$3" />
-      <HomeWelcomeCard data={data.welcomeCard} />
+      <HomeWelcomeCard data={data.welcome_card} />
     </YStack>
   );
 }

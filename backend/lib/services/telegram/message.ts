@@ -93,18 +93,18 @@ export async function getMessageList(
       id: m.id,
       text: m.message ?? '',
       date: m.date,
-      senderId,
-      senderName,
-      senderType,
-      senderAccessHash,
-      isOutgoing,
-      isMe: senderId === myId,
-      replyToMsgId:
+      sender_id: senderId,
+      sender_name: senderName,
+      sender_type: senderType,
+      sender_access_hash: senderAccessHash,
+      is_outgoing: isOutgoing,
+      is_me: senderId === myId,
+      reply_to_msg_id:
         m.replyTo instanceof Api.MessageReplyHeader
           ? (m.replyTo.replyToMsgId ?? null)
           : null,
-      hasMedia: !!m.media,
-      mediaType: m.media ? m.media.className : null,
+      has_media: !!m.media,
+      media_type: m.media ? m.media.className : null,
     };
   });
 }

@@ -18,7 +18,7 @@ export const getPageErrorType = <T>(
 ): PageErrorType | undefined => {
   if (!response.success) {
     if (
-      response.errorCode === 'AUTH_EXPIRED' ||
+      response.error_code === 'AUTH_EXPIRED' ||
       response.error === 'Unauthorized'
     ) {
       return PageErrorType.AUTH;

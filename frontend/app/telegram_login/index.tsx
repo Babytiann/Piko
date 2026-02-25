@@ -27,7 +27,7 @@ export default function TelegramLoginScreen(): ReactNode {
       const data = await telegramApi.fetchTelegramText(TelegramLoginStep.PHONE);
       if (cancelled) return;
       setText(data);
-      setCountryName(data.defaultCountry);
+      setCountryName(data.default_country);
     }
 
     void load();
@@ -43,7 +43,7 @@ export default function TelegramLoginScreen(): ReactNode {
   const handleSendCode = async (): Promise<void> => {
     if (!text) return;
     if (!phoneNumber.trim()) {
-      setError(text.errors.emptyPhone);
+      setError(text.errors.empty_phone);
       return;
     }
     setLoading(true);
@@ -58,13 +58,13 @@ export default function TelegramLoginScreen(): ReactNode {
         pathname: '/telegram_login/verify_code',
         params: {
           phoneNumber: fullPhoneNumber,
-          phoneCodeHash: result.phoneCodeHash,
-          pendingSession: result.pendingSession,
+          phoneCodeHash: result.phone_code_hash,
+          pendingSession: result.pending_session,
           prefetchedTextJson: JSON.stringify(nextText),
         },
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : text.errors.sendCodeFail);
+      setError(err instanceof Error ? err.message : text.errors.send_code_fail);
     } finally {
       setLoading(false);
     }
@@ -74,8 +74,12 @@ export default function TelegramLoginScreen(): ReactNode {
     return <PageLoading />;
   }
 
-  const { phonePlaceholder, sendCodeButton, countries, countryPickerHeader } =
-    text;
+  const {
+    phone_placeholder: phonePlaceholder,
+    send_code_button: sendCodeButton,
+    countries,
+    country_picker_header: countryPickerHeader,
+  } = text;
 
   return (
     <TgLoginFormLayout

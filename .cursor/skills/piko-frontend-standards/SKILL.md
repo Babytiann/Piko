@@ -280,6 +280,18 @@ NEVER: as T 类型断言
 NEVER: ! 非空断言
 ```
 
+### API/IDL 接口类型（蛇形命名）
+
+凡用于描述**接口契约**的类型（HTTP 请求体、响应体、SSE 事件 payload 等），其**字段名必须使用 snake_case**，与后端、第三方 API 的 JSON 契约保持一致，便于跨语言/跨端对齐。
+
+```
+MUST:  请求体/响应体/SSE 事件等 IDL 类型的属性名使用 snake_case (如 conversation_id, header_title)
+MUST:  前端读取 API 响应、组装请求体、解析 SSE 时使用与类型一致的 snake_case 键
+NEVER: 在接口契约类型中使用 camelCase 字段名
+```
+
+仅在前端或后端内部使用的类型（如组件 Props、Hook 返回类型、内部状态）仍按「代码」命名规范使用 camelCase。
+
 ### 判别联合 Context 示例
 
 ```typescript

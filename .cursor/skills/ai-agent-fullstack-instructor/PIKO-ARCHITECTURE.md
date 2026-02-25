@@ -179,6 +179,8 @@ backend/
 
 ## 4. API 端点清单
 
+**接口契约命名**：所有请求体、响应体、SSE 事件 payload 的字段名统一使用 **snake_case**（如 `conversation_id`、`header_title`），与后端 JSON 一致，便于跨端对齐。见前端规范 Skill 中「API/IDL 接口类型」。
+
 ### 已有端点
 
 | 端点                             | 方法 | 用途          |

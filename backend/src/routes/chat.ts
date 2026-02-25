@@ -51,7 +51,7 @@ chatRoutes.post('/list/v1', async (c) => {
         {
           success: false,
           error: 'Telegram 登录已失效，请重新绑定',
-          errorCode: 'AUTH_EXPIRED',
+          error_code: 'AUTH_EXPIRED',
         },
         401,
       );
@@ -66,29 +66,27 @@ chatRoutes.post('/detail/v1', async (c) => {
   try {
     const userId = await getUserId(c.req.raw);
 
-    const {
-      session: bodySession,
-      chatId,
-      chatType,
-      accessHash,
-      title,
-      offsetId,
-    } = (await c.req.json()) as {
+    const body = (await c.req.json()) as {
       session?: string;
-      chatId: string;
-      chatType: string;
-      accessHash: string;
-      title: string;
-      offsetId?: number;
+      chat_id: string;
+      chat_type?: string;
+      access_hash?: string;
+      title?: string;
+      offset_id?: number;
     };
 
     // 优先使用数据库中的 session，fallback 到前端传递的 session
     const dbSession = await getTelegramSession(userId);
-    const session = dbSession ?? bodySession ?? undefined;
+    const session = dbSession ?? body.session ?? undefined;
+    const chatId = body.chat_id;
+    const chatType = body.chat_type ?? 'user';
+    const accessHash = body.access_hash ?? '';
+    const title = body.title ?? 'Chat';
+    const offsetId = body.offset_id;
 
     if (!session || !chatId) {
       return c.json(
-        { success: false, error: 'session and chatId are required' },
+        { success: false, error: 'session and chat_id are required' },
         400,
       );
     }
@@ -96,9 +94,9 @@ chatRoutes.post('/detail/v1', async (c) => {
     const data = await getChatDetailPageData(
       session,
       chatId,
-      chatType ?? 'user',
-      accessHash ?? '',
-      title ?? 'Chat',
+      chatType,
+      accessHash,
+      title,
       50,
       offsetId,
     );
@@ -127,7 +125,7 @@ chatRoutes.post('/detail/v1', async (c) => {
         {
           success: false,
           error: 'Telegram 登录已失效，请重新绑定',
-          errorCode: 'AUTH_EXPIRED',
+          error_code: 'AUTH_EXPIRED',
         },
         401,
       );

@@ -1,26 +1,26 @@
 /** Data contract for the Profile page. */
 
 export interface ProfileUser {
-  displayName: string;
+  display_name: string;
   username: string;
   phone: string;
   /** Base64 data URI of the user's profile photo. */
   img_url?: string;
-  avatarText: string;
-  avatarColor: string;
+  avatar_text: string;
+  avatar_color: string;
   /** Telegram 用户 ID（仅已绑定时有）. */
-  telegramUserId?: string;
+  telegram_user_id?: string;
   /** 绑定时间 ISO 字符串（仅已绑定时有）. */
-  boundAt?: string;
+  bound_at?: string;
 }
 
 export interface TelegramSection {
   title: string;
-  isLoggedIn: boolean;
+  is_logged_in: boolean;
   user?: ProfileUser;
-  unbindButtonText?: string;
-  bindPrompt?: string;
-  bindButtonText?: string;
+  unbind_button_text?: string;
+  bind_prompt?: string;
+  bind_button_text?: string;
 }
 
 /** Copy for settings/help list rows. */
@@ -38,19 +38,19 @@ export interface ProfileAppUser {
 
 /** All profile page copy (backend-driven). */
 export interface ProfilePageCopy {
-  pageTitle: string;
-  userSection: {
-    appleLoginLabel: string;
-    signInPrompt: string;
-    iosOnlyHint: string;
-    loadingLabel: string;
+  page_title: string;
+  user_section: {
+    apple_login_label: string;
+    sign_in_prompt: string;
+    ios_only_hint: string;
+    loading_label: string;
   };
-  linkedAccount: {
+  linked_account: {
     title: string;
-    boundLabel: string;
-    boundHint: string;
-    unboundHint: string;
-    loginFirstHint: string;
+    bound_label: string;
+    bound_hint: string;
+    unbound_hint: string;
+    login_first_hint: string;
   };
   settings: {
     title: string;
@@ -60,14 +60,14 @@ export interface ProfilePageCopy {
     title: string;
     items: ProfileCopyItem[];
   };
-  logoutButton: string;
-  logoutIngress: string;
+  logout_button: string;
+  logout_ingress: string;
 }
 
 export interface ProfilePageData {
   header: { title: string };
   /** 当前 Apple 登录用户，未登录为 null。首屏 Apple 区块据此渲染。 */
-  appUser: ProfileAppUser | null;
+  app_user: ProfileAppUser | null;
   copy: ProfilePageCopy;
-  telegramSection: TelegramSection;
+  telegram_section: TelegramSection;
 }

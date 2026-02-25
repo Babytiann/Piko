@@ -89,8 +89,8 @@ export async function fetch<P, R>(
           typeof err?.error === 'string'
             ? err.error
             : `Request failed (${response.status})`,
-        ...(typeof err?.errorCode === 'string'
-          ? { errorCode: err.errorCode }
+        ...(typeof err?.error_code === 'string'
+          ? { error_code: err.error_code }
           : {}),
         status: response.status,
       };
@@ -104,8 +104,8 @@ export async function fetch<P, R>(
           typeof err?.error === 'string'
             ? err.error
             : `Request failed (${response.status})`,
-        ...(typeof err?.errorCode === 'string'
-          ? { errorCode: err.errorCode }
+        ...(typeof err?.error_code === 'string'
+          ? { error_code: err.error_code }
           : {}),
         status: response.status,
       };

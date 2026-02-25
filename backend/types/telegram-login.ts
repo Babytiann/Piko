@@ -23,13 +23,13 @@ export enum TelegramLoginStep {
 export interface TelegramAuthRequest {
   session_tag: SessionTag;
   /** sendCode / signIn */
-  phoneNumber?: string;
+  phone_number?: string;
   /** signIn */
-  phoneCode?: string;
+  phone_code?: string;
   /** signIn */
-  phoneCodeHash?: string;
+  phone_code_hash?: string;
   /** signIn — sendCode 阶段序列化的 session 字符串，用于恢复同一 auth key */
-  pendingSession?: string;
+  pending_session?: string;
   /** checkPassword */
   session?: string;
   /** checkPassword */
@@ -38,8 +38,8 @@ export interface TelegramAuthRequest {
 
 export interface TelegramUser {
   id: string;
-  firstName: string;
-  lastName: string;
+  first_name: string;
+  last_name: string;
   username: string;
   phone: string;
 }
@@ -56,38 +56,38 @@ export interface CountryItem {
 export interface PhoneStepText {
   title: string;
   subtitle: string;
-  phonePlaceholder: string;
-  sendCodeButton: string;
-  countryPickerHeader: string;
-  defaultCountry: string;
+  phone_placeholder: string;
+  send_code_button: string;
+  country_picker_header: string;
+  default_country: string;
   countries: CountryItem[];
   errors: {
-    emptyPhone: string;
-    sendCodeFail: string;
+    empty_phone: string;
+    send_code_fail: string;
   };
 }
 
 export interface VerifyCodeStepText {
   title: string;
   subtitle: string;
-  codeSentLabel: string;
-  codePlaceholder: string;
-  verifyButton: string;
-  backLink: string;
+  code_sent_label: string;
+  code_placeholder: string;
+  verify_button: string;
+  back_link: string;
   errors: {
-    emptyCode: string;
-    signInFail: string;
+    empty_code: string;
+    sign_in_fail: string;
   };
 }
 
 export interface VerifyTwoFAStepText {
   title: string;
   subtitle: string;
-  passwordPlaceholder: string;
-  confirmButton: string;
+  password_placeholder: string;
+  confirm_button: string;
   errors: {
-    emptyPassword: string;
-    checkPasswordFail: string;
+    empty_password: string;
+    check_password_fail: string;
   };
 }
 

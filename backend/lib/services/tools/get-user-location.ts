@@ -60,7 +60,7 @@ const getUserLocationTool: ToolDefinition<typeof parametersSchema> = {
     // 向前端数据流写 custom data part，前端据此触发 GPS 采集
     context.writeData({
       type: 'request_location',
-      requestId,
+      request_id: requestId,
       reason: params.reason ?? '获取当前位置',
     });
 

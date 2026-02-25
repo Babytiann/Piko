@@ -64,7 +64,7 @@ async function telegramAuth<T>(params: TelegramAuthRequest): Promise<T> {
 export function sendCode(phoneNumber: string): Promise<SendCodeResult> {
   return telegramAuth<SendCodeResult>({
     session_tag: SessionTag.SEND_CODE,
-    phoneNumber,
+    phone_number: phoneNumber,
   });
 }
 
@@ -77,10 +77,10 @@ export function signIn(
 ): Promise<SignInResult> {
   return telegramAuth<SignInResult>({
     session_tag: SessionTag.SIGN_IN,
-    phoneNumber,
-    phoneCode,
-    phoneCodeHash,
-    ...(pendingSession ? { pendingSession } : {}),
+    phone_number: phoneNumber,
+    phone_code: phoneCode,
+    phone_code_hash: phoneCodeHash,
+    ...(pendingSession ? { pending_session: pendingSession } : {}),
   });
 }
 

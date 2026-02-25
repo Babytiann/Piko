@@ -118,7 +118,7 @@ export function streamAiChat({
 
               switch (data.type) {
                 case 'conversation':
-                  onConversation?.(data.conversationId as string);
+                  onConversation?.(data.conversation_id as string);
                   break;
                 case 'tool_start':
                   onToolStart?.(
@@ -131,7 +131,7 @@ export function streamAiChat({
                   onToolEnd?.(data.tool as string, data.success as boolean);
                   break;
                 case 'request_location':
-                  onRequestLocation?.(data.requestId as string);
+                  onRequestLocation?.(data.request_id as string);
                   break;
               }
             }
@@ -198,8 +198,8 @@ export function streamAiChat({
   xhr.send(
     JSON.stringify({
       messages,
-      ...(conversationId && { conversationId }),
-      ...(requestId && { requestId }),
+      ...(conversationId && { conversation_id: conversationId }),
+      ...(requestId && { request_id: requestId }),
     }),
   );
 
@@ -219,7 +219,7 @@ export function postLocationResponse(
   xhr.setRequestHeader('Content-Type', 'application/json');
   const cookie = authClient.getCookie();
   if (cookie) xhr.setRequestHeader('Cookie', cookie);
-  xhr.send(JSON.stringify({ requestId, location }));
+  xhr.send(JSON.stringify({ request_id: requestId, location }));
 }
 
 /** 调用 Gemini Vision 识别消费票据/截图 */
@@ -227,15 +227,16 @@ export async function recognizeExpense(
   imageBase64: string,
   mimeType: string,
 ): Promise<RecognizeResult> {
-  const res = await fetch<{ image: string; mimeType: string }, RecognizeResult>(
-    {
-      method: 'POST',
-      path: 'ai/recognize/v1',
-      body: { image: imageBase64, mimeType },
-    },
-  );
+  const res = await fetch<
+    { image: string; mime_type: string },
+    { result: RecognizeResult }
+  >({
+    method: 'POST',
+    path: 'ai/recognize/v1',
+    body: { image: imageBase64, mime_type: mimeType },
+  });
   if (!res.success) throw new Error(res.error ?? 'Request failed');
-  return res.data;
+  return res.data.result;
 }
 
 // ---------------------------------------------------------------------------
@@ -257,23 +258,23 @@ export async function fetchConversationList(): Promise<ConversationItem[]> {
 export async function fetchConversationDetail(conversationId: string): Promise<{
   id: string;
   title: string;
-  messages: { role: 'user' | 'model'; content: string; createdAt: string }[];
+  messages: { role: 'user' | 'model'; content: string; created_at: string }[];
 }> {
   const res = await fetch<
-    { conversationId: string },
+    { conversation_id: string },
     {
       id: string;
       title: string;
       messages: {
         role: 'user' | 'model';
         content: string;
-        createdAt: string;
+        created_at: string;
       }[];
     }
   >({
     method: 'POST',
     path: 'ai/conversation/detail/v1',
-    body: { conversationId },
+    body: { conversation_id: conversationId },
   });
   if (!res.success) throw new Error(res.error ?? 'Request failed');
   return res.data;
@@ -299,12 +300,12 @@ export async function saveInterruptedMessage(
   content: string,
 ): Promise<void> {
   const res = await fetch<
-    { conversationId: string; messageId: string; content: string },
+    { conversation_id: string; message_id: string; content: string },
     void
   >({
     method: 'POST',
     path: 'ai/conversation/save-interrupted/v1',
-    body: { conversationId, messageId, content },
+    body: { conversation_id: conversationId, message_id: messageId, content },
   });
   if (!res.success) throw new Error(res.error ?? 'Request failed');
 }
@@ -313,10 +314,10 @@ export async function saveInterruptedMessage(
 export async function deleteConversation(
   conversationId: string,
 ): Promise<void> {
-  const result = await fetch<{ conversationId: string }, null>({
+  const result = await fetch<{ conversation_id: string }, null>({
     method: 'POST',
     path: 'ai/conversation/delete/v1',
-    body: { conversationId },
+    body: { conversation_id: conversationId },
   });
 
   if (result.success) return;
@@ -342,15 +343,25 @@ export async function uploadExpense(data: {
   items?: string[];
   source: 'camera' | 'album' | 'manual';
   image?: string;
-  mimeType?: string;
+  mime_type?: string;
 }): Promise<{ id: string; amount: number }> {
+  const body: Record<string, unknown> = {
+    amount: data.amount,
+    merchant: data.merchant,
+    category: data.category,
+    date: data.date,
+    items: data.items,
+    source: data.source,
+    image: data.image,
+    mime_type: data.mime_type,
+  };
   const res = await fetch<
     Record<string, unknown>,
     { id: string; amount: number }
   >({
     method: 'POST',
     path: 'expense/upload/v1',
-    body: data as Record<string, unknown>,
+    body,
   });
   if (!res.success) throw new Error(res.error ?? 'Request failed');
   return res.data;
@@ -359,9 +370,9 @@ export async function uploadExpense(data: {
 /** 获取消费记录列表 */
 export async function fetchExpenseList(params?: {
   page?: number;
-  pageSize?: number;
-  startDate?: string;
-  endDate?: string;
+  page_size?: number;
+  start_date?: string;
+  end_date?: string;
 }): Promise<{
   expenses: Array<{
     id: string;
@@ -370,12 +381,13 @@ export async function fetchExpenseList(params?: {
     category: string;
     date: string;
     source: string;
-    imageUrl: string | null;
-    createdAt: string;
+    image_url: string | null;
+    created_at: string;
   }>;
   total: number;
   page: number;
-  pageSize: number;
+  page_size: number;
+  total_pages: number;
 }> {
   const res = await fetch<
     Record<string, unknown>,
@@ -387,17 +399,25 @@ export async function fetchExpenseList(params?: {
         category: string;
         date: string;
         source: string;
-        imageUrl: string | null;
-        createdAt: string;
+        image_url: string | null;
+        created_at: string;
       }>;
       total: number;
       page: number;
-      pageSize: number;
+      page_size: number;
+      total_pages: number;
     }
   >({
     method: 'POST',
     path: 'expense/list/v1',
-    body: (params ?? {}) as Record<string, unknown>,
+    body: params
+      ? {
+          page: params.page,
+          page_size: params.page_size,
+          start_date: params.start_date,
+          end_date: params.end_date,
+        }
+      : {},
   });
   if (!res.success) throw new Error(res.error ?? 'Request failed');
   return res.data;

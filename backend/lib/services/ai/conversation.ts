@@ -30,24 +30,26 @@ function isUniqueViolation(error: unknown): boolean {
 // Types
 // ---------------------------------------------------------------------------
 
+/** API 返回的对话列表项（字段 snake_case） */
 export interface ConversationListItem {
   id: string;
   title: string;
-  updatedAt: string;
-  messageCount: number;
+  updated_at: string;
+  message_count: number;
 }
 
+/** API 返回的对话详情（字段 snake_case） */
 export interface ConversationDetail {
   id: string;
   title: string;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
   messages: {
     id: string;
     role: 'user' | 'model';
     content: string;
-    toolCalls: unknown;
-    createdAt: string;
+    tool_calls: unknown;
+    created_at: string;
   }[];
 }
 
@@ -108,8 +110,8 @@ export async function listConversations(
   return rows.map((c) => ({
     id: c.id,
     title: c.title,
-    updatedAt: c.updatedAt.toISOString(),
-    messageCount: countMap.get(c.id) ?? 0,
+    updated_at: c.updatedAt.toISOString(),
+    message_count: countMap.get(c.id) ?? 0,
   }));
 }
 
@@ -142,14 +144,14 @@ export async function getConversationWithMessages(
   return {
     id: conversation.id,
     title: conversation.title,
-    createdAt: conversation.createdAt.toISOString(),
-    updatedAt: conversation.updatedAt.toISOString(),
+    created_at: conversation.createdAt.toISOString(),
+    updated_at: conversation.updatedAt.toISOString(),
     messages: messages.map((m) => ({
       id: m.id,
       role: m.role.toLowerCase() as 'user' | 'model',
       content: m.content,
-      toolCalls: m.toolCalls,
-      createdAt: m.createdAt.toISOString(),
+      tool_calls: m.toolCalls,
+      created_at: m.createdAt.toISOString(),
     })),
   };
 }

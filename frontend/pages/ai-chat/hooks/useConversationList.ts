@@ -37,8 +37,8 @@ async function loadConversationCache(): Promise<ConversationItem[]> {
     return (
       typeof candidate.id === 'string' &&
       typeof candidate.title === 'string' &&
-      typeof candidate.updatedAt === 'string' &&
-      typeof candidate.messageCount === 'number'
+      typeof candidate.updated_at === 'string' &&
+      typeof candidate.message_count === 'number'
     );
   });
 }

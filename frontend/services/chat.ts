@@ -28,16 +28,23 @@ export function fetchChatDetailPage(
   return fetch<
     {
       session: string;
-      chatId: string;
-      chatType: string;
-      accessHash: string;
-      title: string;
-      offsetId?: number;
+      chat_id: string;
+      chat_type?: string;
+      access_hash?: string;
+      title?: string;
+      offset_id?: number;
     },
     ChatDetailPageData
   >({
     method: 'POST',
     path: 'chat/detail/v1',
-    body: { session, chatId, chatType, accessHash, title, offsetId },
+    body: {
+      session,
+      chat_id: chatId,
+      chat_type: chatType,
+      access_hash: accessHash,
+      title,
+      offset_id: offsetId,
+    },
   });
 }

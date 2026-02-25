@@ -55,7 +55,7 @@ export default function TelegramDialogsScreen(): ReactNode {
         id: dialog.id,
         title: dialog.title,
         chatType: dialog.type,
-        accessHash: dialog.accessHash,
+        accessHash: dialog.access_hash,
       },
     });
   };
@@ -87,9 +87,9 @@ export default function TelegramDialogsScreen(): ReactNode {
         <Spacer flex={1} />
       </XStack>
 
-      {data.unboundState ? (
+      {data.unbound_state ? (
         <ChatListUnboundPrompt
-          data={data.unboundState}
+          data={data.unbound_state}
           onBind={() => router.push('/telegram_login')}
         />
       ) : (

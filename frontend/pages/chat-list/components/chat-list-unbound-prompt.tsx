@@ -40,7 +40,7 @@ export default function ChatListUnboundPrompt({
         }}
       >
         <Text color="$background" fontWeight="600" fontSize="$3">
-          {data.bindButtonText}
+          {data.bind_button_text}
         </Text>
       </YStack>
     </YStack>

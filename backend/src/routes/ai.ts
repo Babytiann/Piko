@@ -70,8 +70,8 @@ aiRoutes.post('/chat/v1', async (c) => {
     );
   }
 
-  const conversationId = body.conversationId ?? null;
-  const requestId = body.requestId?.trim() || null;
+  const conversationId = body.conversation_id ?? null;
+  const requestId = body.request_id?.trim() || null;
   const isNewConversation = !conversationId || conversationId === 'new';
 
   const toMessageId = (
@@ -135,7 +135,7 @@ aiRoutes.post('/chat/v1', async (c) => {
         // 告知前端本次对话的 ID（新建会话时前端需要持久化）
         writeData({
           type: 'conversation',
-          conversationId: savedConversationId,
+          conversation_id: savedConversationId,
         });
         await saveUserMessage(
           savedConversationId,
@@ -174,7 +174,7 @@ aiRoutes.post('/chat/v1', async (c) => {
 // 前端 GPS 采集完成后，通过此端点把位置回传给正在等待中的 get_user_location 工具
 aiRoutes.post('/location/v1', async (c) => {
   interface LocationResponseBody {
-    requestId: string;
+    request_id: string;
     location: { latitude: number; longitude: number } | null;
   }
 
@@ -185,11 +185,11 @@ aiRoutes.post('/location/v1', async (c) => {
     return c.json({ success: false, error: 'Invalid JSON body' }, 400);
   }
 
-  if (!body.requestId) {
-    return c.json({ success: false, error: 'requestId is required' }, 400);
+  if (!body.request_id) {
+    return c.json({ success: false, error: 'request_id is required' }, 400);
   }
 
-  const resolved = resolveLocationRequest(body.requestId, body.location);
+  const resolved = resolveLocationRequest(body.request_id, body.location);
 
   if (!resolved) {
     return c.json(
@@ -205,14 +205,9 @@ aiRoutes.post('/location/v1', async (c) => {
 aiRoutes.post('/recognize/v1', async (c) => {
   const t0 = Date.now();
 
-  interface RecognizeRequest {
-    image: string;
-    mimeType: string;
-  }
-
-  let body: RecognizeRequest;
+  let body: { image: string; mime_type: string };
   try {
-    body = (await c.req.json()) as RecognizeRequest;
+    body = (await c.req.json()) as { image: string; mime_type: string };
   } catch {
     return c.json({ success: false, error: 'Invalid JSON body' }, 400);
   }
@@ -220,12 +215,12 @@ aiRoutes.post('/recognize/v1', async (c) => {
   if (!body.image || typeof body.image !== 'string') {
     return c.json({ success: false, error: 'image (base64) is required' }, 400);
   }
-  if (!body.mimeType || typeof body.mimeType !== 'string') {
-    return c.json({ success: false, error: 'mimeType is required' }, 400);
+  if (!body.mime_type || typeof body.mime_type !== 'string') {
+    return c.json({ success: false, error: 'mime_type is required' }, 400);
   }
 
   const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
-  if (!allowedMimeTypes.includes(body.mimeType)) {
+  if (!allowedMimeTypes.includes(body.mime_type)) {
     return c.json(
       {
         success: false,
@@ -236,11 +231,11 @@ aiRoutes.post('/recognize/v1', async (c) => {
   }
 
   console.log(
-    `[Recognize] ← 收到识别请求 (${body.mimeType}, ${Math.round(body.image.length / 1024)}KB base64)`,
+    `[Recognize] ← 收到识别请求 (${body.mime_type}, ${Math.round(body.image.length / 1024)}KB base64)`,
   );
 
   try {
-    const result = await recognizePayment(body.image, body.mimeType);
+    const result = await recognizePayment(body.image, body.mime_type);
     const elapsed = Date.now() - t0;
     console.log(
       `[Recognize] ✓ 识别完成 (${elapsed}ms) → ¥${result.amount} ${result.merchant} [${result.category}] 置信度:${result.confidence}`,
@@ -258,12 +253,12 @@ aiRoutes.post('/recognize/v1', async (c) => {
 // ── POST /page_data/v1 ──────────────────────────────────────────────────────
 aiRoutes.post('/page_data/v1', async (c) => {
   const data: AiPageData = {
-    headerTitle: 'AI 助手',
-    emptyTitle: 'Hi，我是 Piko AI',
-    emptySubtitle: '问我任何问题，我会尽力帮你解答。',
-    inputPlaceholder: '问我任何问题...',
-    drawerTitle: '历史对话',
-    newChatLabel: '新对话',
+    header_title: 'AI 助手',
+    empty_title: 'Hi，我是 Piko AI',
+    empty_subtitle: '问我任何问题，我会尽力帮你解答。',
+    input_placeholder: '问我任何问题...',
+    drawer_title: '历史对话',
+    new_chat_label: '新对话',
   };
   return c.json({ success: true, data });
 });
@@ -296,7 +291,7 @@ aiRoutes.post('/conversation/create/v1', async (c) => {
       data: {
         id: conversation.id,
         title: conversation.title,
-        createdAt: conversation.createdAt.toISOString(),
+        created_at: conversation.createdAt.toISOString(),
       },
     });
   } catch (err: unknown) {
@@ -314,18 +309,18 @@ aiRoutes.post('/conversation/create/v1', async (c) => {
 aiRoutes.post('/conversation/detail/v1', async (c) => {
   try {
     const userId = await getUserId(c.req.raw);
-    const body = (await c.req.json()) as { conversationId: string };
+    const body = (await c.req.json()) as { conversation_id: string };
 
-    if (!body.conversationId) {
+    if (!body.conversation_id) {
       return c.json(
-        { success: false, error: 'conversationId is required' },
+        { success: false, error: 'conversation_id is required' },
         400,
       );
     }
 
     const detail = await getConversationWithMessages(
       userId,
-      body.conversationId,
+      body.conversation_id,
     );
 
     if (!detail) {
@@ -349,22 +344,29 @@ aiRoutes.post('/conversation/save-interrupted/v1', async (c) => {
   try {
     const userId = await getUserId(c.req.raw);
     const body = (await c.req.json()) as {
-      conversationId: string;
-      messageId: string;
+      conversation_id: string;
+      message_id: string;
       content: string;
     };
 
-    if (!body.conversationId || !body.messageId) {
+    if (!body.conversation_id || !body.message_id) {
       return c.json(
-        { success: false, error: 'conversationId and messageId are required' },
+        {
+          success: false,
+          error: 'conversation_id and message_id are required',
+        },
         400,
       );
     }
 
-    await upsertModelMessage(body.conversationId, body.messageId, body.content);
+    await upsertModelMessage(
+      body.conversation_id,
+      body.message_id,
+      body.content,
+    );
 
     console.log(
-      `[Conversation save-interrupted] done (user=${userId}, conversation=${body.conversationId}, message=${body.messageId})`,
+      `[Conversation save-interrupted] done (user=${userId}, conversation=${body.conversation_id}, message=${body.message_id})`,
     );
 
     return c.json({ success: true });
@@ -383,16 +385,16 @@ aiRoutes.post('/conversation/save-interrupted/v1', async (c) => {
 aiRoutes.post('/conversation/delete/v1', async (c) => {
   try {
     const userId = await getUserId(c.req.raw);
-    const body = (await c.req.json()) as { conversationId: string };
+    const body = (await c.req.json()) as { conversation_id: string };
 
-    if (!body.conversationId) {
+    if (!body.conversation_id) {
       return c.json(
-        { success: false, error: 'conversationId is required' },
+        { success: false, error: 'conversation_id is required' },
         400,
       );
     }
 
-    const { conversationId } = body;
+    const conversationId = body.conversation_id;
     console.log(
       `[Conversation delete] accepted (user=${userId}, conversation=${conversationId})`,
     );

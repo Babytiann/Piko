@@ -16,11 +16,11 @@ export default function ChatDetailMessageBubble({
   message,
   showAvatar = false,
 }: Props): ReactNode {
-  const { isMe } = message;
+  const isMe = message.is_me;
   const hasReply =
-    message.replyToMsgId != null &&
-    (message.replyToText != null || message.replyToSenderName != null);
-  const hasImage = message.hasMedia && !!message.mediaUrl;
+    message.reply_to_msg_id != null &&
+    (message.reply_to_text != null || message.reply_to_sender_name != null);
+  const hasImage = message.has_media && !!message.media_url;
 
   const bubbleContent = (
     <YStack
@@ -34,21 +34,21 @@ export default function ChatDetailMessageBubble({
         borderBottomLeftRadius: isMe ? 16 : 4,
       }}
     >
-      {!isMe && message.senderName ? (
+      {!isMe && message.sender_name ? (
         <Text fontSize="$1" fontWeight="600" color="$blue10" mb="$1">
-          {message.senderName}
+          {message.sender_name}
         </Text>
       ) : null}
 
       {hasReply ? (
         <ReplyPreview
-          senderName={message.replyToSenderName}
-          text={message.replyToText}
+          senderName={message.reply_to_sender_name}
+          text={message.reply_to_text}
           isMe={isMe}
         />
       ) : null}
 
-      {hasImage ? <MediaImage url={message.mediaUrl!} isMe={isMe} /> : null}
+      {hasImage ? <MediaImage url={message.media_url!} isMe={isMe} /> : null}
 
       {message.text ? (
         <Text
@@ -59,13 +59,13 @@ export default function ChatDetailMessageBubble({
         >
           {message.text}
         </Text>
-      ) : message.hasMedia && !hasImage ? (
+      ) : message.has_media && !hasImage ? (
         <Text
           fontSize="$2"
           color={isMe ? '$blue3' : '$gray10'}
           fontStyle="italic"
         >
-          [{message.mediaType ?? '媒体'}]
+          [{message.media_type ?? '媒体'}]
         </Text>
       ) : null}
 
@@ -84,8 +84,8 @@ export default function ChatDetailMessageBubble({
     return (
       <XStack px="$3" py="$1" gap="$2" style={{ alignItems: 'flex-end' }}>
         <Avatar
-          url={message.senderAvatarUrl}
-          text={message.senderName?.charAt(0)?.toUpperCase() ?? '?'}
+          url={message.sender_avatar_url}
+          text={message.sender_name?.charAt(0)?.toUpperCase() ?? '?'}
           color="#4ECDC4"
           size={32}
         />

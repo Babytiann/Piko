@@ -52,8 +52,8 @@ export const telegramRoutes = new Hono();
 function userPayload(user: Api.TypeUser): TelegramUser {
   return {
     id: user.id?.toString(),
-    firstName: (user as Api.User).firstName ?? '',
-    lastName: (user as Api.User).lastName ?? '',
+    first_name: (user as Api.User).firstName ?? '',
+    last_name: (user as Api.User).lastName ?? '',
     username: (user as Api.User).username ?? '',
     phone: (user as Api.User).phone ?? '',
   };
@@ -68,59 +68,59 @@ telegramRoutes.post('/auth/v1', async (c) => {
 
     switch (session_tag) {
       case SessionTag.SEND_CODE: {
-        if (!body.phoneNumber) {
+        if (!body.phone_number) {
           return c.json(
-            { success: false, error: 'phoneNumber is required for sendCode' },
+            { success: false, error: 'phone_number is required for sendCode' },
             400,
           );
         }
 
-        const client = await createFreshPendingClient(body.phoneNumber);
+        const client = await createFreshPendingClient(body.phone_number);
         const result = await client.sendCode(
           {
             apiId: Number(process.env.TELEGRAM_API_ID),
             apiHash: process.env.TELEGRAM_API_HASH!,
           },
-          body.phoneNumber,
+          body.phone_number,
         );
 
         // 序列化 session（包含 auth key 物料），回传给前端
-        // signIn 时用此 session 恢复 client，保证 auth key 与 phoneCodeHash 匹配
-        const pendingSession = (client.session as StringSession).save();
+        // signIn 时用此 session 恢复 client，保证 auth key 与 phone_code_hash 匹配
+        const pending_session = (client.session as StringSession).save();
 
         return c.json({
           success: true,
-          phoneCodeHash: result.phoneCodeHash,
-          pendingSession,
-          codeType: result.isCodeViaApp ? 'app' : 'sms',
+          phone_code_hash: result.phoneCodeHash,
+          pending_session,
+          code_type: result.isCodeViaApp ? 'app' : 'sms',
           timeout: null,
         });
       }
 
       case SessionTag.SIGN_IN: {
-        if (!body.phoneNumber || !body.phoneCode || !body.phoneCodeHash) {
+        if (!body.phone_number || !body.phone_code || !body.phone_code_hash) {
           return c.json(
             {
               success: false,
               error:
-                'phoneNumber, phoneCode, and phoneCodeHash are required for signIn',
+                'phone_number, phone_code, and phone_code_hash are required for signIn',
             },
             400,
           );
         }
 
-        // 优先用 sendCode 阶段回传的 pendingSession 恢复 client（auth key 完全一致）
-        // 降级到内存 Map，兼容未携带 pendingSession 的旧请求
-        const client = body.pendingSession
-          ? await getPooledClient(body.pendingSession)
-          : await getOrCreatePendingClient(body.phoneNumber);
+        // 优先用 sendCode 阶段回传的 pending_session 恢复 client（auth key 完全一致）
+        // 降级到内存 Map，兼容未携带 pending_session 的旧请求
+        const client = body.pending_session
+          ? await getPooledClient(body.pending_session)
+          : await getOrCreatePendingClient(body.phone_number);
 
         try {
           const result = await client.invoke(
             new Api.auth.SignIn({
-              phoneNumber: body.phoneNumber,
-              phoneCodeHash: body.phoneCodeHash,
-              phoneCode: body.phoneCode,
+              phoneNumber: body.phone_number,
+              phoneCodeHash: body.phone_code_hash,
+              phoneCode: body.phone_code,
             }),
           );
 
@@ -136,14 +136,14 @@ telegramRoutes.post('/auth/v1', async (c) => {
 
           const authorization = result as Api.auth.Authorization;
           const session = (client.session as StringSession).save();
-          removePendingClient(body.phoneNumber);
+          removePendingClient(body.phone_number);
 
           const user = userPayload(authorization.user);
           await ensureUser(userId);
           await bindTelegram(userId, {
             telegramUserId: BigInt(user.id ?? '0'),
             username: user.username || undefined,
-            firstName: user.firstName || undefined,
+            firstName: user.first_name || undefined,
             phone: user.phone || undefined,
             sessionString: session,
           });
@@ -158,7 +158,7 @@ telegramRoutes.post('/auth/v1', async (c) => {
             err.message.includes('SESSION_PASSWORD_NEEDED')
           ) {
             const session = (client.session as StringSession).save();
-            return c.json({ success: false, require2FA: true, session });
+            return c.json({ success: false, require_2fa: true, session });
           }
           throw err;
         }
@@ -190,7 +190,7 @@ telegramRoutes.post('/auth/v1', async (c) => {
         await bindTelegram(userId, {
           telegramUserId: BigInt(user.id ?? '0'),
           username: user.username || undefined,
-          firstName: user.firstName || undefined,
+          firstName: user.first_name || undefined,
           phone: user.phone || undefined,
           sessionString: newSession,
         });
@@ -268,10 +268,10 @@ telegramRoutes.post('/unbind/v1', async (c) => {
 const phoneStepText: PhoneStepText = {
   title: '绑定 Telegram 账号',
   subtitle: '输入你的手机号以连接 Telegram',
-  phonePlaceholder: '手机号',
-  sendCodeButton: '发送验证码',
-  countryPickerHeader: '国家/地区',
-  defaultCountry: '中国',
+  phone_placeholder: '手机号',
+  send_code_button: '发送验证码',
+  country_picker_header: '国家/地区',
+  default_country: '中国',
   countries: [
     { name: '中国', code: '+86' },
     { name: '中国香港', code: '+852' },
@@ -305,32 +305,32 @@ const phoneStepText: PhoneStepText = {
     { name: '埃及', code: '+20' },
   ],
   errors: {
-    emptyPhone: '请输入手机号',
-    sendCodeFail: '发送验证码失败',
+    empty_phone: '请输入手机号',
+    send_code_fail: '发送验证码失败',
   },
 };
 
 const verifyCodeStepText: VerifyCodeStepText = {
   title: '绑定 Telegram 账号',
   subtitle: '输入你收到的验证码',
-  codeSentLabel: '验证码已发送至 {phoneNumber}',
-  codePlaceholder: '输入验证码',
-  verifyButton: '验证登录',
-  backLink: '返回修改手机号',
+  code_sent_label: '验证码已发送至 {phoneNumber}',
+  code_placeholder: '输入验证码',
+  verify_button: '验证登录',
+  back_link: '返回修改手机号',
   errors: {
-    emptyCode: '请输入验证码',
-    signInFail: '登录失败',
+    empty_code: '请输入验证码',
+    sign_in_fail: '登录失败',
   },
 };
 
 const verifyTwoFAStepText: VerifyTwoFAStepText = {
   title: '绑定 Telegram 账号',
   subtitle: '输入你的两步验证密码',
-  passwordPlaceholder: '两步验证密码',
-  confirmButton: '确认密码',
+  password_placeholder: '两步验证密码',
+  confirm_button: '确认密码',
   errors: {
-    emptyPassword: '请输入两步验证密码',
-    checkPasswordFail: '密码验证失败',
+    empty_password: '请输入两步验证密码',
+    check_password_fail: '密码验证失败',
   },
 };
 
@@ -430,10 +430,10 @@ telegramRoutes.post('/get-dialogs/v1', async (c) => {
         title,
         type,
         username,
-        accessHash,
-        unreadCount: dialog.unreadCount,
-        lastMessage,
-        lastMessageDate,
+        access_hash: accessHash,
+        unread_count: dialog.unreadCount,
+        last_message: lastMessage,
+        last_message_date: lastMessageDate,
         pinned: dialog.pinned,
       };
     });
@@ -450,32 +450,32 @@ telegramRoutes.post('/get-dialogs/v1', async (c) => {
 // ── POST /get-messages/v1 ─────────────────────────────────────────────────────
 telegramRoutes.post('/get-messages/v1', async (c) => {
   try {
-    const {
-      session,
-      chatId,
-      chatType,
-      accessHash,
-      limit = 30,
-      offsetId,
-    } = (await c.req.json()) as {
+    const body = (await c.req.json()) as {
       session: string;
-      chatId: string;
-      chatType: string;
-      accessHash: string;
+      chat_id: string;
+      chat_type?: string;
+      access_hash?: string;
       limit?: number;
-      offsetId?: number;
+      offset_id?: number;
     };
 
-    if (!session || !chatId) {
+    if (!body.session || !body.chat_id) {
       return c.json(
-        { success: false, error: 'session and chatId are required' },
+        { success: false, error: 'session and chat_id are required' },
         400,
       );
     }
 
-    const client = await getPooledClient(session);
-    const peer = resolveInputPeer(chatId, chatType, accessHash);
-    const messages = await client.getMessages(peer, { limit, offsetId });
+    const client = await getPooledClient(body.session);
+    const peer = resolveInputPeer(
+      body.chat_id,
+      body.chat_type ?? 'user',
+      body.access_hash ?? '',
+    );
+    const messages = await client.getMessages(peer, {
+      limit: body.limit ?? 30,
+      offsetId: body.offset_id,
+    });
 
     const me = await client.getMe();
     const myId = me.id?.toString();
@@ -506,15 +506,15 @@ telegramRoutes.post('/get-messages/v1', async (c) => {
         id: msg.id,
         text: msg.message ?? '',
         date: msg.date,
-        senderId,
-        senderName,
-        isOutgoing,
-        isMe: senderId === myId,
-        replyToMsgId: msg.replyTo
+        sender_id: senderId,
+        sender_name: senderName,
+        is_outgoing: isOutgoing,
+        is_me: senderId === myId,
+        reply_to_msg_id: msg.replyTo
           ? ((msg.replyTo as Api.MessageReplyHeader).replyToMsgId ?? null)
           : null,
-        hasMedia: !!msg.media,
-        mediaType: msg.media ? msg.media.className : null,
+        has_media: !!msg.media,
+        media_type: msg.media ? msg.media.className : null,
       };
     });
 
@@ -530,32 +530,39 @@ telegramRoutes.post('/get-messages/v1', async (c) => {
 // ── POST /send-message/v1 ─────────────────────────────────────────────────────
 telegramRoutes.post('/send-message/v1', async (c) => {
   try {
-    const { session, chatId, chatType, accessHash, message, replyToMsgId } =
-      (await c.req.json()) as {
-        session: string;
-        chatId: string;
-        chatType: string;
-        accessHash: string;
-        message: string;
-        replyToMsgId?: number;
-      };
+    const body = (await c.req.json()) as {
+      session: string;
+      chat_id: string;
+      chat_type?: string;
+      access_hash?: string;
+      message: string;
+      reply_to_msg_id?: number;
+    };
 
-    if (!session || !chatId || !message) {
+    if (!body.session || !body.chat_id || !body.message) {
       return c.json(
-        { success: false, error: 'session, chatId, and message are required' },
+        { success: false, error: 'session, chat_id, and message are required' },
         400,
       );
     }
 
-    const client = await getPooledClient(session);
-    const peer = resolveInputPeer(chatId, chatType, accessHash);
+    const client = await getPooledClient(body.session);
+    const peer = resolveInputPeer(
+      body.chat_id,
+      body.chat_type ?? 'user',
+      body.access_hash ?? '',
+    );
 
     const result = await client.sendMessage(peer, {
-      message,
-      replyTo: replyToMsgId,
+      message: body.message,
+      replyTo: body.reply_to_msg_id,
     });
 
-    return c.json({ success: true, messageId: result.id, date: result.date });
+    return c.json({
+      success: true,
+      message_id: result.id,
+      date: result.date,
+    });
   } catch (err: unknown) {
     const message =
       err instanceof Error ? err.message : 'Failed to send message';

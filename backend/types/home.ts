@@ -7,5 +7,5 @@ export interface WelcomeCard {
 
 export interface HomePageData {
   header: { title: string };
-  welcomeCard: WelcomeCard;
+  welcome_card: WelcomeCard;
 }

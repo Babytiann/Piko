@@ -57,7 +57,7 @@ export default function VerifyCodeScreen(): ReactNode {
   const handleSignIn = async (): Promise<void> => {
     if (!text) return;
     if (!phoneCode.trim()) {
-      setError(text.errors.emptyCode);
+      setError(text.errors.empty_code);
       return;
     }
     setLoading(true);
@@ -74,7 +74,7 @@ export default function VerifyCodeScreen(): ReactNode {
         telegramApi.fetchTelegramText(TelegramLoginStep.VERIFY_2FA),
       ]);
 
-      if (result.require2FA) {
+      if (result.require_2fa) {
         router.push({
           pathname: '/telegram_login/verify_2fa',
           params: {
@@ -91,7 +91,7 @@ export default function VerifyCodeScreen(): ReactNode {
         router.back();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : text.errors.signInFail);
+      setError(err instanceof Error ? err.message : text.errors.sign_in_fail);
     } finally {
       setLoading(false);
     }
@@ -114,10 +114,10 @@ export default function VerifyCodeScreen(): ReactNode {
         onSignIn={() => void handleSignIn()}
         onBack={() => router.back()}
         loading={loading}
-        codeSentLabel={text.codeSentLabel}
-        codePlaceholder={text.codePlaceholder}
-        verifyButtonText={text.verifyButton}
-        backLinkText={text.backLink}
+        codeSentLabel={text.code_sent_label}
+        codePlaceholder={text.code_placeholder}
+        verifyButtonText={text.verify_button}
+        backLinkText={text.back_link}
       />
     </TgLoginFormLayout>
   );

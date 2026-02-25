@@ -8,7 +8,7 @@ import type {
 } from '@/common/typings/profile';
 
 interface ProfileTelegramSectionProps {
-  copy: ProfilePageCopy['linkedAccount'];
+  copy: ProfilePageCopy['linked_account'];
   data: TelegramSectionData;
   onPress: () => void;
 }
@@ -18,7 +18,7 @@ export default function ProfileTelegramSection({
   data,
   onPress,
 }: ProfileTelegramSectionProps): ReactNode {
-  const isBound = data.isLoggedIn && !!data.user;
+  const isBound = data.is_logged_in && !!data.user;
 
   return (
     <YStack gap="$0">
@@ -54,14 +54,14 @@ export default function ProfileTelegramSection({
               {isBound ? (
                 <>
                   <Text fontSize="$3" color="$green10">
-                    {copy.boundLabel}
+                    {copy.bound_label}
                   </Text>
                   <Ionicons name="checkmark-circle" size={18} color="#34C759" />
                 </>
               ) : null}
             </XStack>
             <Text fontSize="$2" color="$gray12">
-              {isBound ? copy.boundHint : copy.unboundHint}
+              {isBound ? copy.bound_hint : copy.unbound_hint}
             </Text>
           </YStack>
           <Ionicons name="chevron-forward" size={20} color="#8E8E93" />

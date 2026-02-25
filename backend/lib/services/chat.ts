@@ -109,10 +109,10 @@ export async function getChatListPageData(
   if (!session) {
     return {
       header: { title: '消息' },
-      unboundState: {
+      unbound_state: {
         title: '尚未绑定 Telegram 账号',
         description: '前往「个人中心」绑定你的 Telegram 账号后，即可查看消息。',
-        bindButtonText: '前往绑定',
+        bind_button_text: '前往绑定',
       },
     };
   }
@@ -125,13 +125,13 @@ export async function getChatListPageData(
       id: d.id,
       title: d.title,
       type: d.type,
-      accessHash: d.accessHash,
-      avatarText: d.title.charAt(0).toUpperCase(),
-      avatarColor: getAvatarColor(d.id),
-      avatarUrl: buildAvatarUrl(session, d.id, d.type, d.accessHash),
-      lastMessage: d.lastMessage || '...',
-      lastMessageTime: formatTime(d.lastMessageDate),
-      unreadCount: d.unreadCount,
+      access_hash: d.access_hash,
+      avatar_text: d.title.charAt(0).toUpperCase(),
+      avatar_color: getAvatarColor(d.id),
+      avatar_url: buildAvatarUrl(session, d.id, d.type, d.access_hash),
+      last_message: d.last_message || '...',
+      last_message_time: formatTime(d.last_message_date),
+      unread_count: d.unread_count,
       pinned: d.pinned,
     })),
   };
@@ -166,54 +166,61 @@ export async function getChatDetailPageData(
 
   const messages: MessageItem[] = rawMessages.map((m) => {
     const mediaUrl =
-      m.hasMedia && m.mediaType && IMAGE_MEDIA_TYPES.has(m.mediaType)
+      m.has_media && m.media_type && IMAGE_MEDIA_TYPES.has(m.media_type)
         ? buildMediaUrl(session, chatId, chatType, accessHash, m.id)
         : null;
 
-    let replyToText: string | null = null;
-    let replyToSenderName: string | null = null;
-    if (m.replyToMsgId != null) {
-      const repliedMsg = messageById.get(m.replyToMsgId);
+    let reply_to_text: string | null = null;
+    let reply_to_sender_name: string | null = null;
+    if (m.reply_to_msg_id != null) {
+      const repliedMsg = messageById.get(m.reply_to_msg_id);
       if (repliedMsg) {
-        replyToText = truncateText(
+        reply_to_text = truncateText(
           repliedMsg.text ||
-            (repliedMsg.hasMedia ? `[${repliedMsg.mediaType ?? '媒体'}]` : ''),
+            (repliedMsg.has_media
+              ? `[${repliedMsg.media_type ?? '媒体'}]`
+              : ''),
         );
-        replyToSenderName = repliedMsg.senderName || null;
+        reply_to_sender_name = repliedMsg.sender_name || null;
       }
     }
 
-    const senderAvatarUrl =
-      !(m.isMe || m.isOutgoing) && m.senderId
-        ? buildAvatarUrl(session, m.senderId, m.senderType, m.senderAccessHash)
+    const sender_avatar_url =
+      !(m.is_me || m.is_outgoing) && m.sender_id
+        ? buildAvatarUrl(
+            session,
+            m.sender_id,
+            m.sender_type,
+            m.sender_access_hash,
+          )
         : undefined;
 
     return {
       id: m.id,
       text: m.text,
       time: formatMessageTime(m.date),
-      senderName: m.senderName,
-      senderAvatarUrl,
-      isMe: m.isMe || m.isOutgoing,
-      hasMedia: m.hasMedia,
-      mediaType: m.mediaType,
-      mediaUrl,
-      replyToMsgId: m.replyToMsgId,
-      replyToText,
-      replyToSenderName,
+      sender_name: m.sender_name,
+      sender_avatar_url,
+      is_me: m.is_me || m.is_outgoing,
+      has_media: m.has_media,
+      media_type: m.media_type,
+      media_url: mediaUrl,
+      reply_to_msg_id: m.reply_to_msg_id,
+      reply_to_text,
+      reply_to_sender_name,
     };
   });
 
   // Determine pagination info
-  const hasMore = rawMessages.length >= limit;
-  const oldestMessageId =
+  const has_more = rawMessages.length >= limit;
+  const oldest_message_id =
     rawMessages.length > 0 ? rawMessages[rawMessages.length - 1].id : undefined;
 
   return {
     header: { title },
     messages,
-    inputPlaceholder: '输入消息...',
-    hasMore,
-    oldestMessageId,
+    input_placeholder: '输入消息...',
+    has_more,
+    oldest_message_id,
   };
 }

@@ -54,11 +54,11 @@ export async function getUserInfo(session: string): Promise<TelegramUserInfo> {
 
   const result: TelegramUserInfo = {
     id: me.id.toString(),
-    firstName: me.firstName ?? '',
-    lastName: me.lastName ?? '',
+    first_name: me.firstName ?? '',
+    last_name: me.lastName ?? '',
     username: me.username ?? '',
     phone: processedPhone,
-    hasPhoto: !!me.photo,
+    has_photo: !!me.photo,
   };
 
   setUserInfoCache(session, result);

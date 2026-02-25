@@ -12,7 +12,7 @@ import { getProfilePhoto } from './photo';
 export function prefetchUserProfile(session: string): void {
   // 必须串行：两个函数共用同一个 GramJS client 实例，并发调用会导致 libuv 崩溃
   void getUserInfo(session)
-    .then((info) => (info.hasPhoto ? getProfilePhoto(session) : null))
+    .then((info) => (info.has_photo ? getProfilePhoto(session) : null))
     .catch(() => {
       // 预热失败不影响用户，静默忽略
     });

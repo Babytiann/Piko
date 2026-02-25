@@ -13,14 +13,14 @@ export interface ChatMessage {
 export interface AiChatRequest {
   messages: ChatMessage[];
   /** 对话 ID。"new" 或不传 = 新建对话，已有值 = 追加到现有对话 */
-  conversationId?: string;
+  conversation_id?: string;
   /** 客户端请求 ID（用于重连幂等） */
-  requestId?: string;
+  request_id?: string;
 }
 
 export interface SseConversationEvent {
   type: 'conversation';
-  conversationId: string;
+  conversation_id: string;
 }
 
 /** SSE event data shapes. */
@@ -32,7 +32,7 @@ export interface SseChunkEvent {
 export interface SseDoneEvent {
   type: 'done';
   /** 对话 ID（新建对话时返回给前端） */
-  conversationId?: string;
+  conversation_id?: string;
 }
 
 export interface SseErrorEvent {
@@ -60,7 +60,7 @@ export interface SseToolEndEvent {
 export interface SseRequestLocationEvent {
   type: 'request_location';
   /** 用于关联位置回传的唯一请求 ID */
-  requestId: string;
+  request_id: string;
 }
 
 export type SseEvent =
@@ -75,15 +75,15 @@ export type SseEvent =
 /** Page data for the AI chat page. */
 export interface AiPageData {
   /** Page header title, e.g. "AI 助手" */
-  headerTitle: string;
+  header_title: string;
   /** Empty-state greeting title, e.g. "Hi，我是 Piko AI" */
-  emptyTitle: string;
+  empty_title: string;
   /** Empty-state subtitle, e.g. "问我任何问题，我会尽力帮你解答。" */
-  emptySubtitle: string;
+  empty_subtitle: string;
   /** Input placeholder, e.g. "问我任何问题..." */
-  inputPlaceholder: string;
+  input_placeholder: string;
   /** Conversation drawer title, e.g. "历史对话" */
-  drawerTitle: string;
+  drawer_title: string;
   /** New chat button label in drawer, e.g. "新对话" */
-  newChatLabel: string;
+  new_chat_label: string;
 }

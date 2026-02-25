@@ -4,55 +4,55 @@ export interface DialogItem {
   id: string;
   title: string;
   type: 'user' | 'group' | 'channel';
-  accessHash: string;
-  avatarText: string;
-  avatarColor: string;
+  access_hash: string;
+  avatar_text: string;
+  avatar_color: string;
   /** URL to fetch the peer's profile photo via the avatar proxy. */
-  avatarUrl?: string;
-  lastMessage: string;
-  lastMessageTime: string;
-  unreadCount: number;
+  avatar_url?: string;
+  last_message: string;
+  last_message_time: string;
+  unread_count: number;
   pinned: boolean;
 }
 
 export interface UnboundState {
   title: string;
   description: string;
-  bindButtonText: string;
+  bind_button_text: string;
 }
 
 export interface ChatListPageData {
   header: { title: string };
   dialogs?: DialogItem[];
-  unboundState?: UnboundState;
+  unbound_state?: UnboundState;
 }
 
 export interface MessageItem {
   id: number;
   text: string;
   time: string;
-  senderName: string;
+  sender_name: string;
   /** URL to fetch the sender's profile photo via the avatar proxy. */
-  senderAvatarUrl?: string;
-  isMe: boolean;
-  hasMedia: boolean;
-  mediaType: string | null;
+  sender_avatar_url?: string;
+  is_me: boolean;
+  has_media: boolean;
+  media_type: string | null;
   /** URL to download the media via the /telegram/media/v1 proxy endpoint. */
-  mediaUrl: string | null;
+  media_url: string | null;
   /** ID of the message this message is replying to, if any. */
-  replyToMsgId: number | null;
+  reply_to_msg_id: number | null;
   /** Preview text of the replied-to message. */
-  replyToText: string | null;
+  reply_to_text: string | null;
   /** Sender name of the replied-to message. */
-  replyToSenderName: string | null;
+  reply_to_sender_name: string | null;
 }
 
 export interface ChatDetailPageData {
   header: { title: string };
   messages: MessageItem[];
-  inputPlaceholder: string;
+  input_placeholder: string;
   /** Whether there are more (older) messages available to load. */
-  hasMore: boolean;
+  has_more: boolean;
   /** The id of the oldest message in the current batch, used as offsetId for pagination. */
-  oldestMessageId?: number;
+  oldest_message_id?: number;
 }

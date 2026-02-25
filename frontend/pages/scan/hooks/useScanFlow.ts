@@ -111,7 +111,7 @@ export function useScanFlow(): UseScanFlowReturn {
       items: record.items,
       source: record.source,
       image: capturedBase64 ?? undefined,
-      mimeType: capturedMimeType,
+      mime_type: capturedMimeType,
     }).catch((err) => console.error('[Expense] upload error:', err));
 
     // 保存后回到相机

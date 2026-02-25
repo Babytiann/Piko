@@ -23,9 +23,9 @@ export default function ChatListDialogItem({
       style={{ alignItems: 'center' }}
     >
       <Avatar
-        url={dialog.avatarUrl}
-        text={dialog.avatarText}
-        color={dialog.avatarColor}
+        url={dialog.avatar_url}
+        text={dialog.avatar_text}
+        color={dialog.avatar_color}
       />
 
       <YStack flex={1} gap="$1">
@@ -43,7 +43,7 @@ export default function ChatListDialogItem({
             {dialog.title}
           </Text>
           <Text fontSize="$1" color="$gray10">
-            {dialog.lastMessageTime}
+            {dialog.last_message_time}
           </Text>
         </XStack>
 
@@ -57,9 +57,9 @@ export default function ChatListDialogItem({
             flex={1}
             mr="$2"
           >
-            {dialog.lastMessage}
+            {dialog.last_message}
           </Text>
-          {dialog.unreadCount > 0 ? (
+          {dialog.unread_count > 0 ? (
             <View
               bg="$blue9"
               px="$1"
@@ -72,7 +72,7 @@ export default function ChatListDialogItem({
               }}
             >
               <Text color="white" fontSize={11} fontWeight="700">
-                {dialog.unreadCount > 99 ? '99+' : dialog.unreadCount}
+                {dialog.unread_count > 99 ? '99+' : dialog.unread_count}
               </Text>
             </View>
           ) : null}

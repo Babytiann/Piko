@@ -49,7 +49,7 @@ export default function ProfileScreen(): ReactNode {
 
   const copy = data?.copy ?? DEFAULT_PROFILE_COPY;
   const appUser =
-    data?.appUser ??
+    data?.app_user ??
     (appSession?.user
       ? {
           id: appSession.user.id,
@@ -99,7 +99,7 @@ export default function ProfileScreen(): ReactNode {
   };
 
   const handleTelegramPress = (): void => {
-    const user = telegramSectionData?.isLoggedIn
+    const user = telegramSectionData?.is_logged_in
       ? telegramSectionData?.user
       : null;
     if (user) {
@@ -107,8 +107,8 @@ export default function ProfileScreen(): ReactNode {
         pathname: '/telegram_binding',
         params: {
           username: user.username || '—',
-          telegramUserId: user.telegramUserId || '—',
-          boundAt: user.boundAt ?? '',
+          telegramUserId: user.telegram_user_id || '—',
+          boundAt: user.bound_at ?? '',
         },
       });
     } else {
@@ -121,13 +121,13 @@ export default function ProfileScreen(): ReactNode {
     hasAppSession && errorType && errorType !== PageErrorType.AUTH;
 
   const telegramSectionData = showProfileData
-    ? data!.telegramSection
+    ? data!.telegram_section
     : hasAppSession
       ? {
           title: 'Telegram 账号',
-          isLoggedIn: false,
-          bindPrompt: '',
-          bindButtonText: '',
+          is_logged_in: false,
+          bind_prompt: '',
+          bind_button_text: '',
         }
       : null;
 
@@ -150,13 +150,13 @@ export default function ProfileScreen(): ReactNode {
             color="$color"
             letterSpacing={-0.5}
           >
-            {copy.pageTitle}
+            {copy.page_title}
           </Text>
           <Spacer flex={1} />
         </XStack>
 
         <YStack px="$4" gap="$4">
-          <ProfileAppleSection appUser={appUser} copy={copy.userSection} />
+          <ProfileAppleSection appUser={appUser} copy={copy.user_section} />
 
           {showProfileError ? (
             <PageStatusView errorType={errorType} onRetry={handleRetry} />
@@ -164,17 +164,17 @@ export default function ProfileScreen(): ReactNode {
 
           {telegramSectionData ? (
             <ProfileTelegramSection
-              copy={copy.linkedAccount}
+              copy={copy.linked_account}
               data={telegramSectionData}
               onPress={handleTelegramPress}
             />
           ) : !hasAppSession ? (
             <YStack bg="#FFFFFF" p="$4" gap="$3" style={{ borderRadius: 16 }}>
               <Text fontSize="$4" fontWeight="600" color="$color">
-                {copy.linkedAccount.title}
+                {copy.linked_account.title}
               </Text>
               <Text fontSize="$2" color="$gray12">
-                {copy.linkedAccount.loginFirstHint}
+                {copy.linked_account.login_first_hint}
               </Text>
             </YStack>
           ) : null}
@@ -197,7 +197,7 @@ export default function ProfileScreen(): ReactNode {
             >
               <XStack gap="$2" style={{ alignItems: 'center' }}>
                 <Text color="$red10" fontWeight="600" fontSize="$4">
-                  {isLoggingOut ? copy.logoutIngress : copy.logoutButton}
+                  {isLoggingOut ? copy.logout_ingress : copy.logout_button}
                 </Text>
                 {isLoggingOut ? null : (
                   <Text color="$red10" fontSize="$4">

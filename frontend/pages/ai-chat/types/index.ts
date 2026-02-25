@@ -55,7 +55,7 @@ export interface SseChunkEvent {
 
 export interface SseDoneEvent {
   type: 'done';
-  conversationId?: string;
+  conversation_id?: string;
 }
 
 export interface SseErrorEvent {
@@ -82,12 +82,12 @@ export interface SseToolEndEvent {
 /** 请求前端获取用户地理位置 */
 export interface SseRequestLocationEvent {
   type: 'request_location';
-  requestId: string;
+  request_id: string;
 }
 
 export interface SseConversationEvent {
   type: 'conversation';
-  conversationId: string;
+  conversation_id: string;
 }
 
 export type SseEvent =
@@ -107,18 +107,18 @@ export type MarkdownSegment =
 
 /** Page data for the AI chat page (from backend). */
 export interface AiPageData {
-  headerTitle: string;
-  emptyTitle: string;
-  emptySubtitle: string;
-  inputPlaceholder: string;
-  drawerTitle: string;
-  newChatLabel: string;
+  header_title: string;
+  empty_title: string;
+  empty_subtitle: string;
+  input_placeholder: string;
+  drawer_title: string;
+  new_chat_label: string;
 }
 
 /** 会话列表项 */
 export interface ConversationItem {
   id: string;
   title: string;
-  updatedAt: string;
-  messageCount: number;
+  updated_at: string;
+  message_count: number;
 }

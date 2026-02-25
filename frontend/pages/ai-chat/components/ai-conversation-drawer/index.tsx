@@ -90,7 +90,7 @@ export default function AiConversationDrawer({
               {item.title || '新对话'}
             </Text>
             <Text fontSize="$2" color="$gray9" mt="$1">
-              {item.messageCount} 条消息
+              {item.message_count} 条消息
             </Text>
           </YStack>
           <Pressable

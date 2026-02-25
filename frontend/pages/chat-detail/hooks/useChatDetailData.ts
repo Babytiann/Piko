@@ -69,7 +69,7 @@ export function useChatDetailData(
         } else if (response.data) {
           setPageData(response.data);
           setMessages(response.data.messages);
-          setHasMore(response.data.hasMore);
+          setHasMore(response.data.has_more);
         }
       } catch {
         if (cancelled) return;
@@ -114,7 +114,7 @@ export function useChatDetailData(
             );
             return [...prev, ...olderMsgs];
           });
-          setHasMore(response.data.hasMore);
+          setHasMore(response.data.has_more);
         }
       })
       .catch(() => {
