@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import type { ReactNode } from 'react';
+import { useState, useEffect, useRef } from 'react'
+import type { ReactNode } from 'react'
 import {
   Animated,
   Dimensions,
@@ -7,36 +7,38 @@ import {
   Pressable,
   StyleSheet,
   InteractionManager,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { YStack, XStack, Text, useTheme } from 'tamagui';
-import { Ionicons } from '@expo/vector-icons';
+} from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useRouter } from 'expo-router'
+import { YStack, XStack, Text, useTheme } from 'tamagui'
+import { Ionicons } from '@expo/vector-icons'
 
-import PageLoading from '@/common/components/page-loading';
-import PageStatusView from '@/common/components/page-status-view';
-import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
-import { authClient } from '@/services/auth-client';
-import useAiChat from '@/pages/ai-chat/hooks/useAiChat';
-import useConversationList from '@/pages/ai-chat/hooks/useConversationList';
-import useFetchAiPageData from '@/pages/ai-chat/hooks/useFetchAiPageData';
-import { fetchConversationDetail } from '@/services/ai';
+import PageLoading from '@/common/components/page-loading'
+import PageStatusView from '@/common/components/page-status-view'
+import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts'
+import { authClient } from '@/services/auth-client'
+import useAiChat from '@/pages/ai-chat/hooks/useAiChat'
+import useConversationList from '@/pages/ai-chat/hooks/useConversationList'
+import useFetchAiPageData from '@/pages/ai-chat/hooks/useFetchAiPageData'
+import { fetchConversationDetail } from '@/services/ai'
 import type {
   AiMessage,
   BubbleLayout,
   TooltipTarget,
-} from '@/pages/ai-chat/types';
-import AiChatMessageList from '@/pages/ai-chat/components/ai-chat-message-list';
-import AiChatInput from '@/pages/ai-chat/components/ai-chat-input';
-import AiChatTooltip from '@/pages/ai-chat/components/ai-chat-tooltip';
-import AiConversationDrawer from '@/pages/ai-chat/components/ai-conversation-drawer';
+} from '@/pages/ai-chat/types'
+import { LoginStatus } from '@/pages/ai-chat/types'
+import AiChatLoginPrompt from '@/pages/ai-chat/components/ai-chat-login-prompt'
+import AiChatMessageList from '@/pages/ai-chat/components/ai-chat-message-list'
+import AiChatInput from '@/pages/ai-chat/components/ai-chat-input'
+import AiChatTooltip from '@/pages/ai-chat/components/ai-chat-tooltip'
+import AiConversationDrawer from '@/pages/ai-chat/components/ai-conversation-drawer'
 
-const DRAWER_WIDTH = Dimensions.get('window').width * 0.7;
+const DRAWER_WIDTH = Dimensions.get('window').width * 0.7
 
 export default function AiScreen(): ReactNode {
-  const insets = useSafeAreaInsets();
-  const router = useRouter();
-  const theme = useTheme();
+  const insets = useSafeAreaInsets()
+  const router = useRouter()
+  const theme = useTheme()
   const {
     messages,
     isStreaming,
@@ -46,124 +48,134 @@ export default function AiScreen(): ReactNode {
     stopStreaming,
     requestLocationPermission,
     loadConversation,
-  } = useAiChat();
-  const { data: appSession } = authClient.useSession();
+  } = useAiChat()
+  const { data: appSession } = authClient.useSession()
   const {
     data,
     isPageLoading,
     errorType: copyErrorType,
     handleRetry: handleCopyRetry,
-  } = useFetchAiPageData();
+  } = useFetchAiPageData()
 
-  const convList = useConversationList(appSession?.user?.id ?? null);
+  const {
+    login_status,
+    header_title,
+    empty_title,
+    empty_subtitle,
+    input_placeholder,
+    drawer_title,
+    new_chat_label,
+    login_prompt_title,
+    login_prompt_desc,
+    login_prompt_btn,
+  } = data ?? {}
+  const convList = useConversationList(appSession?.user?.id ?? null)
 
-  const contentTranslateX = useRef(new Animated.Value(0)).current;
-  const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const contentTranslateX = useRef(new Animated.Value(0)).current
+  const backdropOpacity = useRef(new Animated.Value(0)).current
 
-  const [drawerVisible, setDrawerVisible] = useState(false);
-  const [tooltipTarget, setTooltipTarget] = useState<TooltipTarget | null>(
-    null,
-  );
+  const [drawerVisible, setDrawerVisible] = useState(false)
+  const [tooltipTarget, setTooltipTarget] = useState<TooltipTarget | null>(null)
 
   const animateClose = (): void => {
-    setDrawerVisible(false);
+    setDrawerVisible(false)
     Animated.timing(contentTranslateX, {
       toValue: 0,
       duration: 200,
       useNativeDriver: true,
-    }).start();
+    }).start()
     Animated.timing(backdropOpacity, {
       toValue: 0,
       duration: 200,
       useNativeDriver: true,
-    }).start();
-  };
+    }).start()
+  }
 
   const handleOpenDrawer = (): void => {
-    Keyboard.dismiss();
-    void convList.refresh();
-    setDrawerVisible(true);
+    Keyboard.dismiss()
+    void convList.refresh()
+    setDrawerVisible(true)
     Animated.timing(contentTranslateX, {
       toValue: DRAWER_WIDTH,
       duration: 250,
       useNativeDriver: true,
-    }).start();
+    }).start()
     Animated.timing(backdropOpacity, {
       toValue: 1,
       duration: 250,
       useNativeDriver: true,
-    }).start();
+    }).start()
     InteractionManager.runAfterInteractions(() => {
-      void convList.refresh();
-    });
-  };
+      void convList.refresh()
+    })
+  }
 
   const handleCloseDrawer = (): void => {
-    animateClose();
-  };
+    animateClose()
+  }
 
   const handleSelectConversation = async (id: string): Promise<void> => {
-    animateClose();
+    animateClose()
     try {
-      const detail = await fetchConversationDetail(id);
-      let nextSeq = 0;
+      const detail = await fetchConversationDetail(id)
+      let nextSeq = 0
       const msgs: AiMessage[] = detail.messages.map((m) => {
-        nextSeq += 1;
+        nextSeq += 1
         return {
           id: `hist_${nextSeq}`,
           role: m.role === 'model' ? 'assistant' : 'user',
           content: m.content,
           timestamp: new Date(m.created_at).getTime(),
-        };
-      });
-      loadConversation(msgs, id);
+        }
+      })
+      loadConversation(msgs, id)
     } catch (err) {
-      console.error('[AI] load conversation error:', err);
+      console.error('[AI] load conversation error:', err)
     }
-  };
+  }
 
   const handleDeleteConversation = (id: string): void => {
-    const list = convList.conversations;
-    const index = list.findIndex((c) => c.id === id);
+    const list = convList.conversations
+    const index = list.findIndex((c) => c.id === id)
 
-    let nextId: string | null = null;
+    let nextId: string | null = null
     if (id === conversationId && list.length > 1) {
-      nextId = index === 0 ? list[1].id : list[0].id;
+      nextId = index === 0 ? list[1].id : list[0].id
     }
 
-    convList.remove(id);
+    convList.remove(id)
 
     if (id === conversationId) {
       if (nextId) {
-        void handleSelectConversation(nextId);
+        void handleSelectConversation(nextId)
       } else {
-        clearMessages();
+        clearMessages()
       }
     }
-  };
+  }
 
   const handleNewChat = (): void => {
-    animateClose();
-    clearMessages();
-  };
+    animateClose()
+    clearMessages()
+  }
 
   const handleMessageLongPress = (
     message: AiMessage,
     layout: BubbleLayout,
   ): void => {
-    setTooltipTarget({ message, layout });
-  };
+    setTooltipTarget({ message, layout })
+  }
 
   const handleTooltipClose = (): void => {
-    setTooltipTarget(null);
-  };
+    setTooltipTarget(null)
+  }
 
   if (isPageLoading) {
     return (
       <YStack flex={1} bg="$background">
         <PageLoading />
       </YStack>
-    );
+    )
   }
 
   if (copyErrorType) {
@@ -171,7 +183,7 @@ export default function AiScreen(): ReactNode {
       <YStack flex={1} bg="$background">
         <PageStatusView errorType={copyErrorType} onRetry={handleCopyRetry} />
       </YStack>
-    );
+    )
   }
 
   if (appSession === undefined) {
@@ -179,49 +191,24 @@ export default function AiScreen(): ReactNode {
       <YStack flex={1} bg="$background">
         <PageLoading />
       </YStack>
-    );
+    )
   }
 
-  if (!appSession?.user) {
+  const isLoggedOut =
+    login_status === LoginStatus.LOGGED_OUT ||
+    (login_status === undefined && !appSession?.user)
+  if (isLoggedOut) {
     return (
-      <YStack
-        flex={1}
-        bg="$background"
-        pt={insets.top}
-        pb={insets.bottom + TAB_BAR_CONTENT_HEIGHT}
-        px="$4"
-        gap="$4"
-        style={{ justifyContent: 'center', alignItems: 'center' }}
-      >
-        <Text
-          fontSize="$5"
-          fontWeight="600"
-          color="$color"
-          style={{ textAlign: 'center' }}
-        >
-          请使用 Apple 登录
-        </Text>
-        <Text fontSize="$3" color="$gray11" style={{ textAlign: 'center' }}>
-          登录后即可使用 AI 聊天、对话历史等功能。
-        </Text>
-        <YStack
-          height={48}
-          bg="$color"
-          pressStyle={{ opacity: 0.8 }}
-          onPress={() => router.push('/(tabs)/profile')}
-          style={{
-            borderRadius: 12,
-            justifyContent: 'center',
-            alignItems: 'center',
-            minWidth: 160,
-          }}
-        >
-          <Text color="$background" fontWeight="600" fontSize="$3">
-            去登录
-          </Text>
-        </YStack>
-      </YStack>
-    );
+      <AiChatLoginPrompt
+        title={login_prompt_title ?? ''}
+        description={login_prompt_desc ?? ''}
+        buttonText={login_prompt_btn ?? ''}
+        onLoginPress={() => router.push('/(tabs)/profile')}
+        paddingTop={insets.top}
+        paddingBottom={insets.bottom + TAB_BAR_CONTENT_HEIGHT}
+        paddingHorizontal={16}
+      />
+    )
   }
 
   return (
@@ -236,8 +223,8 @@ export default function AiScreen(): ReactNode {
         onDelete={handleDeleteConversation}
         onNewChat={handleNewChat}
         onLoadMore={convList.loadMore}
-        drawerTitle={data?.drawer_title ?? ''}
-        newChatLabel={data?.new_chat_label ?? ''}
+        drawerTitle={drawer_title ?? ''}
+        newChatLabel={new_chat_label ?? ''}
       />
 
       <Animated.View
@@ -286,7 +273,7 @@ export default function AiScreen(): ReactNode {
                 color="$color"
                 letterSpacing={-0.5}
               >
-                {data?.header_title ?? ''}
+                {header_title ?? ''}
               </Text>
             </XStack>
 
@@ -320,8 +307,8 @@ export default function AiScreen(): ReactNode {
             <AiChatMessageList
               messages={messages}
               contentPaddingBottom={16}
-              emptyTitle={data?.empty_title ?? ''}
-              emptySubtitle={data?.empty_subtitle ?? ''}
+              emptyTitle={empty_title ?? ''}
+              emptySubtitle={empty_subtitle ?? ''}
               tooltipMessageId={tooltipTarget?.message.id}
               onMessageLongPress={handleMessageLongPress}
               onRequestLocationPermission={requestLocationPermission}
@@ -330,7 +317,7 @@ export default function AiScreen(): ReactNode {
               onSend={sendMessage}
               isStreaming={isStreaming}
               onStop={stopStreaming}
-              placeholder={data?.input_placeholder ?? ''}
+              placeholder={input_placeholder ?? ''}
             />
           </YStack>
 
@@ -338,5 +325,5 @@ export default function AiScreen(): ReactNode {
         </YStack>
       </Animated.View>
     </YStack>
-  );
+  )
 }
