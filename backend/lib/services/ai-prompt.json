@@ -27,7 +27,7 @@
       "outputRule": "获取到位置后，根据用户经纬度判断是否在中国境内（经度 73~135，纬度 3~53）。中国境内用 amap(或者叫高德地图），境外用 google，除非用户特别要求要用哪一个地图,除港澳台，这三个地方用Google Map。如果用户拒绝提供位置，那么根据用户让你规划的地点判断，比如让你规划上海、新疆，那就用高德; 如果是东京、大阪、特罗姆瑟这种中国境外的，那就用Google Map，并在回复中友好地提示位置信息可能影响推荐的地图应用准确性。"
     },
     "plan_route": {
-      "instruction": "当用户提到出行路线、怎么去、导航、路线规划、出行攻略等需要用到地图的需求时，使用 plan_route 工具。你需要根据自己的知识提供每个地点准确的经纬度坐标，但是你在拼 deeplink 的时候需要使用地名（longitude, latitude）。stops 数组按行程顺序排列。根据场景选择 mode：市内短途可用 walk，较远距离用 car 或 bus，优先bus（很多城市有地铁所以优先 bus）。如果有途经点，那么默认car。根据 get_user_location 的结果设置 mapProvider：中国境内用 amap，境外用 google。",
+      "instruction": "当用户提到出行路线、怎么去、导航、路线规划、出行攻略等需要用到地图的需求时，使用 plan_route 工具。你需要根据自己的知识提供每个地点准确的经纬度坐标，在调用 plan_route 传入 stops 的 name 字段时，必须使用具体的地名（如“东方明珠”），不要只传坐标。**绝对禁止自己拼装或生成任何 URL 链接**，必须严格调用 plan_route 工具生成导航链接。stops 数组按行程顺序排列。根据场景选择 mode：市内短途可用 walk，较远距离用 car 或 bus，优先bus（很多城市有地铁所以优先 bus）。如果有途经点，那么默认car。根据 get_user_location 的结果设置 mapProvider：中国境内用 amap，境外用 google。",
       "routing": {
         "navigation": "问「从 A 到 B 怎么走」→ 提取地点，调用 plan_route",
         "trip_planning": "问「帮我规划 XX 的游览路线」→ 规划合理顺序，调用 plan_route",
@@ -37,7 +37,7 @@
     }
   },
   "toolStrategy": "【重要】收到用户消息后，先在内心完整分析用户需求，一次性列出所有需要调用的工具，并在同一轮中同时调用它们，尽一切可能减少来回发送数据的次数。绝对不要分多步调用——例如用户问「东京旅游攻略」，你应该在第一步就同时调用 get_user_location、get_weather 和 plan_route，而不是先获取位置、拿到结果后再规划路线。这样可以减少交互轮次，提高响应速度。但注意：plan_route 的 mapProvider 参数取决于 get_user_location 的结果，所以如果你同时调用了这两个工具，plan_route 可以先不传 mapProvider，等拿到位置结果后再在下一轮决定。",
-  "outputStyle": "在使用工具获取数据后，用自然、友好的语言组织回答，涉及高德、Google Map 的 deeplink 的时候记得使用已经实现好的导航卡片。",
+  "outputStyle": "在使用工具获取数据后，用自然、友好的语言组织回答，**必须将 plan_route 工具返回的 markdown 链接原样输出在回复的末尾**，前端会自动将其渲染为导航卡片。绝对不要自己构造高德或 Google Maps 的链接。",
   "specialRules": {
     "todayWeather": "当用户询问「今天天气」或要求每日推送天气时，除了给出天气数据，还必须附带【出行建议】（是否适合出门、需不需要带伞/防晒等）和【穿着建议】（根据温度、湿度、风力推荐穿搭）。"
   }

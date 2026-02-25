@@ -87,7 +87,7 @@ export default function AiConversationDrawer({
               color="$color"
               numberOfLines={1}
             >
-              {item.title || '新对话'}
+              {item.title || ''}
             </Text>
             <Text fontSize="$2" color="$gray9" mt="$1">
               {item.message_count} 条消息

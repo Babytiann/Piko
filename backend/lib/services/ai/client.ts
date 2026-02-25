@@ -37,11 +37,11 @@ function getOpenRouterProvider(): ReturnType<typeof createOpenRouter> {
 }
 
 export function getModel(): LanguageModel {
-  if (process.env.OPENROUTER_API_KEY) {
+  /*if (process.env.OPENROUTER_API_KEY) {
     const modelId =
       process.env.OPENROUTER_MODEL_ID ?? DEFAULT_OPENROUTER_MODEL_ID;
     return getOpenRouterProvider().chat(modelId) as LanguageModel;
-  }
+  }*/
   return getGoogleProvider()(DEFAULT_MODEL_ID);
 }
 

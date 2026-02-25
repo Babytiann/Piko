@@ -4,9 +4,9 @@ const TABLE_LINE_RE = /^\|.+\|$/;
 const SEPARATOR_RE = /^\|(\s*:?-+:?\s*\|)+\s*$/;
 const PAREN_CELL_RE = /^\(.*\)$/;
 const AMAP_NAV_RE =
-  /^\[([^\]]+)\]\((https:\/\/uri\.amap\.com\/navigation\?[^)]+)\)$/;
+  /^(?:-\s+|\*\s+|\d+\.\s+|·\s+)?\[([^\]]+)\]\((https:\/\/uri\.amap\.com\/navigation\?[^)]+)\)$/;
 const GOOGLE_MAPS_NAV_RE =
-  /^\[([^\]]+)\]\((https:\/\/www\.google\.com\/maps\/dir\/\?[^)]+)\)$/;
+  /^(?:-\s+|\*\s+|\d+\.\s+|·\s+)?\[([^\]]+)\]\((https:\/\/www\.google\.com\/maps\/dir\/\?[^)]+)\)$/;
 
 function parseRow(line: string): string[] {
   return line

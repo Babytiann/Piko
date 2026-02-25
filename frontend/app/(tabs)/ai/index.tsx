@@ -107,10 +107,6 @@ export default function AiScreen(): ReactNode {
       duration: 250,
       useNativeDriver: true,
     }).start();
-    requestAnimationFrame(() => {
-      setDrawerVisible(true);
-      void convList.refresh();
-    });
   };
 
   const handleCloseDrawer = (): void => {
