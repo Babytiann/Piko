@@ -4,7 +4,7 @@
  *   POST /piko/ai/chat/v1                   — 流式多步 Agent 对话（Vercel AI SDK Data Stream）
  *   POST /piko/ai/location/v1              — 前端回传位置（配合 get_user_location 工具）
  *   POST /piko/ai/recognize/v1             — Gemini Vision 识别消费信息
- *   POST /piko/ai/copywriting/v1           — AI 页文案
+ *   POST /piko/ai/page_data/v1           — AI 页文案
  *   POST /piko/ai/conversation/list/v1     — 对话列表
  *   POST /piko/ai/conversation/create/v1   — 创建对话
  *   POST /piko/ai/conversation/detail/v1   — 对话详情
@@ -27,7 +27,7 @@ import {
   upsertModelMessage,
   autoTitle,
 } from '@/lib/services/ai/conversation';
-import type { AiChatRequest, AiCopywriting } from '@/types/ai';
+import type { AiChatRequest, AiPageData } from '@/types/ai';
 
 export const aiRoutes = new Hono();
 
@@ -255,9 +255,9 @@ aiRoutes.post('/recognize/v1', async (c) => {
   }
 });
 
-// ── POST /copywriting/v1 ──────────────────────────────────────────────────────
-aiRoutes.post('/copywriting/v1', async (c) => {
-  const data: AiCopywriting = {
+// ── POST /page_data/v1 ──────────────────────────────────────────────────────
+aiRoutes.post('/page_data/v1', async (c) => {
+  const data: AiPageData = {
     headerTitle: 'AI 助手',
     emptyTitle: 'Hi，我是 Piko AI',
     emptySubtitle: '问我任何问题，我会尽力帮你解答。',

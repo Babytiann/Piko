@@ -3,7 +3,7 @@ import { API_HOST } from '@/common/config';
 import { fetch } from '@/services';
 import { authClient } from '@/services/auth-client';
 import type {
-  AiCopywriting,
+  AiPageData,
   ConversationItem,
   AiMessage as AiChatMessage,
 } from '@/pages/ai-chat/types';
@@ -13,13 +13,13 @@ const SSE_URL = `${API_HOST}/piko/ai/chat/v1`;
 const LOCATION_URL = `${API_HOST}/piko/ai/location/v1`;
 
 /**
- * Fetch all user-facing copywriting for the AI chat page.
+ * Fetch all user-facing page data for the AI chat page.
  * Network errors return { success: false } instead of throwing.
  */
-export function fetchAiCopywriting(): Promise<ApiResponse<AiCopywriting>> {
-  return fetch<Record<string, never>, AiCopywriting>({
+export function fetchAiPageData(): Promise<ApiResponse<AiPageData>> {
+  return fetch<Record<string, never>, AiPageData>({
     method: 'POST',
-    path: 'ai/copywriting/v1',
+    path: 'ai/page_data/v1',
     body: {},
   });
 }

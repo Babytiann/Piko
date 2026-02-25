@@ -111,7 +111,7 @@ backend/
 │       │   └── unbind/v1/route.ts
 │       ├── ai/                   # AI 相关
 │       │   ├── chat/v1/route.ts          # AI 流式聊天 (SSE)
-│       │   ├── copywriting/v1/route.ts   # 页面文案
+│       │   ├── page_data/v1/route.ts   # 页面文案
 │       │   ├── location/v1/route.ts      # 位置回传
 │       │   ├── recognize/v1/route.ts     # 账单识别
 │       │   └── conversation/             # AI 对话管理 (新增)
@@ -199,7 +199,7 @@ backend/
 | 端点                              | 方法       | 用途                             |
 | --------------------------------- | ---------- | -------------------------------- |
 | `/piko/ai/chat/v1`                | POST (SSE) | AI 流式聊天（带 conversationId） |
-| `/piko/ai/copywriting/v1`         | POST       | AI 页面文案                      |
+| `/piko/ai/page_data/v1`           | POST       | AI 页面文案                      |
 | `/piko/ai/location/v1`            | POST       | 前端回传位置                     |
 | `/piko/ai/recognize/v1`           | POST       | Gemini Vision 账单识别           |
 | `/piko/ai/conversation/list/v1`   | POST       | AI 对话列表 (新增)               |

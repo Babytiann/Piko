@@ -105,8 +105,8 @@ export type MarkdownSegment =
   | { type: 'amap-navigation'; url: string; label: string }
   | { type: 'google-maps-navigation'; url: string; label: string };
 
-/** Copywriting / text content for the AI chat page (from backend). */
-export interface AiCopywriting {
+/** Page data for the AI chat page (from backend). */
+export interface AiPageData {
   headerTitle: string;
   emptyTitle: string;
   emptySubtitle: string;

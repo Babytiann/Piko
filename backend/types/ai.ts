@@ -72,8 +72,8 @@ export type SseEvent =
   | SseRequestLocationEvent
   | SseConversationEvent;
 
-/** Copywriting / text content for the AI chat page. */
-export interface AiCopywriting {
+/** Page data for the AI chat page. */
+export interface AiPageData {
   /** Page header title, e.g. "AI 助手" */
   headerTitle: string;
   /** Empty-state greeting title, e.g. "Hi，我是 Piko AI" */

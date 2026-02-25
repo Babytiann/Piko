@@ -4,8 +4,6 @@ import {
   Animated,
   Dimensions,
   Keyboard,
-  type KeyboardEvent,
-  Platform,
   Pressable,
   StyleSheet,
   InteractionManager,
@@ -21,7 +19,7 @@ import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
 import { authClient } from '@/services/auth-client';
 import useAiChat from '@/pages/ai-chat/hooks/useAiChat';
 import useConversationList from '@/pages/ai-chat/hooks/useConversationList';
-import useAiCopywriting from '@/pages/ai-chat/hooks/useAiCopywriting';
+import useFetchAiPageData from '@/pages/ai-chat/hooks/useFetchAiPageData';
 import { fetchConversationDetail } from '@/services/ai';
 import type {
   AiMessage,
@@ -51,11 +49,11 @@ export default function AiScreen(): ReactNode {
   } = useAiChat();
   const { data: appSession } = authClient.useSession();
   const {
-    copy,
-    loading: copyLoading,
+    data,
+    isPageLoading,
     errorType: copyErrorType,
     handleRetry: handleCopyRetry,
-  } = useAiCopywriting();
+  } = useFetchAiPageData();
 
   const convList = useConversationList(appSession?.user?.id ?? null);
 
@@ -160,7 +158,7 @@ export default function AiScreen(): ReactNode {
     setTooltipTarget(null);
   };
 
-  if (copyLoading) {
+  if (isPageLoading) {
     return (
       <YStack flex={1} bg="$background">
         <PageLoading />
@@ -238,8 +236,8 @@ export default function AiScreen(): ReactNode {
         onDelete={handleDeleteConversation}
         onNewChat={handleNewChat}
         onLoadMore={convList.loadMore}
-        drawerTitle={copy?.drawerTitle ?? ''}
-        newChatLabel={copy?.newChatLabel ?? ''}
+        drawerTitle={data?.drawerTitle ?? ''}
+        newChatLabel={data?.newChatLabel ?? ''}
       />
 
       <Animated.View
@@ -288,7 +286,7 @@ export default function AiScreen(): ReactNode {
                 color="$color"
                 letterSpacing={-0.5}
               >
-                {copy?.headerTitle ?? ''}
+                {data?.headerTitle ?? ''}
               </Text>
             </XStack>
 
@@ -322,8 +320,8 @@ export default function AiScreen(): ReactNode {
             <AiChatMessageList
               messages={messages}
               contentPaddingBottom={16}
-              emptyTitle={copy?.emptyTitle ?? ''}
-              emptySubtitle={copy?.emptySubtitle ?? ''}
+              emptyTitle={data?.emptyTitle ?? ''}
+              emptySubtitle={data?.emptySubtitle ?? ''}
               tooltipMessageId={tooltipTarget?.message.id}
               onMessageLongPress={handleMessageLongPress}
               onRequestLocationPermission={requestLocationPermission}
@@ -332,7 +330,7 @@ export default function AiScreen(): ReactNode {
               onSend={sendMessage}
               isStreaming={isStreaming}
               onStop={stopStreaming}
-              placeholder={copy?.inputPlaceholder ?? ''}
+              placeholder={data?.inputPlaceholder ?? ''}
             />
           </YStack>
 
