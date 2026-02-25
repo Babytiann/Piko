@@ -29,7 +29,7 @@ interface UseLocationReturn {
   requestPermissionAgain: () => Promise<LocationResult | null>;
 }
 
-export function useLocation(): UseLocationReturn {
+export default function useLocation(): UseLocationReturn {
   const deniedRef = useRef(false);
 
   const getLocation = async (): Promise<LocationResult | null> => {

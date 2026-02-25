@@ -43,7 +43,7 @@ async function loadConversationCache(): Promise<ConversationItem[]> {
   });
 }
 
-export function useConversationList(
+export default function useConversationList(
   userId: string | null,
 ): UseConversationListReturn {
   const [conversations, setConversations] = useState<ConversationItem[]>([]);

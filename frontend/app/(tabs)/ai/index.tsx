@@ -19,11 +19,9 @@ import PageLoading from '@/common/components/page-loading';
 import PageStatusView from '@/common/components/page-status-view';
 import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
 import { authClient } from '@/services/auth-client';
-import {
-  useAiChat,
-  useAiCopywriting,
-  useConversationList,
-} from '@/pages/ai-chat/hooks';
+import useAiChat from '@/pages/ai-chat/hooks/useAiChat';
+import useConversationList from '@/pages/ai-chat/hooks/useConversationList';
+import useAiCopywriting from '@/pages/ai-chat/hooks/useAiCopywriting';
 import { fetchConversationDetail } from '@/services/ai';
 import type {
   AiMessage,
@@ -36,36 +34,6 @@ import AiChatTooltip from '@/pages/ai-chat/components/ai-chat-tooltip';
 import AiConversationDrawer from '@/pages/ai-chat/components/ai-conversation-drawer';
 
 const DRAWER_WIDTH = Dimensions.get('window').width * 0.7;
-
-function useKeyboardBottomInset(): number {
-  const insets = useSafeAreaInsets();
-  const idleInset = insets.bottom + TAB_BAR_CONTENT_HEIGHT;
-  const [bottomInset, setBottomInset] = useState(idleInset);
-
-  useEffect(() => {
-    const showEvent =
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEvent =
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-
-    const onShow = (e: KeyboardEvent) => {
-      setBottomInset(e.endCoordinates.height);
-    };
-    const onHide = () => {
-      setBottomInset(idleInset);
-    };
-
-    const showSub = Keyboard.addListener(showEvent, onShow);
-    const hideSub = Keyboard.addListener(hideEvent, onHide);
-
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, [idleInset]);
-
-  return bottomInset;
-}
 
 export default function AiScreen(): ReactNode {
   const insets = useSafeAreaInsets();
@@ -88,7 +56,7 @@ export default function AiScreen(): ReactNode {
     errorType: copyErrorType,
     handleRetry: handleCopyRetry,
   } = useAiCopywriting();
-  const bottomInset = useKeyboardBottomInset();
+
   const convList = useConversationList(appSession?.user?.id ?? null);
 
   const contentTranslateX = useRef(new Animated.Value(0)).current;
@@ -350,7 +318,7 @@ export default function AiScreen(): ReactNode {
             </XStack>
           </XStack>
 
-          <YStack flex={1} pb={bottomInset}>
+          <YStack flex={1}>
             <AiChatMessageList
               messages={messages}
               contentPaddingBottom={16}

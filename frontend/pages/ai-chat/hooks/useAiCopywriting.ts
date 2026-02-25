@@ -13,7 +13,7 @@ interface UseAiCopywritingReturn {
   handleRetry: () => void;
 }
 
-export function useAiCopywriting(): UseAiCopywritingReturn {
+export default function useAiCopywriting(): UseAiCopywritingReturn {
   const [copy, setCopy] = useState<AiCopywriting | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorType, setErrorType] = useState<PageErrorType | undefined>(

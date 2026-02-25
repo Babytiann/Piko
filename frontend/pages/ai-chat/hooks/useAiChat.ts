@@ -9,7 +9,7 @@ import {
 } from '@/services/ai';
 import type { AiMessage, ToolCallInfo } from '../types';
 import { FLUSH_INTERVAL_MS } from '../consts';
-import { useLocation } from './useLocation';
+import useLocation from './useLocation';
 
 let nextId = 0;
 function genId(): string {
@@ -35,7 +35,7 @@ interface UseAiChatReturn {
 
 const INTERRUPTED_SUFFIX = '\n\n---\n*输出中断*';
 
-export function useAiChat(): UseAiChatReturn {
+export default function useAiChat(): UseAiChatReturn {
   const [messages, setMessages] = useState<AiMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);

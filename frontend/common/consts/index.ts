@@ -7,6 +7,8 @@ export const TAB_BAR_HEIGHT = 80;
  */
 export const TAB_BAR_CONTENT_HEIGHT = TAB_BAR_HEIGHT + 8;
 
+export const KEYBOARD_INSET_PADDING_BOTTOM_OFFSET = 8;
+
 /** Horizontal inset between indicator edge and tab-cell edge. */
 export const INDICATOR_MARGIN_H = 8;
 

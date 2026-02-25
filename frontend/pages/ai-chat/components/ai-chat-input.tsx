@@ -5,6 +5,8 @@ import { XStack, View, useTheme } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
+import useKeyboardBottomInset from '../hooks/useKeyboardBottomInset';
+
 interface Props {
   onSend: (text: string) => void;
   isStreaming?: boolean;
@@ -21,6 +23,7 @@ export default function AiChatInput({
   const [text, setText] = useState('');
   const theme = useTheme();
   const canSend = text.trim().length > 0 && !isStreaming;
+  const bottomInset = useKeyboardBottomInset();
 
   function handleSend(): void {
     const trimmed = text.trim();
@@ -49,7 +52,8 @@ export default function AiChatInput({
       px="$3"
       py="$2"
       gap="$2"
-      bg="$background"
+      bg="#FFFFFF"
+      pb={bottomInset}
       borderTopWidth={StyleSheet.hairlineWidth}
       borderTopColor="$gray5"
       style={{ alignItems: 'flex-end' }}
@@ -58,7 +62,6 @@ export default function AiChatInput({
         flex={1}
         bg="$gray3"
         px="$3"
-        py={Platform.OS === 'ios' ? '$2' : '$1'}
         style={{ borderRadius: 20, minHeight: 40, justifyContent: 'center' }}
       >
         <TextInput
