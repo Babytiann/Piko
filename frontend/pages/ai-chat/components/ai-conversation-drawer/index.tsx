@@ -1,19 +1,26 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import {
-  Animated,
   Alert,
   Dimensions,
   Pressable,
   StyleSheet,
   FlatList,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import { YStack, XStack, Text, useTheme } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { ConversationItem } from '../../types';
+import { DRAWER_OPEN_MS, DRAWER_CLOSE_MS } from '../../consts';
 
 const DRAWER_WIDTH = Dimensions.get('window').width * 0.7;
+const EASE = Easing.inOut(Easing.cubic);
 
 interface AiConversationDrawerProps {
   visible: boolean;
@@ -44,29 +51,25 @@ export default function AiConversationDrawer({
 }: AiConversationDrawerProps): ReactNode {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const translateX = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
-  const [shouldRender, setShouldRender] = useState(false);
+  const translateX = useSharedValue(-DRAWER_WIDTH);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
 
   useEffect(() => {
     if (visible) {
-      setShouldRender(true);
-      Animated.timing(translateX, {
-        toValue: 0,
-        duration: 250,
-        useNativeDriver: true,
-      }).start();
+      translateX.value = withTiming(0, {
+        duration: DRAWER_OPEN_MS,
+        easing: EASE,
+      });
     } else {
-      Animated.timing(translateX, {
-        toValue: -DRAWER_WIDTH,
-        duration: 200,
-        useNativeDriver: true,
-      }).start(() => {
-        setShouldRender(false);
+      translateX.value = withTiming(-DRAWER_WIDTH, {
+        duration: DRAWER_CLOSE_MS,
+        easing: EASE,
       });
     }
   }, [visible, translateX]);
-
-  if (!shouldRender) return null;
 
   const renderItem = ({ item }: { item: ConversationItem }) => {
     const isActive = item.id === activeId;
@@ -119,10 +122,8 @@ export default function AiConversationDrawer({
       <Animated.View
         style={[
           styles.drawer,
-          {
-            backgroundColor: theme.background.val,
-            transform: [{ translateX }],
-          },
+          { backgroundColor: theme.background.val },
+          animatedStyle,
         ]}
       >
         <XStack

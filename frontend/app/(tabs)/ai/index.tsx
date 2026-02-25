@@ -1,13 +1,18 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import {
-  Animated,
   Dimensions,
   Keyboard,
   Pressable,
   StyleSheet,
   InteractionManager,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, useTheme } from 'tamagui';
@@ -32,8 +37,10 @@ import AiChatMessageList from '@/pages/ai-chat/components/ai-chat-message-list';
 import AiChatInput from '@/pages/ai-chat/components/ai-chat-input';
 import AiChatTooltip from '@/pages/ai-chat/components/ai-chat-tooltip';
 import AiConversationDrawer from '@/pages/ai-chat/components/ai-conversation-drawer';
+import { DRAWER_OPEN_MS, DRAWER_CLOSE_MS } from '@/pages/ai-chat/consts';
 
 const DRAWER_WIDTH = Dimensions.get('window').width * 0.7;
+const DRAWER_EASE = Easing.inOut(Easing.cubic);
 
 export default function AiScreen(): ReactNode {
   const insets = useSafeAreaInsets();
@@ -71,8 +78,15 @@ export default function AiScreen(): ReactNode {
   } = data ?? {};
   const convList = useConversationList(appSession?.user?.id ?? null);
 
-  const contentTranslateX = useRef(new Animated.Value(0)).current;
-  const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const contentTranslateX = useSharedValue(0);
+  const backdropOpacity = useSharedValue(0);
+
+  const contentAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: contentTranslateX.value }],
+  }));
+  const backdropAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: backdropOpacity.value,
+  }));
 
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [tooltipTarget, setTooltipTarget] = useState<TooltipTarget | null>(
@@ -81,32 +95,28 @@ export default function AiScreen(): ReactNode {
 
   const animateClose = (): void => {
     setDrawerVisible(false);
-    Animated.timing(contentTranslateX, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-    Animated.timing(backdropOpacity, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
+    contentTranslateX.value = withTiming(0, {
+      duration: DRAWER_CLOSE_MS,
+      easing: DRAWER_EASE,
+    });
+    backdropOpacity.value = withTiming(0, {
+      duration: DRAWER_CLOSE_MS,
+      easing: DRAWER_EASE,
+    });
   };
 
   const handleOpenDrawer = (): void => {
     Keyboard.dismiss();
     void convList.refresh();
     setDrawerVisible(true);
-    Animated.timing(contentTranslateX, {
-      toValue: DRAWER_WIDTH,
-      duration: 250,
-      useNativeDriver: true,
-    }).start();
-    Animated.timing(backdropOpacity, {
-      toValue: 1,
-      duration: 250,
-      useNativeDriver: true,
-    }).start();
+    contentTranslateX.value = withTiming(DRAWER_WIDTH, {
+      duration: DRAWER_OPEN_MS,
+      easing: DRAWER_EASE,
+    });
+    backdropOpacity.value = withTiming(1, {
+      duration: DRAWER_OPEN_MS,
+      easing: DRAWER_EASE,
+    });
   };
 
   const handleCloseDrawer = (): void => {
@@ -226,22 +236,14 @@ export default function AiScreen(): ReactNode {
         newChatLabel={new_chat_label ?? ''}
       />
 
-      <Animated.View
-        style={{
-          flex: 1,
-          transform: [{ translateX: contentTranslateX }],
-        }}
-      >
+      <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
         <YStack flex={1} pt={insets.top} bg="$background">
           <Animated.View
             pointerEvents={drawerVisible ? 'auto' : 'none'}
             style={[
               StyleSheet.absoluteFill,
-              {
-                backgroundColor: 'rgba(0,0,0,0.4)',
-                opacity: backdropOpacity,
-                zIndex: 100,
-              },
+              { backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 100 },
+              backdropAnimatedStyle,
             ]}
           >
             <Pressable
