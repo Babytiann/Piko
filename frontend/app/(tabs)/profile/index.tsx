@@ -86,6 +86,18 @@ export default function ProfileScreen(): ReactNode {
     }
   };
 
+  const handleLogoutPress = (): void => {
+    Alert.alert(
+      '确认退出',
+      '确定要退出登录吗？',
+      [
+        { text: '取消', style: 'cancel' },
+        { text: '确定', onPress: () => void handleAppLogout() },
+      ],
+      { cancelable: true },
+    );
+  };
+
   const handleTelegramPress = (): void => {
     const user = telegramSectionData?.isLoggedIn
       ? telegramSectionData?.user
@@ -179,7 +191,7 @@ export default function ProfileScreen(): ReactNode {
                 alignItems: 'center',
               }}
               pressStyle={isLoggingOut ? undefined : { opacity: 0.8 }}
-              onPress={isLoggingOut ? undefined : () => void handleAppLogout()}
+              onPress={isLoggingOut ? undefined : handleLogoutPress}
               height={50}
               opacity={isLoggingOut ? 0.7 : 1}
             >
