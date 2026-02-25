@@ -6,7 +6,7 @@
  *
  * Page copy is fetched via `/telegram/text_detail/v1`.
  */
-import { post, postDirect } from '@/services';
+import { fetch, HttpError } from '@/services';
 import type {
   TelegramAuthRequest,
   SendCodeResult,
@@ -48,11 +48,16 @@ export type { TelegramUser } from '@/common/typings/telegram-login';
  * Unified Telegram authentication call.
  * Use `session_tag` to select the operation.
  */
-function telegramAuth<T>(params: TelegramAuthRequest): Promise<T> {
-  return postDirect<T>(
-    'telegram/auth/v1',
-    params as unknown as Record<string, unknown>,
-  );
+async function telegramAuth<T>(params: TelegramAuthRequest): Promise<T> {
+  const res = await fetch<TelegramAuthRequest, T>({
+    method: 'POST',
+    path: 'telegram/auth/v1',
+    body: params as unknown as Record<string, unknown>,
+    raw: true,
+  });
+  if (!res.success)
+    throw new HttpError(res.error ?? 'Request failed', res.status ?? 0);
+  return res.data as T;
 }
 
 /** Send verification code to a phone number. */
@@ -96,24 +101,40 @@ export function checkPassword(
 // ---------------------------------------------------------------------------
 
 /** Fetch page copy for a given login step. */
-export function fetchTelegramText(
+export async function fetchTelegramText(
   step: TelegramLoginStep.PHONE,
 ): Promise<PhoneStepText>;
-export function fetchTelegramText(
+export async function fetchTelegramText(
   step: TelegramLoginStep.VERIFY_CODE,
 ): Promise<VerifyCodeStepText>;
-export function fetchTelegramText(
+export async function fetchTelegramText(
   step: TelegramLoginStep.VERIFY_2FA,
 ): Promise<VerifyTwoFAStepText>;
-export function fetchTelegramText(
+export async function fetchTelegramText(
   step: TelegramLoginStep,
 ): Promise<TelegramLoginText> {
-  return post<TelegramLoginText>('telegram/text_detail/v1', { step });
+  const res = await fetch<{ step: TelegramLoginStep }, TelegramLoginText>({
+    method: 'POST',
+    path: 'telegram/text_detail/v1',
+    body: { step },
+  });
+  if (!res.success) throw new Error(res.error ?? 'Request failed');
+  return res.data;
 }
 
 /** 正式注销 Telegram 会话，在 Telegram 服务端使 session 失效。 */
-export function unbindTelegram(session: string): Promise<{ success: boolean }> {
-  return postDirect<{ success: boolean }>('telegram/unbind/v1', { session });
+export async function unbindTelegram(
+  session: string,
+): Promise<{ success: boolean }> {
+  const res = await fetch<{ session: string }, { success: boolean }>({
+    method: 'POST',
+    path: 'telegram/unbind/v1',
+    body: { session },
+    raw: true,
+  });
+  if (!res.success)
+    throw new HttpError(res.error ?? 'Request failed', res.status ?? 0);
+  return res.data as { success: boolean };
 }
 
 export interface SendMessageResponse {
@@ -122,7 +143,7 @@ export interface SendMessageResponse {
   date: number;
 }
 
-export function sendMessage(
+export async function sendMessage(
   session: string,
   chatId: string,
   chatType: string,
@@ -130,12 +151,23 @@ export function sendMessage(
   message: string,
   replyToMsgId?: number,
 ): Promise<SendMessageResponse> {
-  return postDirect<SendMessageResponse>('telegram/send-message/v1', {
-    session,
-    chatId,
-    chatType,
-    accessHash,
-    message,
-    replyToMsgId,
+  const res = await fetch<
+    {
+      session: string;
+      chatId: string;
+      chatType: string;
+      accessHash: string;
+      message: string;
+      replyToMsgId?: number;
+    },
+    SendMessageResponse
+  >({
+    method: 'POST',
+    path: 'telegram/send-message/v1',
+    body: { session, chatId, chatType, accessHash, message, replyToMsgId },
+    raw: true,
   });
+  if (!res.success)
+    throw new HttpError(res.error ?? 'Request failed', res.status ?? 0);
+  return res.data as SendMessageResponse;
 }

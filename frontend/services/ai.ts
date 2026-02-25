@@ -1,6 +1,6 @@
 import type { ApiResponse } from '@/common/typings/api';
 import { API_HOST } from '@/common/config';
-import { post, postSafe } from '@/services';
+import { fetch } from '@/services';
 import { authClient } from '@/services/auth-client';
 import type {
   AiCopywriting,
@@ -14,10 +14,14 @@ const LOCATION_URL = `${API_HOST}/piko/ai/location/v1`;
 
 /**
  * Fetch all user-facing copywriting for the AI chat page.
- * Uses postSafe so network errors return { success: false } instead of throwing.
+ * Network errors return { success: false } instead of throwing.
  */
 export function fetchAiCopywriting(): Promise<ApiResponse<AiCopywriting>> {
-  return postSafe<AiCopywriting>('ai/copywriting/v1');
+  return fetch<Record<string, never>, AiCopywriting>({
+    method: 'POST',
+    path: 'ai/copywriting/v1',
+    body: {},
+  });
 }
 
 /** Message shape sent to the backend. */
@@ -223,10 +227,15 @@ export async function recognizeExpense(
   imageBase64: string,
   mimeType: string,
 ): Promise<RecognizeResult> {
-  return post<RecognizeResult>('ai/recognize/v1', {
-    image: imageBase64,
-    mimeType,
-  });
+  const res = await fetch<{ image: string; mimeType: string }, RecognizeResult>(
+    {
+      method: 'POST',
+      path: 'ai/recognize/v1',
+      body: { image: imageBase64, mimeType },
+    },
+  );
+  if (!res.success) throw new Error(res.error ?? 'Request failed');
+  return res.data;
 }
 
 // ---------------------------------------------------------------------------
@@ -234,45 +243,80 @@ export async function recognizeExpense(
 // ---------------------------------------------------------------------------
 
 /** 获取会话列表 */
-export function fetchConversationList(): Promise<ConversationItem[]> {
-  return post<ConversationItem[]>('ai/conversation/list/v1');
+export async function fetchConversationList(): Promise<ConversationItem[]> {
+  const res = await fetch<Record<string, never>, ConversationItem[]>({
+    method: 'POST',
+    path: 'ai/conversation/list/v1',
+    body: {},
+  });
+  if (!res.success) throw new Error(res.error ?? 'Request failed');
+  return res.data;
 }
 
 /** 获取会话详情（含消息） */
-export function fetchConversationDetail(conversationId: string): Promise<{
+export async function fetchConversationDetail(conversationId: string): Promise<{
   id: string;
   title: string;
   messages: { role: 'user' | 'model'; content: string; createdAt: string }[];
 }> {
-  return post('ai/conversation/detail/v1', { conversationId });
+  const res = await fetch<
+    { conversationId: string },
+    {
+      id: string;
+      title: string;
+      messages: {
+        role: 'user' | 'model';
+        content: string;
+        createdAt: string;
+      }[];
+    }
+  >({
+    method: 'POST',
+    path: 'ai/conversation/detail/v1',
+    body: { conversationId },
+  });
+  if (!res.success) throw new Error(res.error ?? 'Request failed');
+  return res.data;
 }
 
 /** 创建新会话 */
-export function createConversation(
+export async function createConversation(
   title?: string,
 ): Promise<{ id: string; title: string }> {
-  return post('ai/conversation/create/v1', { title });
+  const res = await fetch<{ title?: string }, { id: string; title: string }>({
+    method: 'POST',
+    path: 'ai/conversation/create/v1',
+    body: { title },
+  });
+  if (!res.success) throw new Error(res.error ?? 'Request failed');
+  return res.data;
 }
 
 /** 保存被用户中断的 AI 消息 */
-export function saveInterruptedMessage(
+export async function saveInterruptedMessage(
   conversationId: string,
   messageId: string,
   content: string,
 ): Promise<void> {
-  return post('ai/conversation/save-interrupted/v1', {
-    conversationId,
-    messageId,
-    content,
+  const res = await fetch<
+    { conversationId: string; messageId: string; content: string },
+    void
+  >({
+    method: 'POST',
+    path: 'ai/conversation/save-interrupted/v1',
+    body: { conversationId, messageId, content },
   });
+  if (!res.success) throw new Error(res.error ?? 'Request failed');
 }
 
 /** 删除会话 */
 export async function deleteConversation(
   conversationId: string,
 ): Promise<void> {
-  const result = await postSafe<null>('ai/conversation/delete/v1', {
-    conversationId,
+  const result = await fetch<{ conversationId: string }, null>({
+    method: 'POST',
+    path: 'ai/conversation/delete/v1',
+    body: { conversationId },
   });
 
   if (result.success) return;
@@ -290,7 +334,7 @@ export async function deleteConversation(
 // ---------------------------------------------------------------------------
 
 /** 上传消费记录 */
-export function uploadExpense(data: {
+export async function uploadExpense(data: {
   amount: number;
   merchant?: string;
   category?: string;
@@ -300,11 +344,20 @@ export function uploadExpense(data: {
   image?: string;
   mimeType?: string;
 }): Promise<{ id: string; amount: number }> {
-  return post('expense/upload/v1', data as Record<string, unknown>);
+  const res = await fetch<
+    Record<string, unknown>,
+    { id: string; amount: number }
+  >({
+    method: 'POST',
+    path: 'expense/upload/v1',
+    body: data as Record<string, unknown>,
+  });
+  if (!res.success) throw new Error(res.error ?? 'Request failed');
+  return res.data;
 }
 
 /** 获取消费记录列表 */
-export function fetchExpenseList(params?: {
+export async function fetchExpenseList(params?: {
   page?: number;
   pageSize?: number;
   startDate?: string;
@@ -324,5 +377,28 @@ export function fetchExpenseList(params?: {
   page: number;
   pageSize: number;
 }> {
-  return post('expense/list/v1', (params ?? {}) as Record<string, unknown>);
+  const res = await fetch<
+    Record<string, unknown>,
+    {
+      expenses: Array<{
+        id: string;
+        amount: number;
+        merchant: string | null;
+        category: string;
+        date: string;
+        source: string;
+        imageUrl: string | null;
+        createdAt: string;
+      }>;
+      total: number;
+      page: number;
+      pageSize: number;
+    }
+  >({
+    method: 'POST',
+    path: 'expense/list/v1',
+    body: (params ?? {}) as Record<string, unknown>,
+  });
+  if (!res.success) throw new Error(res.error ?? 'Request failed');
+  return res.data;
 }

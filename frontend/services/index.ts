@@ -4,7 +4,8 @@ import { authClient } from '@/services/auth-client';
 
 const API_BASE = `${API_HOST}/piko`;
 
-/** 请求失败时抛出，便于按 status 做 UI 分支（如 409 账户已被绑定）。 */
+const nativeFetch = globalThis.fetch;
+
 export class HttpError extends Error {
   constructor(
     message: string,
@@ -15,83 +16,107 @@ export class HttpError extends Error {
   }
 }
 
-/** 返回认证相关的 HTTP headers（better-auth Cookie）。 */
+export interface FetchRequest<P = Record<string, unknown>> {
+  method: 'GET' | 'POST';
+  path: string;
+  params?: P;
+  body?: Record<string, unknown>;
+  raw?: boolean;
+}
+
+export type FetchResponse<T> = ApiResponse<T> & { status?: number };
+
 function getAuthHeaders(): Record<string, string> {
   const cookie = authClient.getCookie();
   return cookie ? { Cookie: cookie } : {};
 }
 
-export async function post<T>(
-  path: string,
-  body: Record<string, unknown> = {},
-): Promise<T> {
-  const response = await fetch(`${API_BASE}/${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    body: JSON.stringify(body),
-  });
+async function doRequest<P>(
+  args: Omit<FetchRequest<P>, 'raw'>,
+): Promise<{ response: Response; data: unknown }> {
+  const { method, path, params, body } = args;
+  const url = new URL(`${API_BASE}/${path}`);
 
-  const json: ApiResponse<T> = await response.json();
-
-  if (!json.success) {
-    throw new Error(json.error ?? `Request failed (${response.status})`);
+  if (method === 'GET' && params) {
+    for (const [k, v] of Object.entries(params)) {
+      if (v !== undefined && v !== null) {
+        url.searchParams.set(k, String(v));
+      }
+    }
   }
 
-  if (!response.ok) {
-    throw new Error(`Request failed (${response.status})`);
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...getAuthHeaders(),
+  };
+
+  const init: RequestInit = {
+    method,
+    headers,
+  };
+
+  if (method === 'POST' && body !== undefined) {
+    init.body = JSON.stringify(body);
   }
 
-  return json.data;
+  const response = await nativeFetch(url.toString(), init);
+  let data: unknown;
+  try {
+    data = await response.json();
+  } catch {
+    data = undefined;
+  }
+
+  return { response, data };
 }
 
-export async function postSafe<T>(
-  path: string,
-  body: Record<string, unknown> = {},
-): Promise<ApiResponse<T>> {
+export async function fetch<P, R>(
+  args: FetchRequest<P>,
+): Promise<FetchResponse<R>> {
+  const { raw, ...rest } = args;
+
   try {
-    const response = await fetch(`${API_BASE}/${path}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-      body: JSON.stringify(body),
-    });
+    const { response, data } = await doRequest(rest);
 
-    const json = await response.json();
-
-    if (!response.ok && json.success) {
-      return { success: false, error: `Request failed (${response.status})` };
+    if (raw) {
+      if (response.ok) {
+        return { success: true, data: data as R, status: response.status };
+      }
+      const err = data as Record<string, unknown> | undefined;
+      return {
+        success: false,
+        error:
+          typeof err?.error === 'string'
+            ? err.error
+            : `Request failed (${response.status})`,
+        ...(typeof err?.errorCode === 'string'
+          ? { errorCode: err.errorCode }
+          : {}),
+        status: response.status,
+      };
     }
 
-    // 透传后端返回的 errorCode（如 AUTH_EXPIRED）
-    if (!json.success && json.errorCode) {
-      return { success: false, error: json.error, errorCode: json.errorCode };
+    if (!response.ok) {
+      const err = data as Record<string, unknown> | undefined;
+      return {
+        success: false,
+        error:
+          typeof err?.error === 'string'
+            ? err.error
+            : `Request failed (${response.status})`,
+        ...(typeof err?.errorCode === 'string'
+          ? { errorCode: err.errorCode }
+          : {}),
+        status: response.status,
+      };
     }
 
-    return json as ApiResponse<T>;
+    if (data === undefined) {
+      return { success: false, error: 'Invalid response' };
+    }
+
+    return { ...(data as ApiResponse<R>), status: response.status };
   } catch {
     return { success: false, error: 'Network error' };
   }
-}
-
-export async function postDirect<T>(
-  path: string,
-  body: Record<string, unknown> = {},
-): Promise<T> {
-  const response = await fetch(`${API_BASE}/${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    body: JSON.stringify(body),
-  });
-
-  const data: unknown = await response.json();
-
-  if (!response.ok) {
-    const errorData = data as Record<string, unknown>;
-    const message =
-      typeof errorData.error === 'string'
-        ? errorData.error
-        : `Request failed (${response.status})`;
-    throw new HttpError(message, response.status);
-  }
-
-  return data as T;
 }

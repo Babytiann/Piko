@@ -3,13 +3,17 @@ import type {
   ChatListPageData,
   ChatDetailPageData,
 } from '@/common/typings/chat';
-import { postSafe } from '@/services';
+import { fetch } from '@/services';
 
 /** Fetch all data for the Chat list (messages tab) page. */
 export function fetchChatListPage(
   session?: string,
 ): Promise<ApiResponse<ChatListPageData>> {
-  return postSafe<ChatListPageData>('chat/list/v1', { session });
+  return fetch<{ session?: string }, ChatListPageData>({
+    method: 'POST',
+    path: 'chat/list/v1',
+    body: { session },
+  });
 }
 
 /** Fetch all data for a single Chat detail page. */
@@ -21,12 +25,19 @@ export function fetchChatDetailPage(
   title: string,
   offsetId?: number,
 ): Promise<ApiResponse<ChatDetailPageData>> {
-  return postSafe<ChatDetailPageData>('chat/detail/v1', {
-    session,
-    chatId,
-    chatType,
-    accessHash,
-    title,
-    offsetId,
+  return fetch<
+    {
+      session: string;
+      chatId: string;
+      chatType: string;
+      accessHash: string;
+      title: string;
+      offsetId?: number;
+    },
+    ChatDetailPageData
+  >({
+    method: 'POST',
+    path: 'chat/detail/v1',
+    body: { session, chatId, chatType, accessHash, title, offsetId },
   });
 }
