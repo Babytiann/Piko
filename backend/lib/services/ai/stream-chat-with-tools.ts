@@ -7,13 +7,6 @@
  *   3. get_user_location 等前端协作式工具通过 context.writeData 向数据流写
  *      request_location 事件，由前端 GPS 采集后 POST 回来
  *   4. 对外保持 v4 Data Stream 协议格式（0/2/d/3），无需修改前端解析器
- *
- * 升级说明（v4 → v6）：
- *   - CoreMessage      → ModelMessage
- *   - createDataStreamResponse → 自建 ReadableStream，手动输出 v4 格式
- *   - maxSteps         → stopWhen: stepCountIs(N)
- *   - tool.parameters  → tool.inputSchema
- *   - thought_signature 由 @ai-sdk/google@3.x 自动透传
  */
 
 import { streamText, stepCountIs, type ModelMessage } from 'ai';

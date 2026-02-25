@@ -1,26 +1,15 @@
-/**
- * AI 模型配置 — 使用 Vercel AI SDK (@ai-sdk/google)。
- *
- * 替换原有的 @google/generative-ai 直接调用，
- * 统一由 Vercel AI SDK 管理 provider 和模型实例。
- */
-
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import type { LanguageModel } from 'ai';
 import promptConfig from '../ai-prompt.json';
 
-// ---------------------------------------------------------------------------
-// 模型配置
-// ---------------------------------------------------------------------------
+const DEFAULT_MODEL_ID = 'gemini-3-flash-preview';
 
-export const DEFAULT_MODEL_ID = 'gemini-3-flash-preview';
+const DEFAULT_OPENROUTER_MODEL_ID = 'arcee-ai/trinity-large-preview:free';
 
-/**
- * 获取 Google Gemini 模型实例。
- * 用全局变量缓存 provider，避免开发模式热重载时重复初始化。
- */
 const globalForAi = globalThis as unknown as {
   __googleProvider?: ReturnType<typeof createGoogleGenerativeAI>;
+  __openRouterProvider?: ReturnType<typeof createOpenRouter>;
 };
 
 function getGoogleProvider(): ReturnType<typeof createGoogleGenerativeAI> {
@@ -34,7 +23,25 @@ function getGoogleProvider(): ReturnType<typeof createGoogleGenerativeAI> {
   return globalForAi.__googleProvider;
 }
 
+function getOpenRouterProvider(): ReturnType<typeof createOpenRouter> {
+  if (!globalForAi.__openRouterProvider) {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      throw new Error('[AI] OPENROUTER_API_KEY 环境变量未配置');
+    }
+    globalForAi.__openRouterProvider = createOpenRouter({
+      apiKey,
+    });
+  }
+  return globalForAi.__openRouterProvider;
+}
+
 export function getModel(): LanguageModel {
+  if (process.env.OPENROUTER_API_KEY) {
+    const modelId =
+      process.env.OPENROUTER_MODEL_ID ?? DEFAULT_OPENROUTER_MODEL_ID;
+    return getOpenRouterProvider().chat(modelId) as LanguageModel;
+  }
   return getGoogleProvider()(DEFAULT_MODEL_ID);
 }
 
