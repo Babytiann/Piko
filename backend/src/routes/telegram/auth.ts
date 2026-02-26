@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { Api } from 'telegram';
 import { StringSession } from 'telegram/sessions/index.js';
-import { computeCheck } from 'telegram/Password';
+import { computeCheck } from 'telegram/Password.js';
 import {
   createFreshPendingClient,
   getOrCreatePendingClient,
