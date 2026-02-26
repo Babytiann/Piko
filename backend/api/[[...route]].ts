@@ -9,7 +9,7 @@
 import app from '../src/app';
 
 export const config = {
-  runtime: 'nodejs22.x',
+  runtime: 'nodejs',
 };
 
 export default app;
