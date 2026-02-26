@@ -7,7 +7,8 @@
 
 import { neon } from '@neondatabase/serverless';
 import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
-import * as schema from './schema';
+
+import * as schema from './schema.js';
 
 type DB = NeonHttpDatabase<typeof schema>;
 
@@ -44,4 +45,4 @@ export const db = new Proxy({} as DB, {
 });
 
 // 导出 schema 方便各 service 文件直接引用
-export * from './schema';
+export * from './schema.js';

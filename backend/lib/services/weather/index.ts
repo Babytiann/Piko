@@ -1,9 +1,9 @@
-export { fetchCurrentWeather } from './current';
-export { fetchForecast } from './forecast';
-export { fetchAirPollution } from './air-pollution';
-export { geocodeCity } from './geocoding';
+export { fetchCurrentWeather } from './current.js';
+export { fetchForecast } from './forecast.js';
+export { fetchAirPollution } from './air-pollution.js';
+export { geocodeCity } from './geocoding.js';
 
-export type {
+export {
   WeatherQueryType,
   WeatherResult,
   CurrentWeatherResult,
@@ -11,4 +11,4 @@ export type {
   ForecastDayResult,
   AirPollutionResult,
   GeoLocation,
-} from './types';
+} from './types.js';

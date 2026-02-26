@@ -1,6 +1,6 @@
-import type { ChatListPageData } from '@/types/chat';
-import { getDialogList } from '../telegram';
-import { getAvatarColor, formatTime, buildAvatarUrl } from './helpers';
+import { ChatListPageData } from '../../../types/chat.js';
+import { getDialogList } from '../telegram/index.js';
+import { getAvatarColor, formatTime, buildAvatarUrl } from './helpers.js';
 
 export async function getChatListPageData(
   session?: string,

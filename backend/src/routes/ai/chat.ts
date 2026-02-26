@@ -1,14 +1,15 @@
 import { Hono } from 'hono';
 import { type ModelMessage } from 'ai';
-import { getUserId, UnauthorizedError } from '@/lib/auth';
-import { streamChatWithTools } from '@/lib/services/ai/stream-chat-with-tools';
+
+import { getUserId, UnauthorizedError } from '../../../lib/auth.js';
+import { streamChatWithTools } from '../../../lib/services/ai/stream-chat-with-tools.js';
 import {
   createConversation,
   saveUserMessage,
   saveModelMessage,
   autoTitle,
-} from '@/lib/services/ai/conversation';
-import type { AiChatRequest } from '@/types/ai';
+} from '../../../lib/services/ai/conversation/index.js';
+import { AiChatRequest } from '../../../types/ai.js';
 
 export const chatRoutes = new Hono();
 

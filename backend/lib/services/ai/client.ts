@@ -1,7 +1,8 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import type { LanguageModel } from 'ai';
-import promptConfig from '../ai-prompt.json';
+import { LanguageModel } from 'ai';
+
+import promptConfig from '../ai-prompt.json' with { type: 'json' };
 
 const DEFAULT_MODEL_ID = 'gemini-3-flash-preview';
 

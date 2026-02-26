@@ -1,6 +1,7 @@
-import type { TelegramClient } from 'telegram';
+import { TelegramClient } from 'telegram';
 import { StringSession } from 'telegram/sessions/index.js';
-import { createClient, disconnectClient } from './client';
+
+import { createClient, disconnectClient } from './client.js';
 
 const globalForTelegram = globalThis as unknown as {
   __pendingTelegramClients?: Map<string, TelegramClient>;

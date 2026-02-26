@@ -1,7 +1,5 @@
-/** 天气预报查询 — OpenWeatherMap 16-day Daily Forecast API */
-
-import type { ForecastDailyResponse, ForecastResult } from './types';
-import { geocodeCity } from './geocoding';
+import { geocodeCity } from './geocoding.js';
+import { ForecastDailyResponse, ForecastResult } from './types.js';
 
 const API_KEY = process.env.OPENWEATHER_API_KEY ?? '';
 const BASE = 'https://api.openweathermap.org';

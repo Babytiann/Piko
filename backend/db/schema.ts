@@ -1,23 +1,13 @@
-/**
- * Drizzle ORM Schema — Piko 数据库定义
- *
- * 对应原 prisma/schema.prisma，共 8 张表：
- *   - better-auth 标准表 4 张（User / Account / Session / Verification）
- *   - 业务表 4 张（TelegramBinding / Expense / AiConversation / AiMessage）
- */
-
 import {
   pgTable,
   pgEnum,
   text,
   boolean,
-  integer,
   bigint,
   numeric,
   real,
   json,
   timestamp,
-  uniqueIndex,
   index,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';

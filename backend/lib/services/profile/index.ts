@@ -1,1 +1,1 @@
-export { getProfilePageData } from './getProfilePageData';
+export { getProfilePageData } from './getProfilePageData.js';

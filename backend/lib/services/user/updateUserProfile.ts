@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { db, users } from '@/db';
+
+import { db, users } from '../../../db/index.js';
 
 export async function updateUserProfile(
   userId: string,

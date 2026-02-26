@@ -9,7 +9,8 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { expo } from '@better-auth/expo';
-import { db, users, accounts, sessions, verifications } from '@/db';
+
+import { db, users, accounts, sessions, verifications } from '../db/index.js';
 
 // ---------------------------------------------------------------------------
 // better-auth 实例
@@ -76,9 +77,7 @@ export async function getUserId(request: Request): Promise<string> {
 /**
  * 从请求中获取 session（含 user），无登录时返回 null。用于 profile 等需「未登录也返回 200」的接口。
  */
-export async function getSessionOrNull(
-  request: Request,
-): Promise<{
+export async function getSessionOrNull(request: Request): Promise<{
   user: { id: string; name: string | null; email: string | null };
 } | null> {
   const session = await auth.api.getSession({ headers: request.headers });

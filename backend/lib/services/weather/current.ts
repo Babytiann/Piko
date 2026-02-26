@@ -1,7 +1,5 @@
-/** 实时天气查询 — OpenWeatherMap Current Weather API */
-
-import type { CurrentWeatherResponse, CurrentWeatherResult } from './types';
-import { geocodeCity } from './geocoding';
+import { geocodeCity } from './geocoding.js';
+import { CurrentWeatherResponse, CurrentWeatherResult } from './types.js';
 
 const API_KEY = process.env.OPENWEATHER_API_KEY ?? '';
 const BASE = 'https://api.openweathermap.org';

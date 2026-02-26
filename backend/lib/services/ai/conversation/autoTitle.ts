@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { db, aiConversations } from '@/db';
+
+import { db, aiConversations } from '../../../../db/index.js';
 
 export async function autoTitle(
   conversationId: string,

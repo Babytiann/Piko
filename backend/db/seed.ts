@@ -1,15 +1,8 @@
-/**
- * 数据库种子脚本 — 使用 Drizzle ORM。
- *
- * 创建 Mock 用户（与 lib/auth.ts 中的 MOCK_USER_ID 对应）。
- * 运行: pnpm db:seed
- */
-
 import 'dotenv/config';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { users } from './schema';
-import { sql } from 'drizzle-orm';
+
+import { users } from './schema.js';
 
 async function main() {
   const databaseUrl = process.env.DATABASE_URL;

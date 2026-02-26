@@ -1,13 +1,13 @@
-import type { ChatDetailPageData, MessageItem } from '@/types/chat';
-import type { RawMessage } from '@/types/telegram';
-import { getMessageList } from '../telegram';
+import { RawMessage } from '../../../types/telegram.js';
+import { getMessageList } from '../telegram/index.js';
+import { ChatDetailPageData, MessageItem } from '../../../types/chat.js';
 import {
   formatMessageTime,
   buildAvatarUrl,
   buildMediaUrl,
   IMAGE_MEDIA_TYPES,
   truncateText,
-} from './helpers';
+} from './helpers.js';
 
 export async function getChatDetailPageData(
   session: string,

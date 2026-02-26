@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
-import { getSessionOrNull } from '@/lib/auth';
-import type { AiPageData } from '@/types/ai';
-import { LoginStatus } from '@/types/ai';
+import { getSessionOrNull } from '../../../lib/auth.js';
+import { LoginStatus, AiPageData } from '../../../types/ai.js';
 
 export const pageDataRoutes = new Hono();
 

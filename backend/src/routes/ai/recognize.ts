@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { recognizePayment } from '@/lib/services/tools/recognize-payment';
+import { recognizePayment } from '../../../lib/services/tools/recognize-payment.js';
 
 export const recognizeRoutes = new Hono();
 

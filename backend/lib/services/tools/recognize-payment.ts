@@ -1,14 +1,11 @@
-/**
- * 票据/截图识别工具 — Gemini Vision 多模态识别。
- *
- * 接收 base64 图片，利用 Gemini 的视觉能力提取结构化消费数据。
- * 这是 Tool Calling 的延伸：输入从文本变成了图片。
- */
-
 import { generateText } from 'ai';
-import { getModel } from '../ai/client';
-import type { RecognizeResult, ExpenseCategory } from '@/types/expense';
-import { EXPENSE_CATEGORIES } from '@/types/expense';
+
+import { getModel } from '../ai/client.js';
+import {
+  RecognizeResult,
+  ExpenseCategory,
+  EXPENSE_CATEGORIES,
+} from '../../../types/expense.js';
 
 // ---------------------------------------------------------------------------
 // Prompt — 告诉 Gemini 如何识别消费信息
@@ -42,10 +39,6 @@ const RECOGNIZE_PROMPT = `你是一个消费票据识别专家。请从这张图
   "items": [],
   "confidence": 0
 }`;
-
-// ---------------------------------------------------------------------------
-// 核心识别函数
-// ---------------------------------------------------------------------------
 
 export async function recognizePayment(
   imageBase64: string,

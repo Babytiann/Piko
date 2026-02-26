@@ -1,7 +1,8 @@
-import { db, expenses } from '@/db';
-import { uploadImage } from '@/lib/r2';
 import { createId } from '@paralleldrive/cuid2';
-import type { CreateExpenseInput } from './types';
+
+import { db, expenses } from '../../../db/index.js';
+import { uploadImage } from '../../r2.js';
+import { CreateExpenseInput } from './types.js';
 
 export async function createExpense(
   userId: string,

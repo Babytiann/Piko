@@ -1,5 +1,6 @@
-import { db, aiConversations } from '@/db';
 import { createId } from '@paralleldrive/cuid2';
+
+import { db, aiConversations } from '../../../../db/index.js';
 
 export async function createConversation(
   userId: string,

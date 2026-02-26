@@ -1,2 +1,2 @@
-export { getUserInfoCache, setUserInfoCache } from './cache';
-export { getUserInfo } from './getUserInfo';
+export { getUserInfoCache, setUserInfoCache } from './cache.js';
+export { getUserInfo } from './getUserInfo.js';

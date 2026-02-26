@@ -1,5 +1,5 @@
-import { getPooledClient } from '@/lib/telegram';
-import { sessionCacheKey, getCachedPhoto, setCachedPhoto } from './cache';
+import { getPooledClient } from '../../../telegram/index.js';
+import { getCachedPhoto, setCachedPhoto } from './cache.js';
 
 export async function getProfilePhoto(
   session: string,

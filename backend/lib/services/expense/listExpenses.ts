@@ -1,6 +1,7 @@
 import { eq, and, gte, lte, desc, count } from 'drizzle-orm';
-import { db, expenses } from '@/db';
-import type { ExpenseListParams } from './types';
+
+import { db, expenses } from '../../../db/index.js';
+import { ExpenseListParams } from './types.js';
 
 export async function listExpenses(
   userId: string,

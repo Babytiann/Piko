@@ -1,6 +1,7 @@
 import { TelegramClient, Api } from 'telegram';
+
 import { StringSession } from 'telegram/sessions/index.js';
-import { API_ID, API_HASH } from './constants';
+import { API_ID, API_HASH } from './constants.js';
 
 /**
  * Create a new TelegramClient with an optional existing session string.

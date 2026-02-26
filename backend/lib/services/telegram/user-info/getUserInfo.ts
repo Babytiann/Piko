@@ -1,8 +1,8 @@
 import { Api } from 'telegram';
 import parsePhoneNumber from 'libphonenumber-js';
-import { getPooledClient } from '@/lib/telegram';
-import type { TelegramUserInfo } from '@/types/telegram';
-import { getUserInfoCache, setUserInfoCache } from './cache';
+import { getPooledClient } from '../../../telegram/index.js';
+import { TelegramUserInfo } from '../../../../types/telegram.js';
+import { getUserInfoCache, setUserInfoCache } from './cache.js';
 
 export async function getUserInfo(session: string): Promise<TelegramUserInfo> {
   const cached = getUserInfoCache(session);

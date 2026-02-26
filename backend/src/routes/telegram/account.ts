@@ -1,15 +1,21 @@
 import { Hono } from 'hono';
 import { Api } from 'telegram';
-import { getPooledClient, removePooledClient } from '@/lib/telegram';
-import { getUserId, UnauthorizedError } from '@/lib/auth';
-import { getTelegramSession, unbindTelegram } from '@/lib/services/user';
-import { clearPhotoCache } from '@/lib/services/telegram/photo';
+import {
+  getPooledClient,
+  removePooledClient,
+} from '../../../lib/telegram/index.js';
+import { getUserId, UnauthorizedError } from '../../../lib/auth.js';
+import {
+  getTelegramSession,
+  unbindTelegram,
+} from '../../../lib/services/user/index.js';
+import { clearPhotoCache } from '../../../lib/services/telegram/photo/index.js';
 import {
   TelegramLoginStep,
   type PhoneStepText,
   type VerifyCodeStepText,
   type VerifyTwoFAStepText,
-} from '@/types/telegram-login';
+} from '../../../types/telegram-login.js';
 
 export const accountRoutes = new Hono();
 

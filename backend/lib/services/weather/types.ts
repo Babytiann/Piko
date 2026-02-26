@@ -1,10 +1,3 @@
-/** OpenWeatherMap 天气服务 — 类型定义 */
-
-// ---------------------------------------------------------------------------
-// 通用
-// ---------------------------------------------------------------------------
-
-/** Geocoding API 返回的地理位置 */
 export interface GeoLocation {
   lat: number;
   lon: number;
@@ -12,14 +5,8 @@ export interface GeoLocation {
   country: string;
 }
 
-/** 查询类型 */
 export type WeatherQueryType = 'current' | 'forecast' | 'air_pollution';
 
-// ---------------------------------------------------------------------------
-// 实时天气
-// ---------------------------------------------------------------------------
-
-/** OpenWeatherMap Current Weather API 原始响应 */
 export interface CurrentWeatherResponse {
   weather: { main: string; description: string }[];
   main: {

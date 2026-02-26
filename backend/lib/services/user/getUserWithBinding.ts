@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { db, users, telegramBindings } from '@/db';
+
+import { db, users, telegramBindings } from '../../../db/index.js';
 
 export async function getUserWithBinding(userId: string): Promise<{
   id: string;

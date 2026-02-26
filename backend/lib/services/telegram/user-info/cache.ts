@@ -1,4 +1,4 @@
-import type { TelegramUserInfo } from '@/types/telegram';
+import { TelegramUserInfo } from '../../../../types/telegram.js';
 
 interface UserInfoCacheEntry {
   data: TelegramUserInfo;

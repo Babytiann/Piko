@@ -1,17 +1,11 @@
-/**
- * Expense 路由
- *   POST /piko/expense/upload/v1
- *   POST /piko/expense/list/v1
- */
-
 import { Hono } from 'hono';
-import { getUserId, UnauthorizedError } from '@/lib/auth';
+import { getUserId, UnauthorizedError } from '../../lib/auth.js';
 import {
   createExpense,
   listExpenses,
   type CreateExpenseInput,
-} from '@/lib/services/expense';
-import { recognizePayment } from '@/lib/services/tools/recognize-payment';
+} from '../../lib/services/expense/index.js';
+import { recognizePayment } from '../../lib/services/tools/recognize-payment.js';
 
 export const expenseRoutes = new Hono();
 

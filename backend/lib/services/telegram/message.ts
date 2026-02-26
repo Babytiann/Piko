@@ -1,7 +1,7 @@
 import { Api } from 'telegram';
 
-import { getPooledClient, resolveInputPeer } from '@/lib/telegram';
-import type { RawMessage } from '@/types/telegram';
+import { getPooledClient, resolveInputPeer } from '../../telegram/index.js';
+import { RawMessage } from '../../../types/telegram.js';
 
 export async function downloadMessageMedia(
   session: string,

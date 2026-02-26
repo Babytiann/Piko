@@ -1,3 +1,3 @@
-export { streamChatWithTools } from './stream-chat-with-tools';
-export type { StreamChatOptions } from './stream-chat-with-tools';
-export { getToolStatusMessage } from './types';
+export { streamChatWithTools } from './stream-chat-with-tools.js';
+export { StreamChatOptions } from './stream-chat-with-tools.js';
+export { getToolStatusMessage } from './types.js';

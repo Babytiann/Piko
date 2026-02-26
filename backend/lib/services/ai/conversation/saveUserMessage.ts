@@ -1,7 +1,8 @@
 import { eq } from 'drizzle-orm';
-import { db, aiConversations, aiMessages } from '@/db';
 import { createId } from '@paralleldrive/cuid2';
-import { isUniqueViolation } from './helpers';
+
+import { isUniqueViolation } from './helpers.js';
+import { db, aiConversations, aiMessages } from '../../../../db/index.js';
 
 export async function saveUserMessage(
   conversationId: string,

@@ -1,15 +1,9 @@
-/**
- * AI 路由聚合
- *   POST /chat/v1, /location/v1, /recognize/v1, /page_data/v1
- *   POST /conversation/list|create|detail|save-interrupted|delete/v1
- */
-
 import { Hono } from 'hono';
-import { chatRoutes } from './chat';
-import { locationRoutes } from './location';
-import { recognizeRoutes } from './recognize';
-import { pageDataRoutes } from './page-data';
-import { conversationRoutes } from './conversation';
+import { chatRoutes } from './chat.js';
+import { locationRoutes } from './location.js';
+import { recognizeRoutes } from './recognize.js';
+import { pageDataRoutes } from './page-data.js';
+import { conversationRoutes } from './conversation.js';
 
 export const aiRoutes = new Hono();
 

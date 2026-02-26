@@ -1,16 +1,13 @@
-/**
- * Chat (Telegram 聊天) 路由
- *   POST /piko/chat/list/v1
- *   POST /piko/chat/detail/v1
- */
-
 import { Hono } from 'hono';
 import {
   getChatListPageData,
   getChatDetailPageData,
-} from '@/lib/services/chat';
-import { unbindTelegram, getTelegramSession } from '@/lib/services/user';
-import { getUserId, UnauthorizedError } from '@/lib/auth';
+} from '../../lib/services/chat/index.js';
+import {
+  unbindTelegram,
+  getTelegramSession,
+} from '../../lib/services/user/index.js';
+import { getUserId, UnauthorizedError } from '../../lib/auth.js';
 
 export const chatRoutes = new Hono();
 

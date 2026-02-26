@@ -1,7 +1,7 @@
-export { TelegramAlreadyBoundError } from './errors';
-export { ensureUser } from './ensureUser';
-export { updateUserProfile } from './updateUserProfile';
-export { getUserWithBinding } from './getUserWithBinding';
-export { bindTelegram } from './bindTelegram';
-export { unbindTelegram } from './unbindTelegram';
-export { getTelegramSession } from './getTelegramSession';
+export { TelegramAlreadyBoundError } from './errors.js';
+export { ensureUser } from './ensureUser.js';
+export { updateUserProfile } from './updateUserProfile.js';
+export { getUserWithBinding } from './getUserWithBinding.js';
+export { bindTelegram } from './bindTelegram.js';
+export { unbindTelegram } from './unbindTelegram.js';
+export { getTelegramSession } from './getTelegramSession.js';

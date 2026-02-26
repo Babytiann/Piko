@@ -1,5 +1,5 @@
-import { getProfilePhoto } from './getProfilePhoto';
-import { bufferToDataUri } from './cache';
+import { getProfilePhoto } from './getProfilePhoto.js';
+import { bufferToDataUri } from './cache.js';
 
 export async function getProfilePhotoBase64(
   session: string,

@@ -1,12 +1,6 @@
-/**
- * Profile 路由
- *   POST /piko/profile/detail/v1
- * 首屏单接口：未登录也返回 200，data.appUser 为 null；登录时返回 appUser + copy + telegramSection。
- */
-
 import { Hono } from 'hono';
-import { getSessionOrNull } from '@/lib/auth';
-import { getProfilePageData } from '@/lib/services/profile';
+import { getSessionOrNull } from '../../lib/auth.js';
+import { getProfilePageData } from '../../lib/services/profile/index.js';
 
 export const profileRoutes = new Hono();
 

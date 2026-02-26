@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { Api } from 'telegram';
-import { getPooledClient } from '@/lib/telegram';
+import { getPooledClient } from '../../../lib/telegram/index.js';
 
 export const dialogsRoutes = new Hono();
 

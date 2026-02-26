@@ -1,20 +1,6 @@
-/**
- * Tool Registry — 统一管理 Agent 可用的工具（Vercel AI SDK 版）。
- *
- * 工具参数改用 Zod schema，与 Vercel AI SDK `tool()` 格式对齐。
- *
- * 类比 React Router: 路由统一注册/匹配，Tool Registry 统一注册/执行。
- * AI 模型收到工具定义后，会自主决定何时调用、传什么参数。
- */
-
 import { tool } from 'ai';
 import { z } from 'zod';
 
-// ---------------------------------------------------------------------------
-// 类型定义
-// ---------------------------------------------------------------------------
-
-/** 单个工具定义 — 告诉 AI "你能做什么" + 告诉后端 "怎么执行" */
 export interface ToolDefinition<TParams extends z.ZodTypeAny = z.ZodTypeAny> {
   /** 工具名称，AI 会用这个名字来调用（如 "get_weather"） */
   name: string;

@@ -1,4 +1,4 @@
-import { db, users } from '@/db';
+import { db, users } from '../../../db/index.js';
 
 export async function ensureUser(userId: string): Promise<void> {
   await db

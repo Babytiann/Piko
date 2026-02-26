@@ -1,5 +1,6 @@
 import { eq, and } from 'drizzle-orm';
-import { db, aiConversations } from '@/db';
+
+import { db, aiConversations } from '../../../../db/index.js';
 
 export async function deleteConversation(
   userId: string,

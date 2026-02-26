@@ -1,9 +1,5 @@
-/**
- * Homepage 路由 — POST /piko/homepage/summary/v1
- */
-
 import { Hono } from 'hono';
-import { getHomePageData } from '@/lib/services/home';
+import { getHomePageData } from '../../lib/services/home/index.js';
 
 export const homepageRoutes = new Hono();
 

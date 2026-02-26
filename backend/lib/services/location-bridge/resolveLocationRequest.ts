@@ -1,5 +1,5 @@
-import type { UserLocation } from './store';
-import { pendingRequests } from './store';
+import { UserLocation } from './store.js';
+import { pendingRequests } from './store.js';
 
 export function resolveLocationRequest(
   requestId: string,

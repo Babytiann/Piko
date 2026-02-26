@@ -1,12 +1,12 @@
 import { Hono } from 'hono';
-import { getUserId, UnauthorizedError } from '@/lib/auth';
+import { getUserId, UnauthorizedError } from '../../../lib/auth.js';
 import {
   createConversation,
   listConversations,
   getConversationWithMessages,
   deleteConversation,
   upsertModelMessage,
-} from '@/lib/services/ai/conversation';
+} from '../../../lib/services/ai/conversation/index.js';
 
 export const conversationRoutes = new Hono();
 

@@ -1,1 +1,1 @@
-export { getHomePageData } from './getHomePageData';
+export { getHomePageData } from './getHomePageData.js';

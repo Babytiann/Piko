@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import {
   downloadMessageMedia,
   downloadPeerPhoto,
-} from '@/lib/services/telegram';
+} from '../../../lib/services/telegram/index.js';
 
 export const mediaRoutes = new Hono();
 

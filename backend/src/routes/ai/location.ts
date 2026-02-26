@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { resolveLocationRequest } from '@/lib/services/location-bridge';
+import { resolveLocationRequest } from '../../../lib/services/location-bridge/index.js';
 
 export const locationRoutes = new Hono();
 

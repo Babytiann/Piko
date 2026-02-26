@@ -1,6 +1,4 @@
-/** Geocoding — 城市名转经纬度坐标（预报和空气质量 API 需要坐标） */
-
-import type { GeoLocation } from './types';
+import type { GeoLocation } from './types.js';
 
 const API_KEY = process.env.OPENWEATHER_API_KEY ?? '';
 const BASE = 'https://api.openweathermap.org';

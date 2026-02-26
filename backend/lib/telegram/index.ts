@@ -4,12 +4,12 @@ export {
   resolveInputPeer,
   disconnectClient,
   StringSession,
-} from './client';
-export { getPooledClient, removePooledClient } from './pool';
+} from './client.js';
+export { getPooledClient, removePooledClient } from './pool.js';
 export {
   getPendingClient,
   createFreshPendingClient,
   getOrCreatePendingClient,
   removePendingClient,
   getPendingClientSession,
-} from './pending';
+} from './pending.js';

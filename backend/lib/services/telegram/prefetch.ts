@@ -2,8 +2,8 @@
  * 绑定成功后，在后台预热用户头像和信息缓存。
  * 调用方以 fire-and-forget 方式调用，不阻塞响应。
  */
-import { getUserInfo } from './user-info';
-import { getProfilePhoto } from './photo';
+import { getUserInfo } from './user-info/index.js';
+import { getProfilePhoto } from './photo/index.js';
 
 /**
  * 并行预取 getMe() 和头像，结果写入各自的内存缓存。

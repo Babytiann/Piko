@@ -1,16 +1,9 @@
-/**
- * Telegram 路由聚合
- *   POST /auth/v1, /unbind/v1, /text_detail/v1
- *   POST /get-dialogs/v1, /get-messages/v1, /send-message/v1
- *   GET  /media/v1, /avatar/v1
- */
-
 import { Hono } from 'hono';
-import { authRoutes } from './auth';
-import { accountRoutes } from './account';
-import { dialogsRoutes } from './dialogs';
-import { messagesRoutes } from './messages';
-import { mediaRoutes } from './media';
+import { authRoutes } from './auth.js';
+import { accountRoutes } from './account.js';
+import { dialogsRoutes } from './dialogs.js';
+import { messagesRoutes } from './messages.js';
+import { mediaRoutes } from './media.js';
 
 export const telegramRoutes = new Hono();
 

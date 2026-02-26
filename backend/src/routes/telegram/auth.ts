@@ -1,5 +1,7 @@
 import { Hono } from 'hono';
 import { Api } from 'telegram';
+
+import { userPayload } from './helpers.js';
 import { StringSession } from 'telegram/sessions/index.js';
 import { computeCheck } from 'telegram/Password.js';
 import {
@@ -7,16 +9,18 @@ import {
   getOrCreatePendingClient,
   removePendingClient,
   getPooledClient,
-} from '@/lib/telegram';
-import { getUserId, UnauthorizedError } from '@/lib/auth';
+} from '../../../lib/telegram/index.js';
+import { getUserId, UnauthorizedError } from '../../../lib/auth.js';
 import {
   ensureUser,
   bindTelegram,
   TelegramAlreadyBoundError,
-} from '@/lib/services/user';
-import { prefetchUserProfile } from '@/lib/services/telegram/prefetch';
-import { SessionTag, type TelegramAuthRequest } from '@/types/telegram-login';
-import { userPayload } from './helpers';
+} from '../../../lib/services/user/index.js';
+import { prefetchUserProfile } from '../../../lib/services/telegram/prefetch.js';
+import {
+  SessionTag,
+  TelegramAuthRequest,
+} from '../../../types/telegram-login.js';
 
 export const authRoutes = new Hono();
 

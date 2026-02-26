@@ -1,5 +1,5 @@
 import { Api } from 'telegram';
-import { getPooledClient, resolveInputPeer } from '@/lib/telegram';
+import { getPooledClient, resolveInputPeer } from '../../../telegram/index.js';
 
 export async function downloadPeerPhoto(
   session: string,

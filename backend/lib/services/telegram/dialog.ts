@@ -1,7 +1,7 @@
 import { Api } from 'telegram';
 
-import { getPooledClient } from '@/lib/telegram';
-import type { RawDialog } from '@/types/telegram';
+import { getPooledClient } from '../../telegram/index.js';
+import { RawDialog } from '../../../types/telegram.js';
 
 export async function getDialogList(
   session: string,

@@ -1,4 +1,4 @@
-import type { RecognizeResult } from '@/types/expense';
+import type { RecognizeResult } from '../../../types/expense.js';
 
 export interface CreateExpenseInput {
   amount: number;

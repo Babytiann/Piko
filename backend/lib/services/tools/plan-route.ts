@@ -1,19 +1,6 @@
-﻿/**
- * 路线规划工具 — 构建高德地图 / Google Maps 导航 Deep Link（Vercel AI SDK 版）。
- *
- * AI 提供地点名称与经纬度坐标，本工具负责：
- * 1. 根据 mapProvider 决定使用高德还是 Google Maps
- * 2. 高德: 处理 via（途经点）限制，仅驾车模式支持 1 个途经点
- * 3. Google Maps: 使用 waypoints 参数，支持多个途经点
- * 4. 4+ 站自动拆分为多段链接（高德），Google Maps 直接用 waypoints
- */
-
 import { z } from 'zod';
-import { toolRegistry, type ToolDefinition } from '../ai-tools';
 
-// ---------------------------------------------------------------------------
-// 类型
-// ---------------------------------------------------------------------------
+import { toolRegistry, ToolDefinition } from '../ai-tools.js';
 
 const stopSchema = z.object({
   name: z.string().describe('地点名称（如"东方明珠"、"Tokyo Tower"）'),

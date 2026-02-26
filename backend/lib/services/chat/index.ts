@@ -1,2 +1,2 @@
-export { getChatListPageData } from './getChatListPageData';
-export { getChatDetailPageData } from './getChatDetailPageData';
+export { getChatListPageData } from './getChatListPageData.js';
+export { getChatDetailPageData } from './getChatDetailPageData.js';

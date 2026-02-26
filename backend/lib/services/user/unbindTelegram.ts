@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { db, telegramBindings } from '@/db';
+
+import { db, telegramBindings } from '../../../db/index.js';
 
 export async function unbindTelegram(userId: string): Promise<boolean> {
   const result = await db

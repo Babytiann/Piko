@@ -1,7 +1,8 @@
 import { eq } from 'drizzle-orm';
-import { db, telegramBindings } from '@/db';
 import { createId } from '@paralleldrive/cuid2';
-import { TelegramAlreadyBoundError } from './errors';
+
+import { TelegramAlreadyBoundError } from './errors.js';
+import { db, telegramBindings } from '../../../db/index.js';
 
 export async function bindTelegram(
   userId: string,

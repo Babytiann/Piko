@@ -1,6 +1,9 @@
 import { Hono } from 'hono';
 import { Api } from 'telegram';
-import { getPooledClient, resolveInputPeer } from '@/lib/telegram';
+import {
+  getPooledClient,
+  resolveInputPeer,
+} from '../../../lib/telegram/index.js';
 
 export const messagesRoutes = new Hono();
 

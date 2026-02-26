@@ -1,4 +1,4 @@
-import type { HomePageData } from '@/types/home';
+import { HomePageData } from '../../../types/home.js';
 
 export async function getHomePageData(): Promise<HomePageData> {
   return {

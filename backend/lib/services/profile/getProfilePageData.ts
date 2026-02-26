@@ -2,8 +2,8 @@ import type {
   ProfilePageCopy,
   ProfilePageData,
   ProfileAppUser,
-} from '@/types/profile';
-import { getUserWithBinding } from '../user';
+} from '../../../types/profile.js';
+import { getUserWithBinding } from '../user/index.js';
 
 const AVATAR_COLORS = [
   '#FF6B6B',

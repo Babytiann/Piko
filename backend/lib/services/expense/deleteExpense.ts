@@ -1,6 +1,7 @@
 import { eq, and } from 'drizzle-orm';
-import { db, expenses } from '@/db';
-import { deleteObject } from '@/lib/r2';
+
+import { db, expenses } from '../../../db/index.js';
+import { deleteObject } from '../../r2.js';
 
 export async function deleteExpense(
   userId: string,

@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { db, aiConversations, aiMessages } from '@/db';
+
+import { db, aiConversations, aiMessages } from '../../../../db/index.js';
 
 export async function upsertModelMessage(
   conversationId: string,

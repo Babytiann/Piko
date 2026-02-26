@@ -1,3 +1,3 @@
-export type { UserLocation } from './store';
-export { createLocationRequest } from './createLocationRequest';
-export { resolveLocationRequest } from './resolveLocationRequest';
+export type { UserLocation } from './store.js';
+export { createLocationRequest } from './createLocationRequest.js';
+export { resolveLocationRequest } from './resolveLocationRequest.js';

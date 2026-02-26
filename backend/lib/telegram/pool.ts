@@ -1,6 +1,7 @@
 import type { TelegramClient } from 'telegram';
-import { createClient, disconnectClient } from './client';
-import { POOL_TTL, POOL_MAX_SIZE, POOL_SWEEP_INTERVAL } from './constants';
+
+import { createClient, disconnectClient } from './client.js';
+import { POOL_TTL, POOL_MAX_SIZE, POOL_SWEEP_INTERVAL } from './constants.js';
 
 interface PooledClient {
   client: TelegramClient;

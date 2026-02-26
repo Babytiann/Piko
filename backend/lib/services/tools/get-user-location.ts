@@ -1,23 +1,6 @@
-/**
- * 获取用户地理位置工具 — 一个"前端协作式"工具（Vercel AI SDK 版）。
- *
- * 和 get_weather / plan_route 不同，这个工具后端无法直接执行
- * （设备位置在用户手机上），需要前端配合：
- *   1. AI 调用 get_user_location → execute() 被触发
- *   2. execute() 通过 context.writeData 写 request_location 数据部分
- *   3. 前端收到 data part 后调用 expo-location 获取 GPS
- *   4. 前端 POST /piko/ai/location/v1 回传位置
- *   5. LocationBridge.resolveLocationRequest 唤醒挂起的 Promise
- *   6. execute() 拿到位置结果，返回给 streamText 作为工具结果
- */
-
 import { z } from 'zod';
-import { createLocationRequest } from '../location-bridge';
-import { toolRegistry, type ToolDefinition } from '../ai-tools';
-
-// ---------------------------------------------------------------------------
-// Schema
-// ---------------------------------------------------------------------------
+import { createLocationRequest } from '../location-bridge/index.js';
+import { toolRegistry, type ToolDefinition } from '../ai-tools.js';
 
 const parametersSchema = z.object({
   reason: z
@@ -25,10 +8,6 @@ const parametersSchema = z.object({
     .optional()
     .describe('简要说明为什么需要获取位置（如"判断使用哪个地图应用"）'),
 });
-
-// ---------------------------------------------------------------------------
-// 工具定义 & 注册
-// ---------------------------------------------------------------------------
 
 const getUserLocationTool: ToolDefinition<typeof parametersSchema> = {
   name: 'get_user_location',

@@ -1,9 +1,9 @@
-import type { UserLocation } from './store';
 import {
   pendingRequests,
   LOCATION_TIMEOUT_MS,
   incrementRequestId,
-} from './store';
+  UserLocation,
+} from './store.js';
 
 export function createLocationRequest(): {
   requestId: string;

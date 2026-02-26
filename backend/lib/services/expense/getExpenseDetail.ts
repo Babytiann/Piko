@@ -1,5 +1,6 @@
 import { eq, and } from 'drizzle-orm';
-import { db, expenses } from '@/db';
+
+import { db, expenses } from '../../../db/index.js';
 
 export async function getExpenseDetail(
   userId: string,

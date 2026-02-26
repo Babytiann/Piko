@@ -10,18 +10,14 @@
  */
 
 import { streamText, stepCountIs, type ModelMessage } from 'ai';
-import { getModel, SYSTEM_INSTRUCTION } from './client';
-import { toolRegistry } from '../ai-tools';
-import { getToolStatusMessage } from './types';
 
-// 确保工具在模块加载时注册（副作用 import）
-import '../tools/get-weather';
-import '../tools/plan-route';
-import '../tools/get-user-location';
+import { getModel, SYSTEM_INSTRUCTION } from './client.js';
+import { toolRegistry } from '../ai-tools.js';
+import { getToolStatusMessage } from './types.js';
 
-// ---------------------------------------------------------------------------
-// 类型
-// ---------------------------------------------------------------------------
+import '../tools/get-weather.js';
+import '../tools/plan-route.js';
+import '../tools/get-user-location.js';
 
 export interface StreamChatOptions {
   /**

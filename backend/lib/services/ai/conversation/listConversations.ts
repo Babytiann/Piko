@@ -1,6 +1,7 @@
 import { eq, desc, count } from 'drizzle-orm';
-import { db, aiConversations, aiMessages } from '@/db';
-import type { ConversationListItem } from './types';
+
+import { ConversationListItem } from './types.js';
+import { db, aiConversations, aiMessages } from '../../../../db/index.js';
 
 export async function listConversations(
   userId: string,

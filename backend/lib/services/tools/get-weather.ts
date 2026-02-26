@@ -1,19 +1,13 @@
-/**
- * 天气查询工具定义 — 薄包装层（Vercel AI SDK 版）。
- *
- * 只负责：向 AI 描述工具 schema + 调用 weather 服务。
- * 实际的 API 调用逻辑在 weather/ 服务模块中。
- */
-
 import { z } from 'zod';
-import { toolRegistry, type ToolDefinition } from '../ai-tools';
+
+import { toolRegistry, ToolDefinition } from '../ai-tools.js';
 import {
   fetchCurrentWeather,
   fetchForecast,
   fetchAirPollution,
   type WeatherQueryType,
   type WeatherResult,
-} from '../weather';
+} from '../weather/index.js';
 
 // ---------------------------------------------------------------------------
 // 参数 Schema（Zod）
