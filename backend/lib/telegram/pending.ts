@@ -1,5 +1,5 @@
 import type { TelegramClient } from 'telegram';
-import { StringSession } from 'telegram/sessions';
+import { StringSession } from 'telegram/sessions/index.js';
 import { createClient, disconnectClient } from './client';
 
 const globalForTelegram = globalThis as unknown as {

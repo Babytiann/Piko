@@ -11,5 +11,5 @@ export { default } from './app';
  * 强制使用 Node.js 运行时（telegram / @aws-sdk 等包依赖 Node.js API）。
  */
 export const config = {
-  runtime: 'nodejs20.x',
+  runtime: 'nodejs22.x',
 };
