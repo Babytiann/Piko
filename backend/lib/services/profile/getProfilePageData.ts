@@ -3,11 +3,7 @@ import type {
   ProfilePageData,
   ProfileAppUser,
 } from '@/types/profile';
-import { getUserWithBinding } from './user';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+import { getUserWithBinding } from '../user';
 
 const AVATAR_COLORS = [
   '#FF6B6B',
@@ -24,10 +20,6 @@ function getAvatarColor(id: string): string {
   const index = Math.abs(parseInt(id, 10) || 0) % AVATAR_COLORS.length;
   return AVATAR_COLORS[index];
 }
-
-// ---------------------------------------------------------------------------
-// Page data builders
-// ---------------------------------------------------------------------------
 
 const PROFILE_COPY: ProfilePageCopy = {
   page_title: '个人主页',
@@ -77,17 +69,6 @@ function buildUnboundPageData(appUser: ProfileAppUser | null): ProfilePageData {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
-
-/**
- * Aggregate all data needed by the Profile page.
- * 首屏单接口：同时返回 appUser（Apple 登录态）、copy、telegramSection。
- *
- * @param appUser 当前 Better Auth 用户，未登录为 null
- * @param _fallbackSession 前端传入的 Telegram session（保留兼容，已绑定状态仅以 DB 为准）
- */
 export async function getProfilePageData(
   appUser: ProfileAppUser | null,
   _fallbackSession?: string,
@@ -100,7 +81,6 @@ export async function getProfilePageData(
 
   if (!binding) return buildUnboundPageData(appUser);
 
-  // 已绑定状态仅由 DB 决定，用 DB 已有字段立即返回，不请求 Telegram API
   const displayName =
     [binding.firstName, binding.username].filter(Boolean).join(' ') ||
     '未知用户';
