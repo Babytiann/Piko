@@ -1,17 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { usePathname } from 'expo-router';
 
 import {
   getPageErrorType,
   PageErrorType,
 } from '@/common/components/page-status-view';
+import { deepEqual } from '@/common/utils';
+import { get, set, clear } from '@/common/lib/route-cache';
 import type { ProfilePageData } from '@/common/typings/profile';
 import { fetchProfilePage } from '@/services/profile';
+
+interface ProfileCachePayload {
+  data: ProfilePageData | null;
+}
 
 interface UseProfileDataReturn {
   isPageLoading: boolean;
   errorType: PageErrorType | undefined;
   data: ProfilePageData | null;
   handleRetry: () => void;
+}
+
+function normalizeCacheKey(pathname: string): string {
+  return pathname.replace(/\/$/, '') || '/';
 }
 
 /**
@@ -22,6 +33,9 @@ export function useProfileData(
   session: string | null,
   appSessionUserId?: string | null,
 ): UseProfileDataReturn {
+  const pathname = usePathname();
+  const baseKey = normalizeCacheKey(pathname ?? '/profile');
+  const cacheKey = `${baseKey}:${session ?? ''}:${appSessionUserId ?? ''}`;
   const [isPageLoading, setIsPageLoading] = useState<boolean>(true);
   const [errorType, setErrorType] = useState<PageErrorType | undefined>(
     undefined,
@@ -31,8 +45,17 @@ export function useProfileData(
 
   useEffect(() => {
     let cancelled = false;
-    setIsPageLoading(true);
-    setErrorType(undefined);
+    const cached = get<ProfileCachePayload>(cacheKey);
+    const hadCache = cached != null && cached.data != null;
+
+    if (hadCache) {
+      setData(cached.data);
+      setIsPageLoading(false);
+      setErrorType(undefined);
+    } else {
+      setIsPageLoading(true);
+      setErrorType(undefined);
+    }
 
     async function load(): Promise<void> {
       try {
@@ -41,17 +64,32 @@ export function useProfileData(
 
         const mappedError = getPageErrorType(response);
         if (mappedError) {
-          setErrorType(mappedError);
-          setData(null);
+          if (!hadCache) {
+            setErrorType(mappedError);
+            setData(null);
+          }
         } else {
-          setData(response.data ?? null);
+          const nextData = response.data ?? null;
+          const fresh: ProfileCachePayload = { data: nextData };
+
+          if (hadCache) {
+            if (!deepEqual(fresh, cached)) {
+              setData(nextData);
+              set(cacheKey, fresh);
+            }
+          } else {
+            setData(nextData);
+            set(cacheKey, fresh);
+          }
         }
       } catch {
         if (cancelled) return;
-        setErrorType(PageErrorType.NETWORK);
-        setData(null);
+        if (!hadCache) {
+          setErrorType(PageErrorType.NETWORK);
+          setData(null);
+        }
       } finally {
-        if (!cancelled) setIsPageLoading(false);
+        if (!cancelled && !hadCache) setIsPageLoading(false);
       }
     }
 
@@ -59,13 +97,14 @@ export function useProfileData(
     return () => {
       cancelled = true;
     };
-  }, [session, fetchKey, appSessionUserId]);
+  }, [session, cacheKey, fetchKey, appSessionUserId]);
 
-  const handleRetry = (): void => {
+  const handleRetry = useCallback((): void => {
+    clear(cacheKey);
     setIsPageLoading(true);
     setErrorType(undefined);
     setFetchKey((k) => k + 1);
-  };
+  }, [cacheKey]);
 
   return { isPageLoading, errorType, data, handleRetry };
 }

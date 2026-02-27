@@ -6,6 +6,7 @@ import { logger } from 'hono/logger';
 
 import { auth } from '../lib/auth.js';
 import { aiRoutes } from './routes/ai/index.js';
+import { budgetRoutes } from './routes/budget.js';
 import { expenseRoutes } from './routes/expense.js';
 import { homepageRoutes } from './routes/homepage.js';
 import { profileRoutes } from './routes/profile.js';
@@ -35,6 +36,7 @@ app.get('/', (c) => c.json({ status: 'ok', service: 'piko-backend' }));
 app.on(['GET', 'POST'], '/api/auth/*', (c) => auth.handler(c.req.raw));
 
 app.route('/piko/ai', aiRoutes);
+app.route('/piko/budget', budgetRoutes);
 app.route('/piko/expense', expenseRoutes);
 app.route('/piko/homepage', homepageRoutes);
 app.route('/piko/profile', profileRoutes);

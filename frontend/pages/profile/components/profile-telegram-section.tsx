@@ -2,6 +2,8 @@ import type { ReactNode } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { XStack, YStack, Text } from 'tamagui';
 
+import { PikoCard } from '@/common/components/piko-card';
+
 import type {
   ProfilePageCopy,
   TelegramSection as TelegramSectionData,
@@ -32,14 +34,7 @@ export default function ProfileTelegramSection({
       >
         {copy.title}
       </Text>
-      <YStack
-        bg="#FFFFFF"
-        style={{ borderRadius: 16 }}
-        pl="$4"
-        pr="$2"
-        pressStyle={{ opacity: 0.8 }}
-        onPress={onPress}
-      >
+      <PikoCard onPress={onPress} padding="$4">
         <XStack
           gap="$3"
           py="$3"
@@ -66,7 +61,7 @@ export default function ProfileTelegramSection({
           </YStack>
           <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
         </XStack>
-      </YStack>
+      </PikoCard>
     </YStack>
   );
 }

@@ -57,12 +57,7 @@ export default function AiScreen(): ReactNode {
     loadConversation,
   } = useAiChat();
   const { data: appSession } = authClient.useSession();
-  const {
-    data,
-    isPageLoading,
-    errorType: copyErrorType,
-    handleRetry: handleCopyRetry,
-  } = useFetchAiPageData();
+  const { data, isPageLoading, errorType, handleRetry } = useFetchAiPageData();
 
   const {
     login_status,
@@ -187,10 +182,10 @@ export default function AiScreen(): ReactNode {
     );
   }
 
-  if (copyErrorType) {
+  if (errorType) {
     return (
       <YStack flex={1} bg="$background">
-        <PageStatusView errorType={copyErrorType} onRetry={handleCopyRetry} />
+        <PageStatusView errorType={errorType} onRetry={handleRetry} />
       </YStack>
     );
   }

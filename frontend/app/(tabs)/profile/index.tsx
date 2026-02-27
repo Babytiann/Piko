@@ -6,6 +6,7 @@ import { YStack, XStack, Text, Spacer } from 'tamagui';
 
 import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
 import PageLoading from '@/common/components/page-loading';
+import { PikoCard } from '@/common/components/piko-card';
 import PageStatusView, {
   PageErrorType,
 } from '@/common/components/page-status-view';
@@ -23,16 +24,14 @@ export default function ProfileScreen(): ReactNode {
   const router = useRouter();
   const { data: appSession } = authClient.useSession();
   const { session, logout } = useAuth();
-  const {
-    isPageLoading,
-    errorType: copyErrorType,
-    data,
-    handleRetry: handleCopyRetry,
-  } = useProfileData(session, appSession?.user?.id);
+  const { isPageLoading, errorType, data, handleRetry } = useProfileData(
+    session,
+    appSession?.user?.id,
+  );
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
-    if (copyErrorType !== PageErrorType.AUTH || !appSession?.user) return;
+    if (errorType !== PageErrorType.AUTH || !appSession?.user) return;
 
     Alert.alert(
       '登录已失效',
@@ -47,7 +46,7 @@ export default function ProfileScreen(): ReactNode {
       ],
       { cancelable: false },
     );
-  }, [copyErrorType, appSession?.user, logout]);
+  }, [errorType, appSession?.user, logout]);
 
   const copy = data?.copy ?? DEFAULT_PROFILE_COPY;
   const appUser =
@@ -61,9 +60,9 @@ export default function ProfileScreen(): ReactNode {
       : null);
 
   const hasAppSession = !!appUser;
-  const showProfileData = hasAppSession && data && !copyErrorType;
+  const showProfileData = hasAppSession && data && !errorType;
   const showProfileError =
-    hasAppSession && copyErrorType && copyErrorType !== PageErrorType.AUTH;
+    hasAppSession && errorType && errorType !== PageErrorType.AUTH;
 
   const telegramSectionData = showProfileData
     ? data!.telegram_section
@@ -124,10 +123,10 @@ export default function ProfileScreen(): ReactNode {
     );
   }
 
-  if (copyErrorType && copyErrorType !== PageErrorType.AUTH) {
+  if (errorType && errorType !== PageErrorType.AUTH) {
     return (
       <YStack flex={1} bg="$background">
-        <PageStatusView errorType={copyErrorType} onRetry={handleCopyRetry} />
+        <PageStatusView errorType={errorType} onRetry={handleRetry} />
       </YStack>
     );
   }
@@ -160,10 +159,7 @@ export default function ProfileScreen(): ReactNode {
           <ProfileAppleSection appUser={appUser} copy={copy.user_section} />
 
           {showProfileError ? (
-            <PageStatusView
-              errorType={copyErrorType}
-              onRetry={handleCopyRetry}
-            />
+            <PageStatusView errorType={errorType} onRetry={handleRetry} />
           ) : null}
 
           {telegramSectionData ? (
@@ -173,31 +169,30 @@ export default function ProfileScreen(): ReactNode {
               onPress={handleTelegramPress}
             />
           ) : !hasAppSession ? (
-            <YStack bg="#FFFFFF" p="$4" gap="$3" style={{ borderRadius: 16 }}>
-              <Text fontSize="$4" fontWeight="600" color="$color">
-                {copy.linked_account.title}
-              </Text>
-              <Text fontSize="$2" color="$gray12">
-                {copy.linked_account.login_first_hint}
-              </Text>
-            </YStack>
+            <PikoCard>
+              <YStack gap="$3">
+                <Text fontSize="$4" fontWeight="600" color="$color">
+                  {copy.linked_account.title}
+                </Text>
+                <Text fontSize="$2" color="$gray12">
+                  {copy.linked_account.login_first_hint}
+                </Text>
+              </YStack>
+            </PikoCard>
           ) : null}
 
           <ProfileSettingsSection copy={copy} />
 
           {hasAppSession ? (
-            <YStack
-              py="$2"
-              bg="#FFFFFF"
+            <PikoCard
+              onPress={isLoggingOut ? undefined : handleLogoutPress}
+              noPadding
               style={{
-                borderRadius: 16,
+                height: 50,
                 justifyContent: 'center',
                 alignItems: 'center',
+                opacity: isLoggingOut ? 0.7 : 1,
               }}
-              pressStyle={isLoggingOut ? undefined : { opacity: 0.8 }}
-              onPress={isLoggingOut ? undefined : handleLogoutPress}
-              height={50}
-              opacity={isLoggingOut ? 0.7 : 1}
             >
               <XStack gap="$2" style={{ alignItems: 'center' }}>
                 <Text color="$red10" fontWeight="600" fontSize="$4">
@@ -209,7 +204,7 @@ export default function ProfileScreen(): ReactNode {
                   </Text>
                 )}
               </XStack>
-            </YStack>
+            </PikoCard>
           ) : null}
         </YStack>
       </ScrollView>

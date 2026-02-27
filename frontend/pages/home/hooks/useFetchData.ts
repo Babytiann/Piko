@@ -1,31 +1,57 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { usePathname } from 'expo-router';
 
 import {
   getPageErrorType,
   PageErrorType,
 } from '@/common/components/page-status-view';
-import type { HomePageData } from '@/common/typings/home';
+import { deepEqual } from '@/common/utils';
+import { get, set, clear } from '@/common/lib/route-cache';
+import type { HomeSlashNodes, HomeSlashResponse } from '@/common/typings/home';
 import { fetchHomePage } from '@/services/home';
+
+interface HomeCachePayload {
+  bodyLayout: string[];
+  nodes: HomeSlashNodes | undefined;
+}
 
 interface UseFetchDataReturn {
   isLoading: boolean;
   errorType: PageErrorType | undefined;
-  data: HomePageData | null;
+  bodyLayout: string[];
+  nodes: HomeSlashNodes | undefined;
   handleRetry: () => void;
 }
 
+function normalizeCacheKey(pathname: string): string {
+  return pathname.replace(/\/$/, '') || '/';
+}
+
 export function useFetchData(): UseFetchDataReturn {
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const pathname = usePathname();
+  const cacheKey = normalizeCacheKey(pathname ?? '/');
+  const [isLoading, setIsLoading] = useState(true);
   const [errorType, setErrorType] = useState<PageErrorType | undefined>(
     undefined,
   );
-  const [data, setData] = useState<HomePageData | null>(null);
-  const [fetchKey, setFetchKey] = useState<number>(0);
+  const [bodyLayout, setBodyLayout] = useState<string[]>([]);
+  const [nodes, setNodes] = useState<HomeSlashNodes | undefined>(undefined);
+  const [fetchKey, setFetchKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
-    setIsLoading(true);
-    setErrorType(undefined);
+    const cached = get<HomeCachePayload>(cacheKey);
+    const hadCache = cached != null && (cached.bodyLayout?.length ?? 0) > 0;
+
+    if (hadCache) {
+      setBodyLayout(cached.bodyLayout ?? []);
+      setNodes(cached.nodes ?? undefined);
+      setIsLoading(false);
+      setErrorType(undefined);
+    } else {
+      setIsLoading(true);
+      setErrorType(undefined);
+    }
 
     async function load(): Promise<void> {
       try {
@@ -34,17 +60,41 @@ export function useFetchData(): UseFetchDataReturn {
 
         const mappedError = getPageErrorType(response);
         if (mappedError) {
-          setErrorType(mappedError);
-          setData(null);
+          if (!hadCache) {
+            setErrorType(mappedError);
+            setBodyLayout([]);
+            setNodes(undefined);
+          }
         } else {
-          setData(response.data ?? null);
+          const data = response.data as HomeSlashResponse | null | undefined;
+          const nextLayout = data?.layout?.body ?? [];
+          const nextNodes = data?.nodes ?? undefined;
+          const fresh: HomeCachePayload = {
+            bodyLayout: nextLayout,
+            nodes: nextNodes,
+          };
+
+          if (hadCache) {
+            if (!deepEqual(fresh, cached)) {
+              setBodyLayout(nextLayout);
+              setNodes(nextNodes);
+              set(cacheKey, fresh);
+            }
+          } else {
+            setBodyLayout(nextLayout);
+            setNodes(nextNodes);
+            set(cacheKey, fresh);
+          }
         }
       } catch {
         if (cancelled) return;
-        setErrorType(PageErrorType.NETWORK);
-        setData(null);
+        if (!hadCache) {
+          setErrorType(PageErrorType.NETWORK);
+          setBodyLayout([]);
+          setNodes(undefined);
+        }
       } finally {
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled && !hadCache) setIsLoading(false);
       }
     }
 
@@ -52,11 +102,12 @@ export function useFetchData(): UseFetchDataReturn {
     return () => {
       cancelled = true;
     };
-  }, [fetchKey]);
+  }, [cacheKey, fetchKey]);
 
-  const handleRetry = (): void => {
+  const handleRetry = useCallback((): void => {
+    clear(cacheKey);
     setFetchKey((k) => k + 1);
-  };
+  }, [cacheKey]);
 
-  return { isLoading, errorType, data, handleRetry };
+  return { isLoading, errorType, bodyLayout, nodes, handleRetry };
 }

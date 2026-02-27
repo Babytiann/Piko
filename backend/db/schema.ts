@@ -138,6 +138,21 @@ export const expenses = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// 业务表 — UserBudget（用户周预算，一人一条）
+// ---------------------------------------------------------------------------
+
+export const userBudgets = pgTable('user_budget', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  /** 本周预算金额 */
+  weeklyBudget: numeric('weekly_budget', { precision: 12, scale: 2 }).notNull(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
 // 业务表 — AiConversation
 // ---------------------------------------------------------------------------
 
@@ -196,7 +211,15 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     references: [telegramBindings.userId],
   }),
   expenses: many(expenses),
+  userBudget: one(userBudgets),
   aiConversations: many(aiConversations),
+}));
+
+export const userBudgetsRelations = relations(userBudgets, ({ one }) => ({
+  user: one(users, {
+    fields: [userBudgets.userId],
+    references: [users.id],
+  }),
 }));
 
 export const accountsRelations = relations(accounts, ({ one }) => ({

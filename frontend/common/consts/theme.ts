@@ -27,6 +27,25 @@ export const Colors = {
   },
 };
 
+/** 卡片背景（与页面 gray2 区分，保证层次） */
+export const CARD_BACKGROUND = '#FFFFFF';
+
+/** 预算环形图 */
+export const BUDGET_RING_COLOR = '#F5A623';
+export const BUDGET_RING_BG_COLOR = '#FFF3DC';
+
+/** 消费分类卡片背景色（与 DESIGN-SYSTEM 一致） */
+export const EXPENSE_CATEGORY_COLORS = {
+  餐饮: '#FF6B6B',
+  交通: '#4ECDC4',
+  娱乐: '#45B7D1',
+  购物: '#96CEB4',
+  其他: '#DDA0DD',
+} as const;
+
+/** 天气卡片渐变（浅橙黄，用于 home-weather-card） */
+export const WEATHER_CARD_GRADIENT = ['#FFE5B4', '#FFD97D'];
+
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */

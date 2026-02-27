@@ -2,6 +2,8 @@ import type { ComponentProps, ReactNode } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { YStack, Text } from 'tamagui';
 
+import { PikoCard } from '@/common/components/piko-card';
+
 import type {
   ProfileCopyItem,
   ProfilePageCopy,
@@ -44,7 +46,7 @@ function SectionBlock({
       >
         {title}
       </Text>
-      <YStack bg="#FFFFFF" style={{ borderRadius: 16 }} pl="$4" pr="$2">
+      <PikoCard padding="$4">
         {items.map((item, i) => (
           <ProfileListRow
             key={item.title}
@@ -53,7 +55,7 @@ function SectionBlock({
             description={item.description}
           />
         ))}
-      </YStack>
+      </PikoCard>
     </YStack>
   );
 }
