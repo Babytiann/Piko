@@ -2,11 +2,13 @@ import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { View } from 'react-native';
 import Animated, {
+  Easing,
   useAnimatedProps,
   useSharedValue,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
+
 import { BUDGET_RING_BG_COLOR, BUDGET_RING_COLOR } from '@/common/consts/theme';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -36,7 +38,10 @@ export function PikoRingChart({
   const sharedProgress = useSharedValue(animated ? 0 : clamped);
 
   useEffect(() => {
-    sharedProgress.value = withSpring(clamped, { damping: 15, stiffness: 120 });
+    sharedProgress.value = withTiming(clamped, {
+      duration: 600,
+      easing: Easing.out(Easing.cubic),
+    });
   }, [clamped, sharedProgress]);
 
   const animatedProps = useAnimatedProps(() => {
@@ -91,7 +96,9 @@ export function PikoRingChart({
         >
           {centerIcon}
         </View>
-      ) : null}
+      ) : (
+        <></>
+      )}
     </View>
   );
 }
