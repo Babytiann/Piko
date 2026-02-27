@@ -17,13 +17,13 @@ export default function MediaImage({ url, isMe }: Props): ReactNode {
   if (error) {
     return (
       <View
-        bg={isMe ? '$blue8' : '$gray5'}
+        bg={isMe ? '$primary' : '$gray5'}
         mb="$1"
         px="$3"
         py="$2"
         style={{ borderRadius: 12, alignItems: 'center' }}
       >
-        <Text fontSize="$1" color={isMe ? '$blue3' : '$gray10'}>
+        <Text fontSize="$1" color={isMe ? '$primaryForeground' : '$gray10'}>
           [图片加载失败]
         </Text>
       </View>
@@ -52,7 +52,7 @@ export default function MediaImage({ url, isMe }: Props): ReactNode {
           }
         }}
         onError={() => setError(true)}
-        placeholder={isMe ? '#1a6dcc' : '#d4d4d8'}
+        placeholder={isMe ? '#11181C' : '#d4d4d8'}
         placeholderContentFit="cover"
       />
     </View>

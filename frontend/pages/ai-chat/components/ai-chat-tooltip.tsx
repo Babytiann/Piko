@@ -164,7 +164,7 @@ export default function AiChatTooltip({ target, onClose }: Props): ReactNode {
         ]}
       >
         <YStack
-          bg="$blue9"
+          bg="$primary"
           px="$3.5"
           py="$2.5"
           style={{ borderRadius: 18, borderBottomRightRadius: 4 }}

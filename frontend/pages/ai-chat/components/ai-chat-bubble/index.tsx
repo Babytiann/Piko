@@ -71,7 +71,7 @@ function AiChatBubble({
             {message.locationRequestId && onRequestLocationPermission ? (
               <Text
                 fontSize={12}
-                color="$blue10"
+                color="$primary"
                 pressStyle={{ opacity: 0.7 }}
                 onPress={() => onRequestLocationPermission(message.id)}
               >
@@ -92,7 +92,7 @@ function AiChatBubble({
         style={[{ maxWidth: '80%' }, isTooltipTarget && { opacity: 0 }]}
       >
         <YStack
-          bg="$blue9"
+          bg="$primary"
           px="$3.5"
           py="$2.5"
           pressStyle={{ opacity: 0.85 }}

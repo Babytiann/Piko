@@ -24,7 +24,7 @@ export default function ChatDetailMessageBubble({
 
   const bubbleContent = (
     <YStack
-      bg={isMe ? '$blue9' : '$gray4'}
+      bg={isMe ? '$primary' : '$gray4'}
       px="$3"
       py="$2"
       style={{
@@ -35,7 +35,7 @@ export default function ChatDetailMessageBubble({
       }}
     >
       {!isMe && message.sender_name ? (
-        <Text fontSize="$1" fontWeight="600" color="$blue10" mb="$1">
+        <Text fontSize="$1" fontWeight="600" color="$primaryForeground" mb="$1">
           {message.sender_name}
         </Text>
       ) : null}
@@ -62,7 +62,7 @@ export default function ChatDetailMessageBubble({
       ) : message.has_media && !hasImage ? (
         <Text
           fontSize="$2"
-          color={isMe ? '$blue3' : '$gray10'}
+          color={isMe ? '$primaryForeground' : '$gray10'}
           fontStyle="italic"
         >
           [{message.media_type ?? '媒体'}]
@@ -71,7 +71,7 @@ export default function ChatDetailMessageBubble({
 
       <Text
         fontSize={10}
-        color={isMe ? '$blue4' : '$gray10'}
+        color={isMe ? '$primaryForeground' : '$gray10'}
         mt="$1"
         style={{ textAlign: 'right' }}
       >
@@ -86,7 +86,7 @@ export default function ChatDetailMessageBubble({
         <Avatar
           url={message.sender_avatar_url}
           text={message.sender_name?.charAt(0)?.toUpperCase() ?? '?'}
-          color="#4ECDC4"
+          color="#687076"
           size={32}
         />
         {bubbleContent}

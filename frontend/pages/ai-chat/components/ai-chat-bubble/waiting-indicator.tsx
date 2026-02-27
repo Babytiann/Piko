@@ -23,7 +23,7 @@ export default function WaitingIndicator(): ReactNode {
 
   return (
     <Animated.View style={animatedStyle}>
-      <Text fontSize="$3" color="$blue9" ml="$1">
+      <Text fontSize="$3" color="$primary" ml="$1">
         ●
       </Text>
     </Animated.View>

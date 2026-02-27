@@ -27,7 +27,7 @@ export default function HomeCategoryCards({ data }: Props): ReactNode {
         <Text fontSize="$4" fontWeight="600" color="$color">
           消费分类
         </Text>
-        <Text fontSize="$3" color="$blue9">
+        <Text fontSize="$3" color="$primary">
           查看全部
         </Text>
       </XStack>
@@ -48,10 +48,10 @@ export default function HomeCategoryCards({ data }: Props): ReactNode {
               justifyContent: 'center',
             }}
           >
-            <Text fontSize="$5" fontWeight="600" color="#1a1a1a">
+            <Text fontSize="$5" fontWeight="600" color="$color">
               ¥{item.amount.toFixed(0)}
             </Text>
-            <Text fontSize="$2" color="rgba(0,0,0,0.7)" mt="$1">
+            <Text fontSize="$2" color="$muted" mt="$1">
               {item.category}
             </Text>
           </YStack>

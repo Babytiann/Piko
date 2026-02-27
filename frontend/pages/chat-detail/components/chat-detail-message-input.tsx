@@ -56,14 +56,14 @@ export default function ChatDetailMessageInput({
         >
           <View
             width={3}
-            bg="$blue9"
+            bg="$primary"
             style={{ alignSelf: 'stretch', borderRadius: 4 }}
           />
           <YStack flex={1} gap={2}>
             <Text
               fontSize="$1"
               fontWeight="600"
-              color="$blue10"
+              color="$primaryForeground"
               numberOfLines={1}
             >
               {replyTo.sender_name || '消息'}
@@ -96,7 +96,7 @@ export default function ChatDetailMessageInput({
         <View
           width={36}
           height={36}
-          bg={trimmed ? '$blue9' : '$gray4'}
+          bg={trimmed ? '$primary' : '$gray4'}
           opacity={trimmed ? 1 : 0.5}
           pressStyle={trimmed ? { scale: 0.92 } : undefined}
           onPress={!sending && trimmed ? () => void handleSend() : undefined}

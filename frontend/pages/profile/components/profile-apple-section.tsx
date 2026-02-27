@@ -6,6 +6,7 @@ import { YStack, XStack, Text } from 'tamagui';
 
 import Avatar from '@/common/components/avatar';
 import { PikoCard } from '@/common/components/piko-card';
+import { MUTED } from '@/common/consts/theme';
 import { authClient } from '@/services/auth-client';
 
 import type { ProfilePageCopy, ProfileAppUser } from '@/common/typings/profile';
@@ -60,7 +61,7 @@ export default function ProfileAppleSection({
             <Avatar
               url={undefined}
               text={(appUser.name ?? appUser.email ?? '?').charAt(0)}
-              color="#8E8E93"
+              color={MUTED}
               size={56}
             />
             <YStack flex={1} gap="$1">
@@ -76,7 +77,7 @@ export default function ProfileAppleSection({
                 <Text fontSize="$2" color="$gray12">
                   {copy.apple_login_label}
                 </Text>
-                <Ionicons name="logo-apple" size={14} color="#8E8E93" />
+                <Ionicons name="logo-apple" size={14} color={MUTED} />
               </XStack>
             </YStack>
           </XStack>

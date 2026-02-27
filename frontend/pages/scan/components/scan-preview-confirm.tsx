@@ -70,14 +70,14 @@ export default function ScanPreviewConfirm({
         <View
           px="$4"
           py="$2.5"
-          bg="$blue9"
+          bg="$primary"
           style={{ borderRadius: 20 }}
           pressStyle={{ opacity: 0.8 }}
           onPress={onConfirm}
         >
           <XStack gap="$2" style={{ alignItems: 'center' }}>
-            <Ionicons name="checkmark-outline" size={18} color="white" />
-            <Text color="white" fontWeight="600" fontSize="$3">
+            <Ionicons name="checkmark-outline" size={18} color="#FFFFFF" />
+            <Text color="$primaryForeground" fontWeight="600" fontSize="$3">
               使用此照片
             </Text>
           </XStack>

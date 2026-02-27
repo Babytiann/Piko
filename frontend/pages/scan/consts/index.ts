@@ -24,14 +24,14 @@ export const CATEGORY_ICONS: Record<ExpenseCategory, string> = {
   其他: 'ellipsis-horizontal-outline',
 };
 
-/** 分类 → 主题色映射（Tamagui token） */
+/** 分类 → 主题色映射（Tamagui token，统一主色） */
 export const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
-  餐饮: '$orange9',
-  交通: '$blue9',
-  购物: '$pink9',
-  娱乐: '$purple9',
-  生活: '$green9',
-  医疗: '$red9',
-  教育: '$yellow9',
-  其他: '$gray9',
+  餐饮: '$primary',
+  交通: '$primary',
+  购物: '$primary',
+  娱乐: '$primary',
+  生活: '$primary',
+  医疗: '$primary',
+  教育: '$primary',
+  其他: '$primary',
 };

@@ -98,7 +98,7 @@ export default function TgLoginCountrySelect({
         <Text fontSize={15} fontWeight="500" color="$color">
           {selectedCode}
         </Text>
-        <ChevronDown size={16} color={isDark ? '#999' : '#666'} />
+        <ChevronDown size={16} color="#687076" />
       </TouchableOpacity>
 
       <Modal
@@ -134,7 +134,7 @@ export default function TgLoginCountrySelect({
                   },
                 ]}
               >
-                <Text fontSize={13} fontWeight="600" color="#8E8E93">
+                <Text fontSize={13} fontWeight="600" color="$muted">
                   {header}
                 </Text>
               </View>
@@ -161,14 +161,14 @@ export default function TgLoginCountrySelect({
                         },
                         isSelected && {
                           backgroundColor: isDark
-                            ? 'rgba(10,132,255,0.15)'
-                            : 'rgba(0,122,255,0.08)',
+                            ? 'rgba(255,255,255,0.12)'
+                            : 'rgba(0,0,0,0.06)',
                         },
                       ]}
                     >
                       <Text
                         fontSize={15}
-                        color={isSelected ? '#007AFF' : '$color'}
+                        color={isSelected ? '$primary' : '$color'}
                         fontWeight={isSelected ? '600' : '400'}
                         flex={1}
                       >
@@ -176,12 +176,12 @@ export default function TgLoginCountrySelect({
                       </Text>
                       <Text
                         fontSize={14}
-                        color="#8E8E93"
+                        color="$muted"
                         mr={isSelected ? 8 : 0}
                       >
                         {item.code}
                       </Text>
-                      {isSelected ? <Check size={16} color="#007AFF" /> : null}
+                      {isSelected ? <Check size={16} color="#11181C" /> : null}
                     </TouchableOpacity>
                   );
                 })}

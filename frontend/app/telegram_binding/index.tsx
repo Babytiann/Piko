@@ -5,6 +5,13 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { YStack, XStack, Text } from 'tamagui';
 
+import {
+  PRIMARY,
+  MUTED,
+  BORDER,
+  CARD_BACKGROUND,
+  WARNING,
+} from '@/common/consts/theme';
 import { useAuth } from '@/common/hooks';
 import { unbindTelegram } from '@/services/telegram';
 
@@ -90,7 +97,7 @@ export default function TelegramBindingScreen(): ReactNode {
             pressStyle={{ opacity: 0.8 }}
             onPress={() => router.back()}
           >
-            <Ionicons name="chevron-back" size={24} color="#000" />
+            <Ionicons name="chevron-back" size={24} color={PRIMARY} />
           </XStack>
           <Text fontSize="$6" fontWeight="700" color="$color">
             Telegram 绑定
@@ -102,19 +109,25 @@ export default function TelegramBindingScreen(): ReactNode {
             <YStack
               width={80}
               height={80}
-              borderRadius={40}
-              bg="#E5E5EA"
-              style={{ alignItems: 'center', justifyContent: 'center' }}
+              bg="$gray4"
+              style={{
+                borderRadius: 40,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
             >
-              <Ionicons name="paper-plane" size={40} color="#8E8E93" />
+              <Ionicons name="paper-plane" size={40} color={MUTED} />
             </YStack>
           </YStack>
 
-          <YStack bg="#FFFFFF" style={{ borderRadius: 16, overflow: 'hidden' }}>
+          <YStack
+            bg={CARD_BACKGROUND}
+            style={{ borderRadius: 16, overflow: 'hidden' }}
+          >
             <YStack
               px="$4"
               py="$3"
-              style={{ borderBottomWidth: 1, borderColor: '#E5E5EA' }}
+              style={{ borderBottomWidth: 1, borderColor: BORDER }}
             >
               <Text fontSize="$2" color="$gray12">
                 用户名
@@ -126,7 +139,7 @@ export default function TelegramBindingScreen(): ReactNode {
             <YStack
               px="$4"
               py="$3"
-              style={{ borderBottomWidth: 1, borderColor: '#E5E5EA' }}
+              style={{ borderBottomWidth: 1, borderColor: BORDER }}
             >
               <Text fontSize="$2" color="$gray12">
                 用户 ID
@@ -163,8 +176,13 @@ export default function TelegramBindingScreen(): ReactNode {
             </YStack>
           </YStack>
 
-          <XStack bg="#FFF9E6" p="$4" gap="$3" style={{ borderRadius: 12 }}>
-            <Ionicons name="warning" size={22} color="#E67E00" />
+          <XStack
+            bg="$gray2"
+            p="$4"
+            gap="$3"
+            style={{ borderRadius: 12, borderWidth: 1, borderColor: BORDER }}
+          >
+            <Ionicons name="warning" size={22} color={WARNING} />
             <YStack flex={1} gap="$1">
               <Text fontSize="$3" fontWeight="600" color="$color">
                 解绑提示
@@ -177,7 +195,7 @@ export default function TelegramBindingScreen(): ReactNode {
           </XStack>
 
           <YStack
-            bg="#FFFFFF"
+            bg={CARD_BACKGROUND}
             py="$3"
             style={{
               borderRadius: 16,
@@ -187,7 +205,7 @@ export default function TelegramBindingScreen(): ReactNode {
             pressStyle={isUnbinding ? undefined : { opacity: 0.8 }}
             onPress={isUnbinding ? undefined : handleUnbind}
           >
-            <Text color="$red10" fontWeight="600" fontSize="$4">
+            <Text color="$destructive" fontWeight="600" fontSize="$4">
               {isUnbinding ? '解除中…' : '解除绑定'}
             </Text>
           </YStack>

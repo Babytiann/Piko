@@ -40,7 +40,7 @@ export default function ProfileTelegramSection({
           py="$3"
           style={{ minHeight: 56, alignItems: 'center' }}
         >
-          <Ionicons name="paper-plane-outline" size={22} color="#8E8E93" />
+          <Ionicons name="paper-plane-outline" size={22} color="#687076" />
           <YStack flex={1} gap="$0.5">
             <XStack gap="$2" style={{ alignItems: 'center' }}>
               <Text fontSize="$4" fontWeight="600" color="$color">
@@ -48,7 +48,7 @@ export default function ProfileTelegramSection({
               </Text>
               {isBound ? (
                 <>
-                  <Text fontSize="$3" color="$green10">
+                  <Text fontSize="$3" color="$success">
                     {copy.bound_label}
                   </Text>
                   <Ionicons name="checkmark-circle" size={18} color="#34C759" />
@@ -59,7 +59,7 @@ export default function ProfileTelegramSection({
               {isBound ? copy.bound_hint : copy.unbound_hint}
             </Text>
           </YStack>
-          <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
+          <Ionicons name="chevron-forward" size={20} color="#687076" />
         </XStack>
       </PikoCard>
     </YStack>

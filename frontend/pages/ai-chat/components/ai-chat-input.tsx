@@ -97,7 +97,7 @@ export default function AiChatInput({
         <View
           width={40}
           height={40}
-          bg={canSend ? '$blue9' : '$gray5'}
+          bg={canSend ? '$primary' : '$gray5'}
           opacity={canSend ? 1 : 0.5}
           pressStyle={canSend ? { scale: 0.92 } : undefined}
           onPress={canSend ? handleSend : undefined}
@@ -111,7 +111,11 @@ export default function AiChatInput({
           <Ionicons
             name="arrow-up"
             size={20}
-            color={canSend ? '#FFFFFF' : theme.gray9.val}
+            color={
+              canSend
+                ? (theme.primaryForeground?.val ?? '#FFFFFF')
+                : theme.gray9.val
+            }
           />
         </View>
       )}

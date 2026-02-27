@@ -195,11 +195,11 @@ export default function ProfileScreen(): ReactNode {
               }}
             >
               <XStack gap="$2" style={{ alignItems: 'center' }}>
-                <Text color="$red10" fontWeight="600" fontSize="$4">
+                <Text color="$destructive" fontWeight="600" fontSize="$4">
                   {isLoggingOut ? copy.logout_ingress : copy.logout_button}
                 </Text>
                 {isLoggingOut ? null : (
-                  <Text color="$red10" fontSize="$4">
+                  <Text color="$destructive" fontSize="$4">
                     →
                   </Text>
                 )}

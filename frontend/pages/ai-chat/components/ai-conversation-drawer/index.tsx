@@ -80,7 +80,7 @@ export default function AiConversationDrawer({
           px="$4"
           py="$3.5"
           mx="$3"
-          bg={isActive ? '$blue3' : 'transparent'}
+          bg={isActive ? '$gray4' : 'transparent'}
           style={{ alignItems: 'center', borderRadius: 10 }}
         >
           <YStack flex={1} mr="$3">
@@ -140,9 +140,9 @@ export default function AiConversationDrawer({
               <Ionicons
                 name="add-circle-outline"
                 size={22}
-                color={theme.blue10.val}
+                color={theme.primary.val}
               />
-              <Text fontSize="$3" color="$blue10" fontWeight="600">
+              <Text fontSize="$3" color="$primary" fontWeight="600">
                 {newChatLabel}
               </Text>
             </XStack>

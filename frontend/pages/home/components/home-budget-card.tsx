@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { PikoCard } from '@/common/components/piko-card';
 import { PikoRingChart } from '@/common/components/piko-ring-chart';
+import { SUCCESS, DESTRUCTIVE, MUTED } from '@/common/consts/theme';
 import type { BudgetCardNodeData } from '@/common/typings/home';
 
 interface Props {
@@ -27,8 +28,8 @@ function BudgetCardSetCta(): ReactNode {
           设置后即可查看预算使用情况
         </Text>
         <XStack mt="$2" style={{ alignItems: 'center', gap: 4 }}>
-          <Ionicons name="add-circle-outline" size={20} color="#687076" />
-          <Text fontSize="$3" color="$blue10">
+          <Ionicons name="add-circle-outline" size={20} color={MUTED} />
+          <Text fontSize="$3" color="$primary">
             去设置
           </Text>
         </XStack>
@@ -61,11 +62,11 @@ function BudgetCardContent({
               <Ionicons
                 name={data.trendPercent >= 0 ? 'trending-up' : 'trending-down'}
                 size={14}
-                color={data.trendPercent >= 0 ? '#34C759' : '#FF3B30'}
+                color={data.trendPercent >= 0 ? SUCCESS : DESTRUCTIVE}
               />
               <Text
                 fontSize="$1"
-                color={data.trendPercent >= 0 ? '#34C759' : '#FF3B30'}
+                color={data.trendPercent >= 0 ? '$success' : '$destructive'}
               >
                 {data.trendPercent >= 0 ? '+' : ''}
                 {data.trendPercent}%

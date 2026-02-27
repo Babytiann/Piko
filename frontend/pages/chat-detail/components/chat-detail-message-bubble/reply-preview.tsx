@@ -19,14 +19,14 @@ export default function ReplyPreview({
       mb="$1.5"
       pl="$2"
       borderLeftWidth={2}
-      borderLeftColor={isMe ? '$blue4' : '$blue9'}
+      borderLeftColor={isMe ? '$gray5' : '$primary'}
     >
       <YStack gap={2} style={{ flexShrink: 1 }}>
         {senderName ? (
           <Text
             fontSize="$1"
             fontWeight="600"
-            color={isMe ? '$blue3' : '$blue10'}
+            color={isMe ? '$primaryForeground' : '$primary'}
             numberOfLines={1}
           >
             {senderName}
@@ -35,7 +35,7 @@ export default function ReplyPreview({
         {text ? (
           <Text
             fontSize="$1"
-            color={isMe ? '$blue4' : '$gray11'}
+            color={isMe ? '$primaryForeground' : '$gray11'}
             numberOfLines={2}
           >
             {text}

@@ -1,11 +1,11 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * 设计 Token：应用背景灰、模块/卡片白，主色与语义色统一。
+ * 所有 UI 颜色由此处或 Tamagui themes 派生，避免硬编码 hex。
  */
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
+const tintColorLight = '#11181C';
 const tintColorDark = '#F5F5F5';
 
 export const Colors = {
@@ -19,7 +19,7 @@ export const Colors = {
   },
   dark: {
     text: '#ECEDEE',
-    background: '#151718',
+    background: '#141416',
     tint: tintColorDark,
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
@@ -27,24 +27,40 @@ export const Colors = {
   },
 };
 
-/** 卡片背景（与页面 gray2 区分，保证层次） */
+/** 主色（按钮、选中态、链接） */
+export const PRIMARY = '#11181C';
+export const PRIMARY_FOREGROUND = '#FFFFFF';
+/** 次要文字/图标 */
+export const MUTED = '#687076';
+/** 卡片背景（模块白，与页面灰区分） */
 export const CARD_BACKGROUND = '#FFFFFF';
+/** 边框/分割线 */
+export const BORDER = '#E5E5EA';
+/** 错误/危险 */
+export const DESTRUCTIVE = '#FF3B30';
+/** 成功/正向 */
+export const SUCCESS = '#34C759';
+/** 警告 */
+export const WARNING = '#E67E00';
 
-/** 预算环形图 */
-export const BUDGET_RING_COLOR = '#F5A623';
-export const BUDGET_RING_BG_COLOR = '#FFF3DC';
+/** 预算环形图（主色系） */
+export const BUDGET_RING_COLOR = '#11181C';
+export const BUDGET_RING_BG_COLOR = '#E5E5EA';
 
-/** 消费分类卡片背景色（与 DESIGN-SYSTEM 一致） */
+/** 消费分类卡片背景（浅浅多巴胺，低饱和统一） */
 export const EXPENSE_CATEGORY_COLORS = {
-  餐饮: '#FF6B6B',
-  交通: '#4ECDC4',
-  娱乐: '#45B7D1',
-  购物: '#96CEB4',
-  其他: '#DDA0DD',
+  餐饮: '#F5E6E6',
+  交通: '#E6EDF2',
+  娱乐: '#EDE8F2',
+  购物: '#E8F0E8',
+  生活: '#E8EEF2',
+  医疗: '#F5E8E8',
+  教育: '#F2EDE6',
+  其他: '#F0EDED',
 } as const;
 
-/** 天气卡片渐变（浅橙黄，用于 home-weather-card） */
-export const WEATHER_CARD_GRADIENT = ['#FFE5B4', '#FFD97D'];
+/** 天气卡片渐变（浅中性） */
+export const WEATHER_CARD_GRADIENT = ['#F5F5F5', '#EEEEEE'];
 
 export const Fonts = Platform.select({
   ios: {

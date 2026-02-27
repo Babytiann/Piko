@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { View, XStack, YStack, Text, Input } from 'tamagui';
 
+import { DESTRUCTIVE, MUTED, WARNING } from '@/common/consts/theme';
 import type { RecognizeResult, ExpenseCategory, ExpenseRecord } from '../types';
 import { EXPENSE_CATEGORIES, CATEGORY_ICONS } from '../consts';
 
@@ -49,7 +50,7 @@ export default function ScanResultForm({
     return (
       <View flex={1} bg="$background" pt={insets.top} style={center}>
         <YStack gap="$4" px="$6" style={{ alignItems: 'center' }}>
-          <Ionicons name="alert-circle-outline" size={48} color="#FF6B6B" />
+          <Ionicons name="alert-circle-outline" size={48} color={DESTRUCTIVE} />
           <Text color="$color" fontSize="$5" fontWeight="600">
             识别失败
           </Text>
@@ -57,14 +58,14 @@ export default function ScanResultForm({
             {error}
           </Text>
           <View
-            bg="$blue9"
+            bg="$primary"
             px="$5"
             py="$2.5"
             style={{ borderRadius: 12 }}
             pressStyle={{ opacity: 0.8 }}
             onPress={onRetake}
           >
-            <Text color="white" fontWeight="600">
+            <Text color="$primaryForeground" fontWeight="600">
               重新拍照
             </Text>
           </View>
@@ -87,7 +88,7 @@ export default function ScanResultForm({
             px="$2"
             py="$1"
           >
-            <Ionicons name="arrow-back" size={24} color="#999" />
+            <Ionicons name="arrow-back" size={24} color={MUTED} />
           </View>
           <Text
             flex={1}
@@ -112,7 +113,7 @@ export default function ScanResultForm({
             gap="$2"
             style={{ borderRadius: 8, alignItems: 'center' }}
           >
-            <Ionicons name="warning-outline" size={16} color="#B8860B" />
+            <Ionicons name="warning-outline" size={16} color={WARNING} />
             <Text color="$yellow11" fontSize="$2">
               识别置信度较低，请确认信息是否正确
             </Text>
@@ -186,7 +187,7 @@ export default function ScanResultForm({
                     key={cat}
                     px="$3"
                     py="$2"
-                    bg={isSelected ? '$blue9' : '$gray3'}
+                    bg={isSelected ? '$primary' : '$gray3'}
                     style={{ borderRadius: 10 }}
                     pressStyle={{ opacity: 0.8 }}
                     onPress={() => setCategory(cat)}
@@ -195,10 +196,10 @@ export default function ScanResultForm({
                       <Ionicons
                         name={CATEGORY_ICONS[cat] as never}
                         size={14}
-                        color={isSelected ? 'white' : '#999'}
+                        color={isSelected ? '#FFFFFF' : MUTED}
                       />
                       <Text
-                        color={isSelected ? 'white' : '$color'}
+                        color={isSelected ? '$primaryForeground' : '$color'}
                         fontSize="$2"
                         fontWeight={isSelected ? '600' : '400'}
                       >
@@ -267,13 +268,13 @@ export default function ScanResultForm({
           }}
         >
           <View
-            bg="$blue9"
+            bg="$primary"
             py="$3"
             style={{ borderRadius: 14, alignItems: 'center' }}
             pressStyle={{ opacity: 0.85 }}
             onPress={handleSave}
           >
-            <Text color="white" fontWeight="700" fontSize="$4">
+            <Text color="$primaryForeground" fontWeight="700" fontSize="$4">
               确认记账
             </Text>
           </View>

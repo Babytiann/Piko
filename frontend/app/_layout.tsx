@@ -36,7 +36,7 @@ export default function RootLayout() {
                   headerShown: true,
                   title: 'Chat',
                   headerShadowVisible: true,
-                  headerStyle: { backgroundColor: '#ffffff' },
+                  headerStyle: { backgroundColor: '#FFFFFF' },
                 }}
               />
               <Stack.Screen

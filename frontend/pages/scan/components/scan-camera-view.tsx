@@ -4,6 +4,7 @@ import { CameraView, type CameraType } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { View, XStack, Text } from 'tamagui';
 
+import { MUTED } from '@/common/consts/theme';
 import type { useScanCamera } from '../hooks/useScanCamera';
 
 interface Props {
@@ -32,7 +33,7 @@ export default function ScanCameraView({
   if (!camera.hasPermission) {
     return (
       <View flex={1} bg="$background" style={styles.center} gap="$4">
-        <Ionicons name="camera-outline" size={64} color="#9BA1A6" />
+        <Ionicons name="camera-outline" size={64} color={MUTED} />
         <Text
           color="$gray11"
           fontSize="$4"
@@ -42,14 +43,14 @@ export default function ScanCameraView({
           需要相机权限才能拍照记账
         </Text>
         <View
-          bg="$blue9"
+          bg="$primary"
           px="$5"
           py="$2.5"
           style={{ borderRadius: 12 }}
           pressStyle={{ opacity: 0.8 }}
           onPress={() => void camera.requestPermission()}
         >
-          <Text color="white" fontWeight="600" fontSize="$4">
+          <Text color="$primaryForeground" fontWeight="600" fontSize="$4">
             授权相机
           </Text>
         </View>

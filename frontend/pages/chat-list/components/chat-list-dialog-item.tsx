@@ -61,7 +61,7 @@ export default function ChatListDialogItem({
           </Text>
           {dialog.unread_count > 0 ? (
             <View
-              bg="$blue9"
+              bg="$primary"
               px="$1"
               style={{
                 minWidth: 20,

@@ -26,7 +26,7 @@ export default function AiChatMarkdown({
     const codeColor = theme.red10.val;
     const subtleBg = theme.gray3.val;
     const borderColor = theme.gray6.val;
-    const accentColor = theme.blue10.val;
+    const accentColor = theme.primary.val;
 
     return {
       body: { fontSize: 15, lineHeight: 22, color: textColor },

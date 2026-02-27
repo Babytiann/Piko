@@ -11,6 +11,13 @@ import { useRouter } from 'expo-router';
 import { YStack, XStack, Text } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
 
+import {
+  PRIMARY,
+  PRIMARY_FOREGROUND,
+  MUTED,
+  BORDER,
+  DESTRUCTIVE,
+} from '@/common/consts/theme';
 import { setBudget } from '@/services/budget';
 
 export default function BudgetSetupScreen(): ReactNode {
@@ -63,7 +70,7 @@ export default function BudgetSetupScreen(): ReactNode {
           style={{ alignSelf: 'flex-start', marginBottom: 24 }}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
-          <Ionicons name="arrow-back" size={24} color="#11181C" />
+          <Ionicons name="arrow-back" size={24} color={PRIMARY} />
         </TouchableOpacity>
 
         <Text fontSize="$6" fontWeight="700" color="$color" mb="$2">
@@ -84,20 +91,20 @@ export default function BudgetSetupScreen(): ReactNode {
               setError(null);
             }}
             placeholder="例如 2000"
-            placeholderTextColor="#9BA1A6"
+            placeholderTextColor={MUTED}
             keyboardType="decimal-pad"
             style={{
               borderWidth: 1,
-              borderColor: error ? '#FF3B30' : '#E5E5EA',
+              borderColor: error ? DESTRUCTIVE : BORDER,
               borderRadius: 12,
               paddingHorizontal: 16,
               paddingVertical: 14,
               fontSize: 17,
-              color: '#11181C',
+              color: PRIMARY,
             }}
           />
           {error ? (
-            <Text fontSize="$2" color="#FF3B30" mt="$2">
+            <Text fontSize="$2" color="$destructive" mt="$2">
               {error}
             </Text>
           ) : null}
@@ -107,7 +114,7 @@ export default function BudgetSetupScreen(): ReactNode {
           onPress={handleSubmit}
           disabled={!valid || submitting}
           style={{
-            backgroundColor: valid && !submitting ? '#0a7ea4' : '#E5E5EA',
+            backgroundColor: valid && !submitting ? PRIMARY : BORDER,
             borderRadius: 12,
             paddingVertical: 14,
             alignItems: 'center',
@@ -116,7 +123,7 @@ export default function BudgetSetupScreen(): ReactNode {
           <Text
             fontSize="$4"
             fontWeight="600"
-            color={valid && !submitting ? '#FFFFFF' : '#9BA1A6'}
+            color={valid && !submitting ? PRIMARY_FOREGROUND : MUTED}
           >
             {submitting ? '保存中…' : '保存'}
           </Text>
