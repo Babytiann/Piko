@@ -7,7 +7,10 @@ export const homepageRoutes = new Hono();
 homepageRoutes.post('/summary/v1', async (c) => {
   try {
     const userId = await getUserId(c.req.raw);
-    const data = await getHomePageData(userId);
+    const body = await c.req.json().catch(() => ({}));
+    const selectedDate =
+      typeof body.selected_date === 'string' ? body.selected_date : undefined;
+    const data = await getHomePageData(userId, selectedDate);
     return c.json({ success: true, data });
   } catch (err: unknown) {
     if (err instanceof UnauthorizedError) {

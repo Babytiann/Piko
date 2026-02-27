@@ -59,6 +59,33 @@ export const EXPENSE_CATEGORY_COLORS = {
   其他: '#F0EDED',
 } as const;
 
+export const CATEGORY_ICON_CONFIG: Record<
+  string,
+  { bgColor: string; iconColor: string; icon: string }
+> = {
+  餐饮: {
+    bgColor: '#FFF7ED',
+    iconColor: '#EA580C',
+    icon: 'restaurant-outline',
+  },
+  交通: { bgColor: '#EFF6FF', iconColor: '#2563EB', icon: 'car-outline' },
+  娱乐: {
+    bgColor: '#F5F3FF',
+    iconColor: '#7C3AED',
+    icon: 'musical-notes-outline',
+  },
+  购物: { bgColor: '#FFF1F2', iconColor: '#E11D48', icon: 'bag-outline' },
+  生活: { bgColor: '#F0FDF4', iconColor: '#16A34A', icon: 'home-outline' },
+  医疗: { bgColor: '#FEF2F2', iconColor: '#DC2626', icon: 'medkit-outline' },
+  健康: { bgColor: '#FDF2F8', iconColor: '#DB2777', icon: 'heart-outline' },
+  教育: { bgColor: '#FFFBEB', iconColor: '#D97706', icon: 'school-outline' },
+  其他: {
+    bgColor: '#F5F5F5',
+    iconColor: '#71717A',
+    icon: 'ellipsis-horizontal-outline',
+  },
+};
+
 /** 天气卡片渐变（浅中性） */
 export const WEATHER_CARD_GRADIENT = ['#F5F5F5', '#EEEEEE'];
 

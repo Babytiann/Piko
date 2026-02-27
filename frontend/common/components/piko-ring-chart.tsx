@@ -25,8 +25,8 @@ interface PikoRingChartProps {
 
 export function PikoRingChart({
   progress,
-  size = 120,
-  strokeWidth = 10,
+  size = 112,
+  strokeWidth = 15,
   color = BUDGET_RING_COLOR,
   bgColor = BUDGET_RING_BG_COLOR,
   centerIcon,

@@ -21,13 +21,14 @@ interface UseFetchDataReturn {
   bodyLayout: string[];
   nodes: HomeSlashNodes | undefined;
   handleRetry: () => void;
+  handleRefreshWithDate: (date?: string) => void;
 }
 
 function normalizeCacheKey(pathname: string): string {
   return pathname.replace(/\/$/, '') || '/';
 }
 
-export function useFetchData(): UseFetchDataReturn {
+export function useFetchData(selectedDate?: string): UseFetchDataReturn {
   const pathname = usePathname();
   const cacheKey = normalizeCacheKey(pathname ?? '/');
   const [isLoading, setIsLoading] = useState(true);
@@ -37,25 +38,26 @@ export function useFetchData(): UseFetchDataReturn {
   const [bodyLayout, setBodyLayout] = useState<string[]>([]);
   const [nodes, setNodes] = useState<HomeSlashNodes | undefined>(undefined);
   const [fetchKey, setFetchKey] = useState(0);
+  const [dateParam, setDateParam] = useState<string | undefined>(selectedDate);
 
   useEffect(() => {
     let cancelled = false;
     const cached = get<HomeCachePayload>(cacheKey);
     const hadCache = cached != null && (cached.bodyLayout?.length ?? 0) > 0;
 
-    if (hadCache) {
+    if (hadCache && !dateParam) {
       setBodyLayout(cached.bodyLayout ?? []);
       setNodes(cached.nodes ?? undefined);
       setIsLoading(false);
       setErrorType(undefined);
-    } else {
+    } else if (!hadCache) {
       setIsLoading(true);
       setErrorType(undefined);
     }
 
     async function load(): Promise<void> {
       try {
-        const response = await fetchHomePage();
+        const response = await fetchHomePage(dateParam);
         if (cancelled) return;
 
         const mappedError = getPageErrorType(response);
@@ -74,7 +76,7 @@ export function useFetchData(): UseFetchDataReturn {
             nodes: nextNodes,
           };
 
-          if (hadCache) {
+          if (hadCache && !dateParam) {
             if (!deepEqual(fresh, cached)) {
               setBodyLayout(nextLayout);
               setNodes(nextNodes);
@@ -83,7 +85,9 @@ export function useFetchData(): UseFetchDataReturn {
           } else {
             setBodyLayout(nextLayout);
             setNodes(nextNodes);
-            set(cacheKey, fresh);
+            if (!dateParam) {
+              set(cacheKey, fresh);
+            }
           }
         }
       } catch {
@@ -94,7 +98,7 @@ export function useFetchData(): UseFetchDataReturn {
           setNodes(undefined);
         }
       } finally {
-        if (!cancelled && !hadCache) setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     }
 
@@ -102,12 +106,25 @@ export function useFetchData(): UseFetchDataReturn {
     return () => {
       cancelled = true;
     };
-  }, [cacheKey, fetchKey]);
+  }, [cacheKey, fetchKey, dateParam]);
 
   const handleRetry = useCallback((): void => {
     clear(cacheKey);
+    setDateParam(undefined);
     setFetchKey((k) => k + 1);
   }, [cacheKey]);
 
-  return { isLoading, errorType, bodyLayout, nodes, handleRetry };
+  const handleRefreshWithDate = useCallback((date?: string): void => {
+    setDateParam(date);
+    setFetchKey((k) => k + 1);
+  }, []);
+
+  return {
+    isLoading,
+    errorType,
+    bodyLayout,
+    nodes,
+    handleRetry,
+    handleRefreshWithDate,
+  };
 }

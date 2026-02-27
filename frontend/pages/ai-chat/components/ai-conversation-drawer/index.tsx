@@ -22,6 +22,21 @@ import { DRAWER_OPEN_MS, DRAWER_CLOSE_MS } from '../../consts';
 const DRAWER_WIDTH = Dimensions.get('window').width * 0.7;
 const EASE = Easing.inOut(Easing.cubic);
 
+function formatRelativeTime(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return '刚刚';
+  if (mins < 60) return `${mins} 分钟前`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} 小时前`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days} 天前`;
+  return new Date(dateStr).toLocaleDateString('zh-CN', {
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
 interface AiConversationDrawerProps {
   visible: boolean;
   onClose: () => void;
@@ -71,17 +86,30 @@ export default function AiConversationDrawer({
     }
   }, [visible]);
 
-  const renderItem = ({ item }: { item: ConversationItem }) => {
+  const renderItem = ({
+    item,
+    index,
+  }: {
+    item: ConversationItem;
+    index: number;
+  }) => {
     const isActive = item.id === activeId;
+    const isLast = index === conversations.length - 1;
 
     return (
       <Pressable onPress={() => onSelect(item.id)}>
         <XStack
           px="$4"
-          py="$3.5"
+          py="$3"
           mx="$3"
           bg={isActive ? '$gray4' : 'transparent'}
-          style={{ alignItems: 'center', borderRadius: 10 }}
+          style={{
+            alignItems: 'center',
+            borderRadius: 10,
+            borderBottomWidth: isLast ? 0 : 0.5,
+            borderBottomColor: theme.gray4.val,
+            marginBottom: isLast ? 0 : 2,
+          }}
         >
           <YStack flex={1} mr="$3">
             <Text
@@ -92,9 +120,21 @@ export default function AiConversationDrawer({
             >
               {item.title || ''}
             </Text>
-            <Text fontSize="$2" color="$gray9" mt="$1">
-              {item.message_count} 条消息
-            </Text>
+            <XStack mt="$1" gap="$2" style={{ alignItems: 'center' }}>
+              <Text fontSize="$2" color="$gray9">
+                {item.message_count} 条消息
+              </Text>
+              {'updated_at' in item && item.updated_at ? (
+                <>
+                  <Text fontSize="$1" color="$gray7">
+                    ·
+                  </Text>
+                  <Text fontSize="$2" color="$gray8">
+                    {formatRelativeTime(item.updated_at as string)}
+                  </Text>
+                </>
+              ) : null}
+            </XStack>
           </YStack>
           <Pressable
             onPress={(e) => {

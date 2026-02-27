@@ -53,6 +53,7 @@ function SectionBlock({
             icon={icons[i] ?? 'ellipse-outline'}
             title={item.title}
             description={item.description}
+            isLast={i === items.length - 1}
           />
         ))}
       </PikoCard>

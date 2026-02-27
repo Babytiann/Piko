@@ -1,42 +1,77 @@
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useContext } from 'react';
 
-import { ScrollView, RefreshControl } from 'react-native';
-import { YStack, XStack, Spacer } from 'tamagui';
+import { ScrollView } from 'react-native';
+import { YStack, XStack, Text, Spacer } from 'tamagui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import PageLoading from '@/common/components/page-loading';
 import PageStatusView from '@/common/components/page-status-view';
 import type {
   BudgetCardNodeData,
   CategoryCardsData,
+  ExpenseListData,
   HomeSlashNodes,
+  QuickStatsData,
   WeatherCardData,
   WeekCalendarData,
 } from '@/common/typings/home';
+import { RecognitionContext } from '@/contexts/recognition-context';
 
 import { useFetchData } from '@/pages/home/hooks/useFetchData';
+import HomeQuickStats from '@/pages/home/components/home-quick-stats';
 import HomeWeekCalendar from '@/pages/home/components/home-week-calendar';
 import HomeBudgetCard from '@/pages/home/components/home-budget-card';
 import HomeWeatherCard from '@/pages/home/components/home-weather-card';
 import HomeCategoryCards from '@/pages/home/components/home-category-cards';
+import HomeExpenseList from '@/pages/home/components/home-expense-list';
+import HomeRecognitionProgress from '@/pages/home/components/home-recognition-progress';
 
 import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
 
-function renderSlot(slotId: string, nodes: HomeSlashNodes): ReactNode {
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 6) return '夜深了';
+  if (h < 12) return '早上好';
+  if (h < 14) return '中午好';
+  if (h < 18) return '下午好';
+  return '晚上好';
+}
+
+function renderSlot(
+  slotId: string,
+  nodes: HomeSlashNodes,
+  onWeekChange: (date: string) => void,
+  onBudgetUpdated: () => void,
+): ReactNode {
   const node = nodes[slotId as keyof HomeSlashNodes];
   const data = node?.type === 'component' ? node.data : undefined;
   if (data == null) return null;
 
   switch (slotId) {
+    case 'quick_stats':
+      return <HomeQuickStats data={data as QuickStatsData} />;
     case 'week_calendar':
-      return <HomeWeekCalendar data={data as WeekCalendarData} />;
+      return (
+        <HomeWeekCalendar
+          data={data as WeekCalendarData}
+          onWeekChange={onWeekChange}
+        />
+      );
     case 'budget_card':
-      return <HomeBudgetCard data={data as BudgetCardNodeData} />;
+      return (
+        <HomeBudgetCard
+          data={data as BudgetCardNodeData}
+          onBudgetUpdated={onBudgetUpdated}
+        />
+      );
     case 'weather_card':
       return <HomeWeatherCard data={data as WeatherCardData} />;
     case 'category_cards':
       return <HomeCategoryCards data={data as CategoryCardsData} />;
+    case 'expense_list':
+      return <HomeExpenseList data={data as ExpenseListData} />;
     default:
       return null;
   }
@@ -44,14 +79,22 @@ function renderSlot(slotId: string, nodes: HomeSlashNodes): ReactNode {
 
 export default function HomeScreen(): ReactNode {
   const { top, bottom } = useSafeAreaInsets();
-  const { isLoading, errorType, bodyLayout, nodes, handleRetry } =
-    useFetchData();
-  const [refreshing, setRefreshing] = useState(false);
+  const {
+    isLoading,
+    errorType,
+    bodyLayout,
+    nodes,
+    handleRetry,
+    handleRefreshWithDate,
+  } = useFetchData();
+  const recognition = useContext(RecognitionContext);
 
-  const onRefresh = (): void => {
-    setRefreshing(true);
+  const onWeekChange = (date: string): void => {
+    handleRefreshWithDate(date);
+  };
+
+  const onBudgetUpdated = (): void => {
     handleRetry();
-    setTimeout(() => setRefreshing(false), 500);
   };
 
   if (isLoading) return <PageLoading />;
@@ -68,9 +111,20 @@ export default function HomeScreen(): ReactNode {
     paddingHorizontal: 16,
   };
 
+  const showRecognition = recognition.status !== 'idle';
+
   const slots: ReactNode[] = [];
   for (let i = 0; i < bodyLayout.length; i++) {
     const slotId = bodyLayout[i];
+
+    if (slotId === 'category_cards' && showRecognition) {
+      slots.push(
+        <YStack key="recognition_progress">
+          <HomeRecognitionProgress />
+        </YStack>,
+      );
+    }
+
     if (slotId === 'budget_card' && bodyLayout[i + 1] === 'weather_card') {
       const budgetNode = nodes.budget_card;
       const weatherNode = nodes.weather_card;
@@ -79,23 +133,35 @@ export default function HomeScreen(): ReactNode {
       const weatherData =
         weatherNode?.type === 'component' ? weatherNode.data : undefined;
       slots.push(
-        <XStack key="middle_row" gap="$3" flexDirection="row">
-          {budgetData ? (
-            <YStack flex={1}>
-              <HomeBudgetCard data={budgetData as BudgetCardNodeData} />
-            </YStack>
-          ) : null}
-          {weatherData ? (
-            <YStack flex={1}>
-              <HomeWeatherCard data={weatherData} />
-            </YStack>
-          ) : null}
-        </XStack>,
+        <Animated.View
+          key="middle_row"
+          entering={FadeInDown.delay(200).springify()}
+        >
+          <XStack gap="$3" flexDirection="row">
+            {budgetData ? (
+              <YStack flex={1}>
+                <HomeBudgetCard
+                  data={budgetData as BudgetCardNodeData}
+                  onBudgetUpdated={onBudgetUpdated}
+                />
+              </YStack>
+            ) : null}
+            {weatherData ? (
+              <YStack flex={1}>
+                <HomeWeatherCard data={weatherData} />
+              </YStack>
+            ) : null}
+          </XStack>
+        </Animated.View>,
       );
       i += 1;
       continue;
     }
-    slots.push(<YStack key={slotId}>{renderSlot(slotId, nodes)}</YStack>);
+    slots.push(
+      <YStack key={slotId}>
+        {renderSlot(slotId, nodes, onWeekChange, onBudgetUpdated)}
+      </YStack>,
+    );
   }
 
   return (
@@ -104,12 +170,19 @@ export default function HomeScreen(): ReactNode {
         style={{ flex: 1 }}
         contentContainerStyle={contentPadding}
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
       >
-        <Spacer size="$4" />
-        <YStack gap="$4">{slots}</YStack>
+        <Spacer size="$2" />
+        <Animated.View entering={FadeInDown.delay(50).springify()}>
+          <YStack px="$1" mb="$2">
+            <Text fontSize={26} fontWeight="800" color="$color">
+              {getGreeting()}
+            </Text>
+            <Text fontSize={13} color="$muted" mt={2}>
+              记录每一笔
+            </Text>
+          </YStack>
+        </Animated.View>
+        <YStack gap="$3">{slots}</YStack>
       </ScrollView>
     </YStack>
   );

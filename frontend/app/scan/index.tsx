@@ -43,7 +43,7 @@ export default function ScanScreen(): ReactNode {
           <View flex={1} bg="$background" style={styles.center}>
             <ActivityIndicator size="large" />
             <Text color="$gray11" fontSize="$4" mt="$4">
-              AI 正在识别消费信息...
+              正在跳转首页...
             </Text>
           </View>
         );

@@ -3,10 +3,12 @@ import type { HomeSlashResponse } from '@/common/typings/home';
 import { fetch } from '@/services';
 
 /** Fetch all data for the Home page (Slash: layout + nodes). */
-export function fetchHomePage(): Promise<ApiResponse<HomeSlashResponse>> {
-  return fetch<Record<string, never>, HomeSlashResponse>({
+export function fetchHomePage(
+  selectedDate?: string,
+): Promise<ApiResponse<HomeSlashResponse>> {
+  return fetch<Record<string, unknown>, HomeSlashResponse>({
     method: 'POST',
     path: 'homepage/summary/v1',
-    body: {},
+    body: selectedDate ? { selected_date: selectedDate } : {},
   });
 }

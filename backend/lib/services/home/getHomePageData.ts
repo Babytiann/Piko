@@ -2,7 +2,10 @@ import type {
   BudgetCardData,
   BudgetCardNeedSet,
   CategoryCardsData,
+  ExpenseListData,
+  ExpenseListItem,
   HomeSlashResponse,
+  QuickStatsData,
   WeatherCardData,
   WeekCalendarData,
 } from '../../../types/home.js';
@@ -15,9 +18,10 @@ const DEFAULT_CITY = '上海';
 
 function getWeekBounds(anchor: Date): { start: Date; end: Date } {
   const d = new Date(anchor);
-  const day = d.getDay();
+  const dow = d.getDay();
+  const mondayOffset = dow === 0 ? 6 : dow - 1;
   const start = new Date(d);
-  start.setDate(d.getDate() - day);
+  start.setDate(d.getDate() - mondayOffset);
   start.setHours(0, 0, 0, 0);
   const end = new Date(start);
   end.setDate(start.getDate() + 6);
@@ -25,8 +29,31 @@ function getWeekBounds(anchor: Date): { start: Date; end: Date } {
   return { start, end };
 }
 
+function getMonthBounds(anchor: Date): { start: Date; end: Date } {
+  const start = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
+  end.setHours(23, 59, 59, 999);
+  return { start, end };
+}
+
+function getTodayBounds(now: Date): { start: Date; end: Date } {
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(now);
+  end.setHours(23, 59, 59, 999);
+  return { start, end };
+}
+
 function formatDateKey(date: Date): string {
   return date.toISOString().slice(0, 10);
+}
+
+function formatTime(dateStr: string): string {
+  const d = new Date(dateStr);
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = String(d.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
 }
 
 function getWeekLabel(date: Date): string {
@@ -36,11 +63,17 @@ function getWeekLabel(date: Date): string {
   return `${month}月第${weekOfMonth}周`;
 }
 
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
 export async function getHomePageData(
   userId: string,
+  selectedDate?: string,
 ): Promise<HomeSlashResponse> {
   const now = new Date();
-  const { start, end } = getWeekBounds(now);
+  const anchor = selectedDate ? new Date(selectedDate) : now;
+  const { start, end } = getWeekBounds(anchor);
   const startStr = formatDateKey(start);
   const endStr = formatDateKey(end);
 
@@ -51,23 +84,49 @@ export async function getHomePageData(
   const lastWeekStartStr = formatDateKey(lastWeekStart);
   const lastWeekEndStr = formatDateKey(lastWeekEnd);
 
-  const [weeklyBudget, expenseRes, lastWeekRes, weatherResult] =
-    await Promise.all([
-      getUserBudget(userId),
-      listExpenses(userId, {
-        startDate: startStr,
-        endDate: endStr,
-        pageSize: 100,
-        page: 1,
-      }),
-      listExpenses(userId, {
-        startDate: lastWeekStartStr,
-        endDate: lastWeekEndStr,
-        pageSize: 100,
-        page: 1,
-      }),
-      fetchCurrentWeather(DEFAULT_CITY).catch(() => null),
-    ]);
+  const todayBounds = getTodayBounds(now);
+  const todayStr = formatDateKey(todayBounds.start);
+  const todayEndStr = formatDateKey(todayBounds.end);
+
+  const monthBounds = getMonthBounds(now);
+  const monthStartStr = formatDateKey(monthBounds.start);
+  const monthEndStr = formatDateKey(monthBounds.end);
+
+  const [
+    weeklyBudget,
+    expenseRes,
+    lastWeekRes,
+    todayRes,
+    monthRes,
+    weatherResult,
+  ] = await Promise.all([
+    getUserBudget(userId),
+    listExpenses(userId, {
+      startDate: startStr,
+      endDate: endStr,
+      pageSize: 100,
+      page: 1,
+    }),
+    listExpenses(userId, {
+      startDate: lastWeekStartStr,
+      endDate: lastWeekEndStr,
+      pageSize: 100,
+      page: 1,
+    }),
+    listExpenses(userId, {
+      startDate: todayStr,
+      endDate: todayEndStr,
+      pageSize: 50,
+      page: 1,
+    }),
+    listExpenses(userId, {
+      startDate: monthStartStr,
+      endDate: monthEndStr,
+      pageSize: 500,
+      page: 1,
+    }),
+    fetchCurrentWeather(DEFAULT_CITY).catch(() => null),
+  ]);
 
   const expenses = expenseRes.expenses;
   const byDate: Record<string, number> = {};
@@ -79,6 +138,12 @@ export async function getHomePageData(
     byCategory[e.category] = (byCategory[e.category] ?? 0) + e.amount;
   }
 
+  const lastWeekByDate: Record<string, number> = {};
+  for (const e of lastWeekRes.expenses) {
+    const dateKey = e.date.slice(0, 10);
+    lastWeekByDate[dateKey] = (lastWeekByDate[dateKey] ?? 0) + e.amount;
+  }
+
   const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
   const lastWeekSpent = lastWeekRes.expenses.reduce(
     (sum, e) => sum + e.amount,
@@ -87,7 +152,21 @@ export async function getHomePageData(
   const daysInWeek = 7;
   const dailyAverage = totalSpent / daysInWeek;
 
-  const weekLabel = getWeekLabel(now);
+  // Build daily_spent arrays for sparkline
+  const dailySpent: number[] = [];
+  const lastWeekDailySpent: number[] = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    dailySpent.push(round2(byDate[formatDateKey(d)] ?? 0));
+
+    const ld = new Date(lastWeekStart);
+    ld.setDate(lastWeekStart.getDate() + i);
+    lastWeekDailySpent.push(round2(lastWeekByDate[formatDateKey(ld)] ?? 0));
+  }
+
+  // --- week_calendar ---
+  const weekLabel = getWeekLabel(anchor);
   const days: WeekCalendarData['days'] = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(start);
@@ -102,10 +181,11 @@ export async function getHomePageData(
 
   const weekCalendarData: WeekCalendarData = {
     weekLabel,
-    selectedDate: formatDateKey(now),
+    selectedDate: formatDateKey(anchor),
     days,
   };
 
+  // --- budget_card ---
   let budgetCardData: BudgetCardData | BudgetCardNeedSet;
   if (weeklyBudget == null) {
     budgetCardData = { needSetBudget: true };
@@ -121,15 +201,18 @@ export async function getHomePageData(
       trendPercent = Math.round(change * 10) / 10;
     }
     budgetCardData = {
-      weeklyBudget: weeklyBudget,
-      spent: Math.round(totalSpent * 100) / 100,
-      remaining: Math.round(remaining * 100) / 100,
+      weeklyBudget,
+      spent: round2(totalSpent),
+      remaining: round2(remaining),
       usedPercent,
-      dailyAverage: Math.round(dailyAverage * 100) / 100,
+      dailyAverage: round2(dailyAverage),
       trendPercent,
+      daily_spent: dailySpent,
+      last_week_daily_spent: lastWeekDailySpent,
     };
   }
 
+  // --- weather_card ---
   const weatherCardData: WeatherCardData | null = weatherResult
     ? {
         city: weatherResult.city,
@@ -142,25 +225,71 @@ export async function getHomePageData(
       }
     : null;
 
+  // --- category_cards ---
+  const totalCategoryAmount = Object.values(byCategory).reduce(
+    (s, a) => s + a,
+    0,
+  );
   const categoryCardsData: CategoryCardsData = {
     categories: Object.entries(byCategory).map(([category, amount]) => ({
       category,
-      amount: Math.round(amount * 100) / 100,
+      amount: round2(amount),
+      percentage:
+        totalCategoryAmount > 0
+          ? Math.round((amount / totalCategoryAmount) * 100)
+          : 0,
     })),
   };
 
+  // --- expense_list (today) ---
+  const todayExpenses = todayRes.expenses;
+  const todayTotal = todayExpenses.reduce((s, e) => s + e.amount, 0);
+  const expenseListData: ExpenseListData = {
+    expenses: todayExpenses.map(
+      (e): ExpenseListItem => ({
+        id: e.id,
+        category: e.category,
+        merchant: e.merchant,
+        amount: e.amount,
+        date: e.date.slice(0, 10),
+        time: formatTime(e.date),
+        source: e.source,
+        image_url: e.imageUrl,
+      }),
+    ),
+    total_count: todayRes.total,
+    total_amount: round2(todayTotal),
+  };
+
+  // --- quick_stats ---
+  const monthTotal = monthRes.expenses.reduce((s, e) => s + e.amount, 0);
+  const quickStatsData: QuickStatsData = {
+    today_amount: round2(todayTotal),
+    week_amount: round2(totalSpent),
+    month_amount: round2(monthTotal),
+  };
+
   const nodes: HomeSlashResponse['nodes'] = {
+    quick_stats: { type: 'component', data: quickStatsData },
     week_calendar: { type: 'component', data: weekCalendarData },
     budget_card: { type: 'component', data: budgetCardData },
     weather_card: weatherCardData
       ? { type: 'component', data: weatherCardData }
       : undefined,
     category_cards: { type: 'component', data: categoryCardsData },
+    expense_list: { type: 'component', data: expenseListData },
   };
 
   return {
     layout: {
-      body: ['week_calendar', 'budget_card', 'weather_card', 'category_cards'],
+      body: [
+        'quick_stats',
+        'week_calendar',
+        'budget_card',
+        'weather_card',
+        'category_cards',
+        'expense_list',
+      ],
     },
     nodes,
   };

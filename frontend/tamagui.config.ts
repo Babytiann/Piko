@@ -23,6 +23,12 @@ export const config = createTamagui({
       mass: 0.9,
       stiffness: 100,
     },
+    gentle: {
+      type: 'spring',
+      damping: 20,
+      mass: 1,
+      stiffness: 120,
+    },
   }),
   themes: {
     ...defaultConfig.themes,

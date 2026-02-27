@@ -17,6 +17,8 @@ export interface BudgetCardData {
   usedPercent: number;
   dailyAverage: number;
   trendPercent?: number;
+  daily_spent: number[];
+  last_week_daily_spent: number[];
 }
 
 export interface BudgetCardNeedSet {
@@ -38,10 +40,34 @@ export interface WeatherCardData {
 export interface CategoryCardItem {
   category: string;
   amount: number;
+  percentage: number;
 }
 
 export interface CategoryCardsData {
   categories: CategoryCardItem[];
+}
+
+export interface ExpenseListItem {
+  id: string;
+  category: string;
+  merchant: string | null;
+  amount: number;
+  date: string;
+  time: string;
+  source: string;
+  image_url: string | null;
+}
+
+export interface ExpenseListData {
+  expenses: ExpenseListItem[];
+  total_count: number;
+  total_amount: number;
+}
+
+export interface QuickStatsData {
+  today_amount: number;
+  week_amount: number;
+  month_amount: number;
 }
 
 export type HomeSlashNodeType = 'container' | 'component' | 'group';
@@ -52,10 +78,12 @@ export interface HomeSlashNode<T = unknown> {
 }
 
 export interface HomeSlashNodes {
+  quick_stats?: HomeSlashNode<QuickStatsData>;
   week_calendar?: HomeSlashNode<WeekCalendarData>;
   budget_card?: HomeSlashNode<BudgetCardNodeData>;
   weather_card?: HomeSlashNode<WeatherCardData>;
   category_cards?: HomeSlashNode<CategoryCardsData>;
+  expense_list?: HomeSlashNode<ExpenseListData>;
 }
 
 export interface HomeSlashLayout {
@@ -65,15 +93,4 @@ export interface HomeSlashLayout {
 export interface HomeSlashResponse {
   layout: HomeSlashLayout;
   nodes: HomeSlashNodes;
-}
-
-/** Legacy (pre-Slash) */
-export interface WelcomeCard {
-  title: string;
-  description: string;
-}
-
-export interface HomePageData {
-  header: { title: string };
-  welcome_card: WelcomeCard;
 }

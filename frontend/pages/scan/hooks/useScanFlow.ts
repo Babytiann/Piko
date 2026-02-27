@@ -1,37 +1,27 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react';
+import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
-import type { ScanPhase, RecognizeResult, ExpenseRecord } from '../types';
+import type { ScanPhase, ExpenseRecord } from '../types';
 import { useScanCamera } from './useScanCamera';
 import { useScanRecognize } from './useScanRecognize';
 import { uploadExpense } from '@/services/ai';
+import { compressImage } from '@/common/utils/compress-image';
+import { RecognitionContext } from '@/contexts/recognition-context';
 
 interface UseScanFlowReturn {
-  /** 当前流程阶段 */
   phase: ScanPhase;
-  /** 相机相关能力 */
   camera: ReturnType<typeof useScanCamera>;
-  /** AI 识别相关状态 */
   recognizer: ReturnType<typeof useScanRecognize>;
-  /** 拍照后的图片 URI（预览用） */
   capturedUri: string | null;
-  /** 拍照后的 base64（识别用） */
   capturedBase64: string | null;
-  /** 已保存的消费记录列表（本地 state） */
   expenses: ExpenseRecord[];
-  /** 拍照 */
   handleCapture: () => Promise<void>;
-  /** 从相册选图 */
   handlePickLibrary: () => Promise<void>;
-  /** 确认使用拍的照片 → 发起识别 */
   handleConfirmPhoto: () => Promise<void>;
-  /** 重拍 */
   handleRetake: () => void;
-  /** 切到手动输入 */
   handleManualInput: () => void;
-  /** 保存消费记录 */
   handleSaveExpense: (record: Omit<ExpenseRecord, 'id' | 'createdAt'>) => void;
-  /** 返回相机 */
   handleBackToCamera: () => void;
 }
 
@@ -47,6 +37,27 @@ export function useScanFlow(): UseScanFlowReturn {
 
   const camera = useScanCamera();
   const recognizer = useScanRecognize();
+  const router = useRouter();
+  const recognition = useContext(RecognitionContext);
+
+  const navigateHomeWithRecognition = async (
+    imageUri: string,
+    base64: string,
+    source: string,
+  ): Promise<void> => {
+    try {
+      const compressed = await compressImage(imageUri);
+      recognition.startRecognition(
+        compressed.base64,
+        'image/jpeg',
+        compressed.uri,
+        source,
+      );
+    } catch {
+      recognition.startRecognition(base64, 'image/jpeg', imageUri, source);
+    }
+    router.replace('/');
+  };
 
   const handleCapture = async (): Promise<void> => {
     const photo = await camera.takePicture();
@@ -66,17 +77,14 @@ export function useScanFlow(): UseScanFlowReturn {
     setCapturedUri(null);
     setCapturedBase64(base64);
     setCapturedMimeType('image/jpeg');
-    setPhase('recognizing');
-    await recognizer.recognize(base64, 'image/jpeg');
-    setPhase('result');
+
+    const tempUri = `data:image/jpeg;base64,${base64.slice(0, 100)}`;
+    await navigateHomeWithRecognition(tempUri, base64, 'album');
   };
 
   const handleConfirmPhoto = async (): Promise<void> => {
-    if (!capturedBase64) return;
-
-    setPhase('recognizing');
-    await recognizer.recognize(capturedBase64, capturedMimeType);
-    setPhase('result');
+    if (!capturedBase64 || !capturedUri) return;
+    await navigateHomeWithRecognition(capturedUri, capturedBase64, 'camera');
   };
 
   const handleRetake = (): void => {
@@ -102,7 +110,6 @@ export function useScanFlow(): UseScanFlowReturn {
     setExpenses((prev) => [expense, ...prev]);
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    // 异步上传后端持久化（不阻塞 UI）
     void uploadExpense({
       amount: record.amount,
       merchant: record.merchant,
@@ -114,7 +121,6 @@ export function useScanFlow(): UseScanFlowReturn {
       mime_type: capturedMimeType,
     }).catch((err) => console.error('[Expense] upload error:', err));
 
-    // 保存后回到相机
     setCapturedUri(null);
     setCapturedBase64(null);
     recognizer.clearResult();

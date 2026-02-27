@@ -10,6 +10,7 @@ interface ProfileListRowProps {
   description?: string;
   right?: ReactNode;
   onPress?: () => void;
+  isLast?: boolean;
 }
 
 export default function ProfileListRow({
@@ -18,12 +19,18 @@ export default function ProfileListRow({
   description,
   right,
   onPress,
+  isLast = false,
 }: ProfileListRowProps): ReactNode {
   const content = (
     <XStack
       gap="$3"
       py="$3"
-      style={{ minHeight: 56, alignItems: 'center' }}
+      style={{
+        minHeight: 56,
+        alignItems: 'center',
+        borderBottomWidth: isLast ? 0 : 0.5,
+        borderBottomColor: '#F0F0F0',
+      }}
       {...(onPress && {
         pressStyle: { opacity: 0.8 },
         onPress: () => onPress(),

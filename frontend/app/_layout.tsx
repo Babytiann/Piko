@@ -9,6 +9,7 @@ import { TamaguiProvider } from 'tamagui';
 import { PortalProvider } from '@tamagui/portal';
 import { config } from '../tamagui.config';
 import { AuthProvider, useAuthValue } from '@/common/hooks';
+import { RecognitionProvider } from '@/contexts/recognition-context';
 
 export default function RootLayout() {
   const scheme = useColorScheme();
@@ -22,61 +23,63 @@ export default function RootLayout() {
       >
         <PortalProvider shouldAddRootHost>
           <AuthProvider value={authValue}>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                headerStyle: { backgroundColor: '#ffffff' },
-                headerShadowVisible: true,
-              }}
-            >
-              <Stack.Screen name="(tabs)" options={{ title: '' }} />
-              <Stack.Screen
-                name="chat/[id]"
-                options={{
-                  headerShown: true,
-                  title: 'Chat',
+            <RecognitionProvider>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  headerStyle: { backgroundColor: '#ffffff' },
                   headerShadowVisible: true,
-                  headerStyle: { backgroundColor: '#FFFFFF' },
                 }}
-              />
-              <Stack.Screen
-                name="telegram_login"
-                options={{
-                  headerShown: false,
-                }}
-              />
-              <Stack.Screen
-                name="telegram-dialog/index"
-                options={{
-                  headerShown: false,
-                  title: '',
-                  animation: 'slide_from_right',
-                }}
-              />
-              <Stack.Screen
-                name="scan/index"
-                options={{
-                  headerShown: false,
-                  animation: 'slide_from_right',
-                  gestureEnabled: true,
-                  gestureDirection: 'horizontal',
-                }}
-              />
-              <Stack.Screen
-                name="telegram_binding/index"
-                options={{
-                  headerShown: false,
-                  animation: 'slide_from_right',
-                }}
-              />
-              <Stack.Screen
-                name="budget-setup/index"
-                options={{
-                  headerShown: false,
-                  animation: 'slide_from_right',
-                }}
-              />
-            </Stack>
+              >
+                <Stack.Screen name="(tabs)" options={{ title: '' }} />
+                <Stack.Screen
+                  name="chat/[id]"
+                  options={{
+                    headerShown: true,
+                    title: 'Chat',
+                    headerShadowVisible: true,
+                    headerStyle: { backgroundColor: '#FFFFFF' },
+                  }}
+                />
+                <Stack.Screen
+                  name="telegram_login"
+                  options={{
+                    headerShown: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="telegram-dialog/index"
+                  options={{
+                    headerShown: false,
+                    title: '',
+                    animation: 'slide_from_right',
+                  }}
+                />
+                <Stack.Screen
+                  name="scan/index"
+                  options={{
+                    headerShown: false,
+                    animation: 'slide_from_right',
+                    gestureEnabled: true,
+                    gestureDirection: 'horizontal',
+                  }}
+                />
+                <Stack.Screen
+                  name="telegram_binding/index"
+                  options={{
+                    headerShown: false,
+                    animation: 'slide_from_right',
+                  }}
+                />
+                <Stack.Screen
+                  name="budget-setup/index"
+                  options={{
+                    headerShown: false,
+                    animation: 'slide_from_right',
+                  }}
+                />
+              </Stack>
+            </RecognitionProvider>
           </AuthProvider>
         </PortalProvider>
         <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
