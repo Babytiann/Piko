@@ -2,7 +2,7 @@ import { createId } from '@paralleldrive/cuid2';
 
 import { db, expenses } from '../../../db/index.js';
 import { uploadImage } from '../../r2.js';
-import { CreateExpenseInput } from './types.js';
+import type { CreateExpenseInput } from './types.js';
 
 export async function createExpense(
   userId: string,

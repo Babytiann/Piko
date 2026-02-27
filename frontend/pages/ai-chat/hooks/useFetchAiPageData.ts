@@ -4,7 +4,7 @@ import {
   PageErrorType,
 } from '@/common/components/page-status-view';
 import { fetchAiPageData } from '@/services/ai';
-import { AiPageData } from '../types';
+import type { AiPageData } from '../types';
 
 interface UseFetchAiPageDataReturn {
   data: AiPageData | null;

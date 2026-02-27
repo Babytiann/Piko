@@ -1,4 +1,4 @@
-import { ChatListPageData } from '../../../types/chat.js';
+import type { ChatListPageData } from '../../../types/chat.js';
 import { getDialogList } from '../telegram/index.js';
 import { getAvatarColor, formatTime, buildAvatarUrl } from './helpers.js';
 

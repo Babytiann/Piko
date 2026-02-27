@@ -1,5 +1,5 @@
 import { geocodeCity } from './geocoding.js';
-import { AirPollutionResponse, AirPollutionResult } from './types.js';
+import type { AirPollutionResponse, AirPollutionResult } from './types.js';
 
 const API_KEY = process.env.OPENWEATHER_API_KEY ?? '';
 const BASE = 'https://api.openweathermap.org';

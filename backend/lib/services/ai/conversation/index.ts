@@ -1,4 +1,4 @@
-export { ConversationListItem, ConversationDetail } from './types.js';
+export type { ConversationListItem, ConversationDetail } from './types.js';
 export { createConversation } from './createConversation.js';
 export { listConversations } from './listConversations.js';
 export { getConversationWithMessages } from './getConversationWithMessages.js';

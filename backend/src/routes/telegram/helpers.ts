@@ -1,6 +1,6 @@
 import { Api } from 'telegram';
 
-import { TelegramUser } from '../../../types/telegram-login.js';
+import type { TelegramUser } from '../../../types/telegram-login.js';
 
 export function userPayload(user: Api.TypeUser): TelegramUser {
   return {

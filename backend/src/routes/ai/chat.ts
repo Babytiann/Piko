@@ -9,7 +9,7 @@ import {
   saveModelMessage,
   autoTitle,
 } from '../../../lib/services/ai/conversation/index.js';
-import { AiChatRequest } from '../../../types/ai.js';
+import type { AiChatRequest } from '../../../types/ai.js';
 
 export const chatRoutes = new Hono();
 

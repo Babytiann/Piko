@@ -17,10 +17,8 @@ import {
   TelegramAlreadyBoundError,
 } from '../../../lib/services/user/index.js';
 import { prefetchUserProfile } from '../../../lib/services/telegram/prefetch.js';
-import {
-  SessionTag,
-  TelegramAuthRequest,
-} from '../../../types/telegram-login.js';
+import { SessionTag } from '../../../types/telegram-login.js';
+import type { TelegramAuthRequest } from '../../../types/telegram-login.js';
 
 export const authRoutes = new Hono();
 

@@ -1,10 +1,10 @@
 import { generateText } from 'ai';
 
 import { getModel } from '../ai/client.js';
-import {
+import { EXPENSE_CATEGORIES } from '../../../types/expense.js';
+import type {
   RecognizeResult,
   ExpenseCategory,
-  EXPENSE_CATEGORIES,
 } from '../../../types/expense.js';
 
 // ---------------------------------------------------------------------------

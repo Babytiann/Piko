@@ -1,7 +1,7 @@
 import { Api } from 'telegram';
 import parsePhoneNumber from 'libphonenumber-js';
 import { getPooledClient } from '../../../telegram/index.js';
-import { TelegramUserInfo } from '../../../../types/telegram.js';
+import type { TelegramUserInfo } from '../../../../types/telegram.js';
 import { getUserInfoCache, setUserInfoCache } from './cache.js';
 
 export async function getUserInfo(session: string): Promise<TelegramUserInfo> {

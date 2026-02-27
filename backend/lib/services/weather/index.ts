@@ -3,7 +3,7 @@ export { fetchForecast } from './forecast.js';
 export { fetchAirPollution } from './air-pollution.js';
 export { geocodeCity } from './geocoding.js';
 
-export {
+export type {
   WeatherQueryType,
   WeatherResult,
   CurrentWeatherResult,

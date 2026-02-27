@@ -1,6 +1,6 @@
 import { eq, and, asc } from 'drizzle-orm';
 
-import { ConversationDetail } from './types.js';
+import type { ConversationDetail } from './types.js';
 import { db, aiConversations, aiMessages } from '../../../../db/index.js';
 
 export async function getConversationWithMessages(

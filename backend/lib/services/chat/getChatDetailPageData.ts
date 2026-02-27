@@ -1,6 +1,6 @@
-import { RawMessage } from '../../../types/telegram.js';
+import type { RawMessage } from '../../../types/telegram.js';
 import { getMessageList } from '../telegram/index.js';
-import { ChatDetailPageData, MessageItem } from '../../../types/chat.js';
+import type { ChatDetailPageData, MessageItem } from '../../../types/chat.js';
 import {
   formatMessageTime,
   buildAvatarUrl,

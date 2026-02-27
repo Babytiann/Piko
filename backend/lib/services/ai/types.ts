@@ -1,4 +1,3 @@
-/** 工具名 → 前端展示文案 */
 const TOOL_STATUS_MESSAGES: Record<string, string> = {
   get_weather: '正在查询天气...',
   plan_route: '正在规划路线...',
