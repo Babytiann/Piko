@@ -5,7 +5,7 @@ import { Text, View } from 'tamagui';
 
 import { API_HOST } from '@/common/config';
 
-/** Resolve relative server paths (e.g. "/piko/...") to absolute URLs. */
+/** Resolve relative server paths (e.g. "/telegram/...") to absolute URLs. */
 function resolveUrl(url: string): string {
   return url.startsWith('/') ? `${API_HOST}${url}` : url;
 }

@@ -16,6 +16,21 @@ import { telegramRoutes } from './routes/telegram/index.js';
 
 const app = new Hono();
 
+// 请求入口日志：便于在 Vercel Logs 中按 path 追溯
+app.use('*', async (c, next) => {
+  const method = c.req.method;
+  const path = c.req.path;
+  const qs = c.req.url.includes('?') ? '?' + c.req.url.split('?')[1] : '';
+  console.log('[piko] IN', method, path + qs);
+  await next();
+  const status = c.res.status;
+  if (status >= 400) {
+    console.warn('[piko] OUT', method, path, '->', status);
+  } else {
+    console.log('[piko] OUT', method, path, '->', status);
+  }
+});
+
 app.use(
   cors({
     origin: [
@@ -32,22 +47,29 @@ app.use(
 
 app.use(logger() as unknown as MiddlewareHandler);
 
-app.use('/piko/*', async (c, next) => {
-  console.log('[piko] request', c.req.method, c.req.path);
-  await next();
-});
-
 app.get('/', (c) => c.json({ status: 'ok', service: 'piko-backend' }));
 
 app.on(['GET', 'POST'], '/api/auth/*', (c) => auth.handler(c.req.raw));
 
-app.route('/piko/ai', aiRoutes);
-app.route('/piko/budget', budgetRoutes);
-app.route('/piko/expense', expenseRoutes);
-app.route('/piko/expense', recognizeStreamRoutes);
-app.route('/piko/homepage', homepageRoutes);
-app.route('/piko/profile', profileRoutes);
-app.route('/piko/chat', chatRoutes);
-app.route('/piko/telegram', telegramRoutes);
+app.route('/ai', aiRoutes);
+app.route('/budget', budgetRoutes);
+app.route('/expense', expenseRoutes);
+app.route('/expense', recognizeStreamRoutes);
+app.route('/homepage', homepageRoutes);
+app.route('/profile', profileRoutes);
+app.route('/chat', chatRoutes);
+app.route('/telegram', telegramRoutes);
+
+// 未匹配到路由时打日志，便于排查 404
+app.notFound((c) => {
+  console.warn('[piko] 404 no route', c.req.method, c.req.path);
+  return c.json({ success: false, error: 'Not Found' }, 404);
+});
+
+// 未捕获异常打日志，便于排查 500
+app.onError((err, c) => {
+  console.error('[piko] 500', c.req.method, c.req.path, err);
+  return c.json({ success: false, error: 'Internal Server Error' }, 500);
+});
 
 export default app;

@@ -123,6 +123,7 @@ expenseRoutes.post('/detail/v1', async (c) => {
     const body = (await c.req.json()) as Record<string, unknown>;
     const expenseId = body.id as string;
     if (!expenseId) {
+      console.warn('[piko] 400', c.req.path, 'Missing expense id');
       return c.json({ success: false, error: 'Missing expense id' }, 400);
     }
     const detail = await getExpenseDetail(userId, expenseId);
@@ -148,6 +149,7 @@ expenseRoutes.post('/delete/v1', async (c) => {
     const body = (await c.req.json()) as Record<string, unknown>;
     const expenseId = body.id as string;
     if (!expenseId) {
+      console.warn('[piko] 400', c.req.path, 'Missing expense id');
       return c.json({ success: false, error: 'Missing expense id' }, 400);
     }
     await deleteExpense(userId, expenseId);

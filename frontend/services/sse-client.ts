@@ -55,7 +55,7 @@ export function createSSEClient({
     }
   }
 
-  const url = `${API_HOST}/piko/${path}`;
+  const url = `${API_HOST}/${path}`;
   xhr.open('POST', url);
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.setRequestHeader('Accept', 'text/event-stream');

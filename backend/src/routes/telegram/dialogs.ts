@@ -17,6 +17,7 @@ dialogsRoutes.post('/get-dialogs/v1', async (c) => {
     };
 
     if (!session) {
+      console.warn('[piko] 400', c.req.path, 'session is required');
       return c.json({ success: false, error: 'session is required' }, 400);
     }
 

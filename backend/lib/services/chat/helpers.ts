@@ -50,7 +50,7 @@ export function buildAvatarUrl(
     peerType,
     accessHash,
   });
-  return `/piko/telegram/avatar/v1?${params.toString()}`;
+  return `/telegram/avatar/v1?${params.toString()}`;
 }
 
 export function buildMediaUrl(
@@ -67,7 +67,7 @@ export function buildMediaUrl(
     accessHash,
     messageId: messageId.toString(),
   });
-  return `/piko/telegram/media/v1?${params.toString()}`;
+  return `/telegram/media/v1?${params.toString()}`;
 }
 
 export const IMAGE_MEDIA_TYPES = new Set([

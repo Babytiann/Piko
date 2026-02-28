@@ -9,7 +9,7 @@ export interface ChatMessage {
   content: string;
 }
 
-/** Request body for POST /piko/ai/chat/v1 */
+/** Request body for POST /ai/chat/v1 */
 export interface AiChatRequest {
   messages: ChatMessage[];
   /** 对话 ID。"new" 或不传 = 新建对话，已有值 = 追加到现有对话 */

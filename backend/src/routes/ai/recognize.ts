@@ -10,18 +10,27 @@ recognizeRoutes.post('/recognize/v1', async (c) => {
   try {
     body = (await c.req.json()) as { image: string; mime_type: string };
   } catch {
+    console.warn('[piko] 400', c.req.path, 'Invalid JSON body');
     return c.json({ success: false, error: 'Invalid JSON body' }, 400);
   }
 
   if (!body.image || typeof body.image !== 'string') {
+    console.warn('[piko] 400', c.req.path, 'image (base64) is required');
     return c.json({ success: false, error: 'image (base64) is required' }, 400);
   }
   if (!body.mime_type || typeof body.mime_type !== 'string') {
+    console.warn('[piko] 400', c.req.path, 'mime_type is required');
     return c.json({ success: false, error: 'mime_type is required' }, 400);
   }
 
   const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
   if (!allowedMimeTypes.includes(body.mime_type)) {
+    console.warn(
+      '[piko] 400',
+      c.req.path,
+      'Unsupported mimeType:',
+      body.mime_type,
+    );
     return c.json(
       {
         success: false,

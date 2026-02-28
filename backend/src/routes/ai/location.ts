@@ -13,10 +13,12 @@ locationRoutes.post('/location/v1', async (c) => {
   try {
     body = (await c.req.json()) as LocationResponseBody;
   } catch {
+    console.warn('[piko] 400', c.req.path, 'Invalid JSON body');
     return c.json({ success: false, error: 'Invalid JSON body' }, 400);
   }
 
   if (!body.request_id) {
+    console.warn('[piko] 400', c.req.path, 'request_id is required');
     return c.json({ success: false, error: 'request_id is required' }, 400);
   }
 

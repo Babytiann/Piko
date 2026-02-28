@@ -29,10 +29,16 @@ chatRoutes.post('/chat/v1', async (c) => {
   try {
     body = (await c.req.json()) as AiChatRequest;
   } catch {
+    console.warn('[piko] 400', c.req.path, 'Invalid JSON body');
     return c.json({ success: false, error: 'Invalid JSON body' }, 400);
   }
 
   if (!Array.isArray(body.messages) || body.messages.length === 0) {
+    console.warn(
+      '[piko] 400',
+      c.req.path,
+      'messages must be a non-empty array',
+    );
     return c.json(
       { success: false, error: 'messages must be a non-empty array' },
       400,
@@ -41,6 +47,11 @@ chatRoutes.post('/chat/v1', async (c) => {
 
   const lastMsg = body.messages[body.messages.length - 1];
   if (!lastMsg || lastMsg.role !== 'user' || !lastMsg.content.trim()) {
+    console.warn(
+      '[piko] 400',
+      c.req.path,
+      'Last message must be a non-empty user message',
+    );
     return c.json(
       {
         success: false,

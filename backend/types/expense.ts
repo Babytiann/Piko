@@ -42,7 +42,7 @@ export interface RecognizeResult {
   confidence: number;
 }
 
-/** POST /piko/ai/recognize/v1 请求体 */
+/** POST /ai/recognize/v1 请求体 */
 export interface RecognizeRequest {
   /** Base64 编码的图片数据 */
   image: string;
@@ -50,7 +50,7 @@ export interface RecognizeRequest {
   mime_type: string;
 }
 
-/** POST /piko/ai/recognize/v1 响应体 */
+/** POST /ai/recognize/v1 响应体 */
 export interface RecognizeResponse {
   /** 识别结果 */
   result: RecognizeResult;

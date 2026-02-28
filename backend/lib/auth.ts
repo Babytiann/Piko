@@ -41,12 +41,9 @@ export const auth = betterAuth({
     'https://appleid.apple.com',
     'piko://',
     'exp://localhost:8081',
+    'exp://',
     'http://localhost:3000',
     'http://localhost:8081',
-    // Expo 开发时设备请求的 Origin 多为 exp://<本机 IP>:8081，用前缀匹配
-    ...(process.env.NODE_ENV !== 'production'
-      ? ['exp://', 'exp://**', 'http://192.168.0.0/16', 'http://10.0.0.0/8']
-      : []),
     ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
   ],
 });

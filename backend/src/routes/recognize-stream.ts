@@ -26,6 +26,7 @@ recognizeStreamRoutes.post('/recognize-stream/v1', async (c) => {
   const source = (body.source as string) ?? 'camera';
 
   if (!imageBase64) {
+    console.warn('[piko] 400', c.req.path, 'Missing image');
     return c.json({ success: false, error: 'Missing image' }, 400);
   }
 

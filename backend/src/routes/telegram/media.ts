@@ -60,6 +60,7 @@ mediaRoutes.get('/avatar/v1', async (c) => {
   const accessHash = c.req.query('accessHash') ?? '';
 
   if (!session || !peerId) {
+    console.warn('[piko] 400', c.req.path, 'session and peerId are required');
     return c.json({ error: 'session and peerId are required' }, 400);
   }
 

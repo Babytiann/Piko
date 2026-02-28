@@ -2,7 +2,7 @@ import type { ApiResponse } from '@/common/typings/api';
 import { API_HOST } from '@/common/config';
 import { authClient } from '@/services/auth-client';
 
-const API_BASE = `${API_HOST}/piko`;
+const API_BASE = API_HOST;
 
 // 启动时打一次 log，方便确认当前请求的根地址（排查 EXPO_PUBLIC_API_HOST / Vercel 域名）
 if (__DEV__) {

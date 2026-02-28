@@ -9,8 +9,8 @@ import type {
 } from '@/pages/ai-chat/types';
 import type { RecognizeResult } from '@/pages/scan/types';
 
-const SSE_URL = `${API_HOST}/piko/ai/chat/v1`;
-const LOCATION_URL = `${API_HOST}/piko/ai/location/v1`;
+const SSE_URL = `${API_HOST}/ai/chat/v1`;
+const LOCATION_URL = `${API_HOST}/ai/location/v1`;
 
 /**
  * Fetch all user-facing page data for the AI chat page.
