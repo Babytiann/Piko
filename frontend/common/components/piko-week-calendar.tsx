@@ -64,7 +64,8 @@ export function PikoWeekCalendar({
         const isToday = key === todayKey;
         const marked = markedDates[key];
         const amount = marked?.amount;
-        const hasExpense = amount != null && amount > 0;
+        const hasAmount = amount != null;
+        const hasExpense = hasAmount && amount > 0;
 
         return (
           <Pressable
@@ -103,16 +104,17 @@ export function PikoWeekCalendar({
               >
                 {date.getDate()}
               </Text>
-              {hasExpense ? (
-                <Text
-                  fontSize={10}
-                  color={isToday ? 'rgba(255,255,255,0.7)' : '$gray10'}
-                  mt={2}
-                  style={{ fontVariant: ['tabular-nums'] }}
-                >
-                  ¥{amount.toFixed(0)}
-                </Text>
-              ) : null}
+              <Text
+                fontSize={10}
+                color={isToday ? 'rgba(255,255,255,0.7)' : '$gray10'}
+                mt={2}
+                style={{
+                  fontVariant: ['tabular-nums'],
+                  opacity: hasExpense ? 1 : 0.5,
+                }}
+              >
+                {hasExpense ? `¥${amount.toFixed(0)}` : '0¥'}
+              </Text>
             </YStack>
           </Pressable>
         );

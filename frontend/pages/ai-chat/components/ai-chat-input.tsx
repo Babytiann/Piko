@@ -52,7 +52,7 @@ export default function AiChatInput({
       px="$3"
       py="$2"
       gap="$2"
-      bg="#FFFFFF"
+      bg="$card"
       pb={bottomInset}
       borderTopWidth={StyleSheet.hairlineWidth}
       borderTopColor="$gray5"

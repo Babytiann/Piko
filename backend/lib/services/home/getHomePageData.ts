@@ -95,7 +95,7 @@ export async function getHomePageData(
   const monthStartStr = formatDateKey(monthBounds.start);
   const monthEndStr = formatDateKey(monthBounds.end);
 
-  const [weeklyBudget, expenseRes, lastWeekRes, monthRes, weatherResult] =
+  const [budgetResult, expenseRes, lastWeekRes, monthRes, weatherResult] =
     await Promise.all([
       getUserBudget(userId),
       listExpenses(userId, {
@@ -181,11 +181,15 @@ export async function getHomePageData(
     days,
   };
 
+  // --- shared month total (used by budget_card + quick_stats) ---
+  const monthTotal = monthRes.expenses.reduce((s, e) => s + e.amount, 0);
+
   // --- budget_card ---
   let budgetCardData: BudgetCardData | BudgetCardNeedSet;
-  if (weeklyBudget == null) {
+  if (budgetResult == null) {
     budgetCardData = { needSetBudget: true };
   } else {
+    const { weeklyBudget, monthlyBudget } = budgetResult;
     const usedPercent =
       weeklyBudget > 0
         ? Math.min(100, Math.round((totalSpent / weeklyBudget) * 100))
@@ -197,6 +201,9 @@ export async function getHomePageData(
       trendPercent = Math.round(change * 10) / 10;
     }
     budgetCardData = {
+      monthlyBudget,
+      monthSpent: round2(monthTotal),
+      monthRemaining: round2(Math.max(0, monthlyBudget - monthTotal)),
       weeklyBudget,
       spent: round2(totalSpent),
       remaining: round2(remaining),
@@ -263,7 +270,6 @@ export async function getHomePageData(
     (e) => e.date.slice(0, 10) === todayStr,
   );
   const todayTotal = todayExpenses.reduce((s, e) => s + e.amount, 0);
-  const monthTotal = monthRes.expenses.reduce((s, e) => s + e.amount, 0);
   const quickStatsData: QuickStatsData = {
     today_amount: round2(todayTotal),
     week_amount: round2(totalSpent),

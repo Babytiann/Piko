@@ -25,11 +25,11 @@ export default function ProfileListRow({
     <XStack
       gap="$3"
       py="$3"
+      borderBottomWidth={isLast ? 0 : 0.5}
+      borderBottomColor="$gray4"
       style={{
         minHeight: 56,
         alignItems: 'center',
-        borderBottomWidth: isLast ? 0 : 0.5,
-        borderBottomColor: '#F0F0F0',
       }}
       {...(onPress && {
         pressStyle: { opacity: 0.8 },

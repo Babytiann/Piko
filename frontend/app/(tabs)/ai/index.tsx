@@ -176,7 +176,7 @@ export default function AiScreen(): ReactNode {
 
   if (isPageLoading) {
     return (
-      <YStack flex={1} bg="$background">
+      <YStack flex={1} bg="white">
         <PageLoading />
       </YStack>
     );
@@ -184,7 +184,7 @@ export default function AiScreen(): ReactNode {
 
   if (errorType) {
     return (
-      <YStack flex={1} bg="$background">
+      <YStack flex={1} bg="white">
         <PageStatusView errorType={errorType} onRetry={handleRetry} />
       </YStack>
     );
@@ -192,7 +192,7 @@ export default function AiScreen(): ReactNode {
 
   if (appSession === undefined) {
     return (
-      <YStack flex={1} bg="$background">
+      <YStack flex={1} bg="white">
         <PageLoading />
       </YStack>
     );
@@ -216,7 +216,7 @@ export default function AiScreen(): ReactNode {
   }
 
   return (
-    <YStack flex={1} bg="$background">
+    <YStack flex={1} bg="white">
       <AiConversationDrawer
         visible={drawerVisible}
         onClose={handleCloseDrawer}
@@ -235,7 +235,7 @@ export default function AiScreen(): ReactNode {
         pointerEvents="box-none"
         style={[{ flex: 1 }, contentAnimatedStyle]}
       >
-        <YStack flex={1} pt={insets.top} bg="$background">
+        <YStack flex={1} pt={insets.top} bg="white">
           <Animated.View
             pointerEvents={drawerVisible ? 'auto' : 'none'}
             style={[
@@ -252,6 +252,8 @@ export default function AiScreen(): ReactNode {
           <XStack
             px="$4"
             py="$3"
+            borderBottomWidth={0.5}
+            borderBottomColor="$gray4"
             style={{ alignItems: 'center', justifyContent: 'space-between' }}
           >
             <XStack gap="$3" style={{ alignItems: 'center' }}>

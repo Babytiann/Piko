@@ -138,7 +138,7 @@ export const expenses = pgTable(
 );
 
 // ---------------------------------------------------------------------------
-// 业务表 — UserBudget（用户周预算，一人一条）
+// 业务表 — UserBudget（用户预算，一人一条；月预算为用户设置值，周预算由系统按月均分）
 // ---------------------------------------------------------------------------
 
 export const userBudgets = pgTable('user_budget', {
@@ -147,7 +147,12 @@ export const userBudgets = pgTable('user_budget', {
     .notNull()
     .unique()
     .references(() => users.id, { onDelete: 'cascade' }),
-  /** 本周预算金额 */
+  /** 月预算金额（用户设置） */
+  monthlyBudget: numeric('monthly_budget', {
+    precision: 12,
+    scale: 2,
+  }).notNull(),
+  /** 周预算金额（系统按 monthlyBudget / 当月周数 计算） */
   weeklyBudget: numeric('weekly_budget', { precision: 12, scale: 2 }).notNull(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

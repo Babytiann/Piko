@@ -33,7 +33,7 @@ export default function HomeQuickStats({ data }: Props): ReactNode {
                   mt="$1"
                   style={{ fontVariant: ['tabular-nums'] }}
                 >
-                  ¥{data[item.key].toLocaleString()}
+                  ¥{(data[item.key] ?? 0).toLocaleString()}
                 </Text>
               </YStack>
             </PikoCard>

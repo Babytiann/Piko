@@ -29,7 +29,7 @@ interface Props {
   onSaved: () => void;
 }
 
-const PRESETS = [500, 1000, 2000, 3000];
+const PRESETS = [2000, 4000, 6000, 8000];
 
 export default function HomeBudgetEditSheet({
   visible,
@@ -111,7 +111,7 @@ export default function HomeBudgetEditSheet({
                   }}
                 >
                   <Text fontSize={18} fontWeight="700" color="$color">
-                    修改周预算
+                    修改月预算
                   </Text>
                   <Pressable onPress={onClose} hitSlop={8}>
                     <Ionicons name="close" size={22} color={MUTED} />
@@ -120,7 +120,7 @@ export default function HomeBudgetEditSheet({
 
                 <YStack mb="$4">
                   <Text fontSize={12} color="$muted" mb="$2">
-                    预算金额
+                    每月预算金额
                   </Text>
                   <XStack
                     style={{

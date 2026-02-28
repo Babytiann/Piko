@@ -11,7 +11,6 @@ import Animated, {
   ZoomIn,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 
@@ -33,7 +32,7 @@ function ProgressBar({ progress }: { progress: number }): ReactNode {
   const animatedWidth = useSharedValue(0);
 
   useEffect(() => {
-    animatedWidth.value = withSpring(progress, { damping: 15, stiffness: 150 });
+    animatedWidth.value = withTiming(progress, { duration: 300 });
   }, [progress, animatedWidth]);
 
   const barStyle = useAnimatedStyle(() => ({
@@ -214,7 +213,7 @@ function ResultEditSheet({
   );
 }
 
-const DELETE_BTN_WIDTH = 72;
+const DELETE_BTN_WIDTH = 56;
 
 export default function HomeRecognitionProgress(): ReactNode {
   const recognition = useContext(RecognitionContext);
@@ -231,7 +230,7 @@ export default function HomeRecognitionProgress(): ReactNode {
         text: '取消',
         style: 'cancel',
         onPress: () => {
-          translateX.value = withSpring(0);
+          translateX.value = withTiming(0, { duration: 200 });
         },
       },
       {
@@ -259,9 +258,9 @@ export default function HomeRecognitionProgress(): ReactNode {
     })
     .onEnd((e) => {
       if (e.translationX < -30 || e.velocityX < -500) {
-        translateX.value = withSpring(-DELETE_BTN_WIDTH, { damping: 20 });
+        translateX.value = withTiming(-DELETE_BTN_WIDTH, { duration: 200 });
       } else {
-        translateX.value = withSpring(0, { damping: 20 });
+        translateX.value = withTiming(0, { duration: 200 });
       }
     });
 
@@ -298,9 +297,6 @@ export default function HomeRecognitionProgress(): ReactNode {
               right: 0,
               top: 0,
               bottom: 0,
-              backgroundColor: DESTRUCTIVE,
-              borderTopRightRadius: 20,
-              borderBottomRightRadius: 20,
               alignItems: 'center',
               justifyContent: 'center',
             },
@@ -308,17 +304,17 @@ export default function HomeRecognitionProgress(): ReactNode {
         >
           <Pressable
             onPress={confirmDelete}
+            hitSlop={4}
             style={{
-              flex: 1,
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: DESTRUCTIVE,
               alignItems: 'center',
               justifyContent: 'center',
-              width: DELETE_BTN_WIDTH,
             }}
           >
-            <Ionicons name="trash-outline" size={22} color="white" />
-            <Text fontSize={10} color="white" mt={2} fontWeight="600">
-              删除
-            </Text>
+            <Ionicons name="trash-outline" size={18} color="white" />
           </Pressable>
         </Animated.View>
 

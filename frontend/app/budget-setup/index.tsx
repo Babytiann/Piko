@@ -74,15 +74,15 @@ export default function BudgetSetupScreen(): ReactNode {
         </TouchableOpacity>
 
         <Text fontSize="$6" fontWeight="700" color="$color" mb="$2">
-          设置本周预算
+          设置每月预算
         </Text>
         <Text fontSize="$3" color="$gray10" mb="$4">
-          设置后可在首页查看预算使用进度
+          设置后可在首页查看月度预算与每周进度
         </Text>
 
         <YStack mb="$4">
           <Text fontSize="$2" color="$gray10" mb="$2">
-            本周预算（元）
+            每月预算（元）
           </Text>
           <TextInput
             value={value}
@@ -90,7 +90,7 @@ export default function BudgetSetupScreen(): ReactNode {
               setValue(t);
               setError(null);
             }}
-            placeholder="例如 2000"
+            placeholder="例如 5000"
             placeholderTextColor={MUTED}
             keyboardType="decimal-pad"
             style={{

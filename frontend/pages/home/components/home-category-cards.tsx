@@ -88,7 +88,8 @@ export default function HomeCategoryCards({
     useState<CategoryCardItem | null>(null);
   const [showAllSheet, setShowAllSheet] = useState(false);
 
-  const displayCategories = data.categories.slice(0, 6);
+  const categories = data.categories ?? [];
+  const displayCategories = categories.slice(0, 6);
 
   return (
     <Animated.View entering={FadeInDown.delay(300).springify()}>
@@ -158,7 +159,7 @@ export default function HomeCategoryCards({
 
       <HomeCategoryAllSheet
         visible={showAllSheet}
-        categories={data.categories}
+        categories={categories}
         onClose={() => setShowAllSheet(false)}
         onSelectCategory={setSelectedCategory}
       />

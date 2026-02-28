@@ -114,9 +114,10 @@ export default function HomeExpenseList({
 
   const effectiveDate = selectedDate ?? data.today_date;
 
+  const expenses = data.expenses ?? [];
   const filtered = useMemo(() => {
-    return data.expenses.filter((e) => e.date === effectiveDate);
-  }, [data.expenses, effectiveDate]);
+    return expenses.filter((e) => e.date === effectiveDate);
+  }, [expenses, effectiveDate]);
 
   const totalAmount = useMemo(
     () => filtered.reduce((s, e) => s + e.amount, 0),

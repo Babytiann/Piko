@@ -1,15 +1,15 @@
-import type { ReactElement } from 'react'
-import { YStack, Text } from 'tamagui'
+import type { ReactElement } from 'react';
+import { YStack, Text } from 'tamagui';
 
 interface Props {
-  title: string
-  description: string
-  buttonText: string
-  onLoginPress: () => void
+  title: string;
+  description: string;
+  buttonText: string;
+  onLoginPress: () => void;
   /** Optional safe area / padding; e.g. from useSafeAreaInsets + tab bar height */
-  paddingTop?: number
-  paddingBottom?: number
-  paddingHorizontal?: number
+  paddingTop?: number;
+  paddingBottom?: number;
+  paddingHorizontal?: number;
 }
 
 export default function AiChatLoginPrompt({
@@ -24,7 +24,7 @@ export default function AiChatLoginPrompt({
   return (
     <YStack
       flex={1}
-      bg="$background"
+      bg="white"
       pt={paddingTop}
       pb={paddingBottom}
       px={paddingHorizontal}
@@ -59,5 +59,5 @@ export default function AiChatLoginPrompt({
         </Text>
       </YStack>
     </YStack>
-  )
+  );
 }

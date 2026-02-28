@@ -4,7 +4,7 @@ import { Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { YStack, XStack, Text } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Path, Line } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { PikoCard } from '@/common/components/piko-card';
@@ -103,10 +103,10 @@ function BudgetCardSetCta({ onPress }: { onPress: () => void }): ReactNode {
       >
         <YStack style={{ alignItems: 'center', gap: 8 }}>
           <Text fontSize={15} fontWeight="600" color="$gray10">
-            设置本周预算
+            设置每月预算
           </Text>
           <Text fontSize={12} color="$gray9">
-            设置后即可查看预算使用情况
+            设置后即可查看月度预算与每周进度
           </Text>
           <XStack mt="$2" style={{ alignItems: 'center', gap: 4 }}>
             <Ionicons name="add-circle-outline" size={20} color={MUTED} />
@@ -132,14 +132,18 @@ function BudgetCardContent({
   return (
     <Animated.View entering={FadeInDown.delay(200).springify()}>
       <PikoCard padding="$3">
+        {/* Month overview header */}
         <XStack
           mb="$2"
-          style={{ alignItems: 'flex-start', justifyContent: 'space-between' }}
+          pb="$2"
+          borderBottomWidth={1}
+          borderBottomColor="$gray4"
+          style={{ alignItems: 'center', justifyContent: 'space-between' }}
         >
           <YStack>
             <XStack style={{ alignItems: 'center', gap: 6 }}>
               <Text fontSize={11} color="$muted">
-                本周预算
+                月预算
               </Text>
               <Pressable onPress={onEditPress} hitSlop={8}>
                 <Ionicons name="create-outline" size={14} color={MUTED} />
@@ -148,6 +152,39 @@ function BudgetCardContent({
             <Text
               fontSize={16}
               fontWeight="700"
+              color="$color"
+              style={{ fontVariant: ['tabular-nums'] }}
+            >
+              ¥{data.monthlyBudget.toLocaleString()}
+            </Text>
+          </YStack>
+          <YStack style={{ alignItems: 'flex-end' }}>
+            <Text fontSize={11} color="$muted">
+              本月已花
+            </Text>
+            <Text
+              fontSize={14}
+              fontWeight="600"
+              color={data.monthRemaining <= 0 ? '$destructive' : '$color'}
+              style={{ fontVariant: ['tabular-nums'] }}
+            >
+              ¥{data.monthSpent.toLocaleString()}
+            </Text>
+          </YStack>
+        </XStack>
+
+        {/* Weekly progress section */}
+        <XStack
+          mb="$2"
+          style={{ alignItems: 'flex-start', justifyContent: 'space-between' }}
+        >
+          <YStack>
+            <Text fontSize={11} color="$muted">
+              本周预算
+            </Text>
+            <Text
+              fontSize={14}
+              fontWeight="600"
               color="$color"
               style={{ fontVariant: ['tabular-nums'] }}
             >
@@ -180,7 +217,7 @@ function BudgetCardContent({
                   {data.usedPercent}%
                 </Text>
                 <Text fontSize={10} color="$gray10">
-                  已使用
+                  本周已用
                 </Text>
               </YStack>
             }
@@ -188,7 +225,7 @@ function BudgetCardContent({
           <YStack flex={1} gap="$2">
             <YStack>
               <Text fontSize={11} color="$muted">
-                已花费
+                本周已花
               </Text>
               <Text
                 fontSize={15}
@@ -201,7 +238,7 @@ function BudgetCardContent({
             </YStack>
             <YStack>
               <Text fontSize={11} color="$muted">
-                剩余预算
+                本周剩余
               </Text>
               <Text
                 fontSize={15}
@@ -258,7 +295,7 @@ export default function HomeBudgetCard({
       />
       <HomeBudgetEditSheet
         visible={showEditSheet}
-        currentBudget={data.weeklyBudget}
+        currentBudget={data.monthlyBudget}
         onClose={() => setShowEditSheet(false)}
         onSaved={() => {
           setShowEditSheet(false);

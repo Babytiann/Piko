@@ -67,13 +67,13 @@ export default function ProfileSettingsSection({
   return (
     <YStack gap="$4">
       <SectionBlock
-        title={labels.settings.title}
-        items={labels.settings.items}
+        title={labels.settings?.title ?? ''}
+        items={labels.settings?.items ?? []}
         icons={SETTINGS_ICONS}
       />
       <SectionBlock
-        title={labels.help.title}
-        items={labels.help.items}
+        title={labels.help?.title ?? ''}
+        items={labels.help?.items ?? []}
         icons={HELP_ICONS}
       />
     </YStack>

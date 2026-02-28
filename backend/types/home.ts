@@ -16,6 +16,9 @@ export interface WeekCalendarData {
 }
 
 export interface BudgetCardData {
+  monthlyBudget: number;
+  monthSpent: number;
+  monthRemaining: number;
   weeklyBudget: number;
   spent: number;
   remaining: number;
