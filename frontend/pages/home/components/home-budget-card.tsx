@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useColorScheme } from 'react-native';
 import { YStack, XStack, Text } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
@@ -9,7 +10,8 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { PikoCard } from '@/common/components/piko-card';
 import { PikoRingChart } from '@/common/components/piko-ring-chart';
-import { SUCCESS, DESTRUCTIVE, MUTED } from '@/common/consts/theme';
+import { getThemeColors } from '@/common/consts/theme';
+import type { ColorScheme } from '@/common/consts/theme';
 import type {
   BudgetCardNodeData,
   BudgetCardData,
@@ -40,7 +42,13 @@ function buildSparklinePath(
     .join(' ');
 }
 
-function MiniSparkline({ data }: { data: BudgetCardData }): ReactNode {
+function MiniSparkline({
+  data,
+  scheme,
+}: {
+  data: BudgetCardData;
+  scheme: ColorScheme;
+}): ReactNode {
   const W = 60;
   const H = 24;
   const thisWeek = data.daily_spent ?? [];
@@ -50,27 +58,38 @@ function MiniSparkline({ data }: { data: BudgetCardData }): ReactNode {
 
   const thisPath = buildSparklinePath(thisWeek, W, H);
   const lastPath = buildSparklinePath(lastWeek, W, H);
+  const lastStroke = scheme === 'dark' ? '#52525B' : '#D4D4D8';
+  const thisStroke = scheme === 'dark' ? '#F59E0B' : '#FBBF24';
 
   return (
     <Svg width={W} height={H}>
       {lastPath ? (
         <Path
           d={lastPath}
-          stroke="#D4D4D8"
+          stroke={lastStroke}
           strokeWidth={1.5}
           fill="none"
           strokeDasharray="3,3"
         />
       ) : null}
       {thisPath ? (
-        <Path d={thisPath} stroke="#FBBF24" strokeWidth={2} fill="none" />
+        <Path d={thisPath} stroke={thisStroke} strokeWidth={2} fill="none" />
       ) : null}
     </Svg>
   );
 }
 
-function TrendBadge({ trendPercent }: { trendPercent: number }): ReactNode {
+function TrendBadge({
+  trendPercent,
+  scheme,
+}: {
+  trendPercent: number;
+  scheme: ColorScheme;
+}): ReactNode {
   const isDown = trendPercent < 0;
+  const colors = getThemeColors(scheme);
+  const bgDown = scheme === 'dark' ? 'rgba(50,215,75,0.12)' : '#F0FDF4';
+  const bgUp = scheme === 'dark' ? 'rgba(255,69,58,0.12)' : '#FEF2F2';
   return (
     <XStack
       style={{
@@ -79,13 +98,13 @@ function TrendBadge({ trendPercent }: { trendPercent: number }): ReactNode {
         paddingHorizontal: 8,
         paddingVertical: 3,
         borderRadius: 12,
-        backgroundColor: isDown ? '#F0FDF4' : '#FEF2F2',
+        backgroundColor: isDown ? bgDown : bgUp,
       }}
     >
       <Ionicons
         name={isDown ? 'trending-down' : 'trending-up'}
         size={12}
-        color={isDown ? SUCCESS : DESTRUCTIVE}
+        color={isDown ? colors.success : colors.destructive}
       />
       <Text
         fontSize={11}
@@ -101,10 +120,13 @@ function TrendBadge({ trendPercent }: { trendPercent: number }): ReactNode {
 function BudgetCardSetCta({
   onPress,
   labels,
+  scheme,
 }: {
   onPress: () => void;
   labels: HomeLabels['budget_card'];
+  scheme: ColorScheme;
 }): ReactNode {
+  const ctaColors = getThemeColors(scheme);
   return (
     <Animated.View entering={FadeInDown.delay(200).springify()}>
       <PikoCard
@@ -120,7 +142,11 @@ function BudgetCardSetCta({
             {labels.set_cta_desc}
           </Text>
           <XStack mt="$2" style={{ alignItems: 'center', gap: 4 }}>
-            <Ionicons name="add-circle-outline" size={20} color={MUTED} />
+            <Ionicons
+              name="add-circle-outline"
+              size={20}
+              color={ctaColors.muted}
+            />
             <Text fontSize={14} color="$primary">
               {labels.set_cta_button}
             </Text>
@@ -136,14 +162,17 @@ function BudgetCardContent({
   labels,
   cs,
   onEditPress,
+  scheme,
 }: {
   data: BudgetCardData;
   labels: HomeLabels['budget_card'];
   cs: string;
   onEditPress: () => void;
+  scheme: ColorScheme;
 }): ReactNode {
   const progress = Math.min(1, data.usedPercent / 100);
   const isOverBudget = data.usedPercent > 100;
+  const colors = getThemeColors(scheme);
 
   return (
     <Animated.View entering={FadeInDown.delay(200).springify()}>
@@ -161,7 +190,11 @@ function BudgetCardContent({
                 {labels.monthly_budget_label}
               </Text>
               <Pressable onPress={onEditPress} hitSlop={8}>
-                <Ionicons name="create-outline" size={14} color={MUTED} />
+                <Ionicons
+                  name="create-outline"
+                  size={14}
+                  color={colors.muted}
+                />
               </Pressable>
             </XStack>
             <Text
@@ -210,9 +243,9 @@ function BudgetCardContent({
           </YStack>
           <YStack style={{ alignItems: 'flex-end', gap: 4 }}>
             {data.trendPercent != null ? (
-              <TrendBadge trendPercent={data.trendPercent} />
+              <TrendBadge trendPercent={data.trendPercent} scheme={scheme} />
             ) : null}
-            <MiniSparkline data={data} />
+            <MiniSparkline data={data} scheme={scheme} />
           </YStack>
         </XStack>
 
@@ -221,7 +254,7 @@ function BudgetCardContent({
             progress={progress}
             size={112}
             strokeWidth={15}
-            color={isOverBudget ? '#FF4D4F' : undefined}
+            color={isOverBudget ? colors.destructive : undefined}
             centerIcon={
               <YStack
                 style={{ alignItems: 'center', justifyContent: 'center' }}
@@ -303,6 +336,7 @@ export default function HomeBudgetCard({
   onBudgetUpdated,
 }: Props): ReactNode {
   const router = useRouter();
+  const scheme = (useColorScheme() ?? 'light') as ColorScheme;
   const [showEditSheet, setShowEditSheet] = useState(false);
   const bl = labels.budget_card;
   const cl = labels.common;
@@ -313,6 +347,7 @@ export default function HomeBudgetCard({
       <BudgetCardSetCta
         onPress={() => router.push('/budget-setup')}
         labels={bl}
+        scheme={scheme}
       />
     );
   }
@@ -324,6 +359,7 @@ export default function HomeBudgetCard({
         labels={bl}
         cs={cs}
         onEditPress={() => setShowEditSheet(true)}
+        scheme={scheme}
       />
       <HomeBudgetEditSheet
         visible={showEditSheet}

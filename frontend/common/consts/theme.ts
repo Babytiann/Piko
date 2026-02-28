@@ -43,6 +43,43 @@ export const SUCCESS = '#34C759';
 /** 警告 */
 export const WARNING = '#E67E00';
 
+export type ColorScheme = 'light' | 'dark';
+
+const THEME_COLORS = {
+  light: {
+    primary: '#11181C',
+    primaryForeground: '#FFFFFF',
+    muted: '#687076',
+    card: '#FFFFFF',
+    background: '#F5F5F5',
+    border: '#E5E5EA',
+    destructive: '#FF3B30',
+    success: '#34C759',
+    warning: '#E67E00',
+    overlay: 'rgba(0,0,0,0.4)',
+    subtleBorder: 'rgba(0,0,0,0.04)',
+    subtleShadow: '0 1px 3px rgba(0,0,0,0.04)',
+  },
+  dark: {
+    primary: '#ECEDEE',
+    primaryForeground: '#11181C',
+    muted: '#9BA1A6',
+    card: '#1C1C1E',
+    background: '#141416',
+    border: '#38383A',
+    destructive: '#FF453A',
+    success: '#32D74B',
+    warning: '#FF9F0A',
+    overlay: 'rgba(0,0,0,0.6)',
+    subtleBorder: 'rgba(255,255,255,0.06)',
+    subtleShadow: 'none',
+  },
+} as const;
+
+export function getThemeColors(scheme: ColorScheme) {
+  return THEME_COLORS[scheme];
+}
+
 /** 预算环形图（主色系） */
 export const BUDGET_RING_COLOR = '#FBBF24';
 export const BUDGET_RING_BG_COLOR = '#E5E5EA';
@@ -86,8 +123,42 @@ export const CATEGORY_ICON_CONFIG: Record<
   },
 };
 
+const CATEGORY_ICON_CONFIG_DARK: Record<
+  string,
+  { bgColor: string; iconColor: string; icon: string }
+> = {
+  餐饮: {
+    bgColor: '#2D1F0E',
+    iconColor: '#FB923C',
+    icon: 'restaurant-outline',
+  },
+  交通: { bgColor: '#0F1A2E', iconColor: '#60A5FA', icon: 'car-outline' },
+  娱乐: {
+    bgColor: '#1A1230',
+    iconColor: '#A78BFA',
+    icon: 'musical-notes-outline',
+  },
+  购物: { bgColor: '#2D0F18', iconColor: '#FB7185', icon: 'bag-outline' },
+  生活: { bgColor: '#0F2D1A', iconColor: '#4ADE80', icon: 'home-outline' },
+  医疗: { bgColor: '#2D1414', iconColor: '#F87171', icon: 'medkit-outline' },
+  健康: { bgColor: '#2D0F22', iconColor: '#F472B6', icon: 'heart-outline' },
+  教育: { bgColor: '#2D2510', iconColor: '#FBBF24', icon: 'school-outline' },
+  其他: {
+    bgColor: '#2C2C2E',
+    iconColor: '#A1A1AA',
+    icon: 'ellipsis-horizontal-outline',
+  },
+};
+
+export function getCategoryIconConfig(
+  scheme: ColorScheme,
+): Record<string, { bgColor: string; iconColor: string; icon: string }> {
+  return scheme === 'dark' ? CATEGORY_ICON_CONFIG_DARK : CATEGORY_ICON_CONFIG;
+}
+
 /** 天气卡片渐变（浅中性） */
 export const WEATHER_CARD_GRADIENT = ['#F5F5F5', '#EEEEEE'];
+export const WEATHER_CARD_GRADIENT_DARK = ['#1C1C1E', '#2C2C2E'];
 
 export const Fonts = Platform.select({
   ios: {

@@ -1,6 +1,12 @@
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
-import { Modal, Pressable, FlatList, Dimensions } from 'react-native';
+import {
+  Modal,
+  Pressable,
+  FlatList,
+  Dimensions,
+  useColorScheme,
+} from 'react-native';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -10,7 +16,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { MUTED, CATEGORY_ICON_CONFIG } from '@/common/consts/theme';
+import { getCategoryIconConfig, getThemeColors } from '@/common/consts/theme';
+import type { ColorScheme } from '@/common/consts/theme';
 import type { ExpenseListItem, HomeLabels } from '@/common/typings/home';
 
 const SCREEN_H = Dimensions.get('window').height;
@@ -33,6 +40,9 @@ export default function HomeExpenseAllSheet({
   onClose,
 }: Props): ReactNode {
   const router = useRouter();
+  const scheme = (useColorScheme() ?? 'light') as ColorScheme;
+  const colors = getThemeColors(scheme);
+  const iconConfig = getCategoryIconConfig(scheme);
   const translateY = useSharedValue(SCREEN_H);
   const el = labels.expense_list;
   const cs = labels.common.currency_symbol;
@@ -58,7 +68,7 @@ export default function HomeExpenseAllSheet({
       <Pressable
         style={{
           flex: 1,
-          backgroundColor: 'rgba(0,0,0,0.4)',
+          backgroundColor: colors.overlay,
           justifyContent: 'flex-end',
         }}
         onPress={onClose}
@@ -94,7 +104,7 @@ export default function HomeExpenseAllSheet({
                   </Text>
                 </YStack>
                 <Pressable onPress={onClose} hitSlop={8}>
-                  <Ionicons name="close" size={22} color={MUTED} />
+                  <Ionicons name="close" size={22} color={colors.muted} />
                 </Pressable>
               </XStack>
 
@@ -104,8 +114,7 @@ export default function HomeExpenseAllSheet({
                 contentContainerStyle={{ paddingHorizontal: 20 }}
                 renderItem={({ item }) => {
                   const config =
-                    CATEGORY_ICON_CONFIG[item.category] ??
-                    CATEGORY_ICON_CONFIG['其他'];
+                    iconConfig[item.category] ?? iconConfig['其他'];
                   return (
                     <Pressable
                       onPress={() => {
@@ -184,7 +193,7 @@ export default function HomeExpenseAllSheet({
                           <Ionicons
                             name="chevron-forward"
                             size={14}
-                            color={MUTED}
+                            color={colors.muted}
                           />
                         </XStack>
                       </XStack>

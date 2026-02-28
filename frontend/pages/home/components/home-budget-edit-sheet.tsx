@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Dimensions,
+  useColorScheme,
 } from 'react-native';
 import { YStack, XStack, Text } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,7 +19,8 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { setBudget } from '@/services/budget';
-import { MUTED, PRIMARY } from '@/common/consts/theme';
+import { getThemeColors } from '@/common/consts/theme';
+import type { ColorScheme } from '@/common/consts/theme';
 import type { HomeLabels } from '@/common/typings/home';
 
 const SCREEN_H = Dimensions.get('window').height;
@@ -44,6 +46,8 @@ export default function HomeBudgetEditSheet({
   const cl = labels.common;
   const cs = cl.currency_symbol;
 
+  const scheme = (useColorScheme() ?? 'light') as ColorScheme;
+  const colors = getThemeColors(scheme);
   const [value, setValue] = useState(String(currentBudget));
   const [saving, setSaving] = useState(false);
   const translateY = useSharedValue(SCREEN_H);
@@ -90,7 +94,7 @@ export default function HomeBudgetEditSheet({
       <Pressable
         style={{
           flex: 1,
-          backgroundColor: 'rgba(0,0,0,0.4)',
+          backgroundColor: colors.overlay,
           justifyContent: 'flex-end',
         }}
         onPress={onClose}
@@ -121,7 +125,7 @@ export default function HomeBudgetEditSheet({
                     {bl.edit_sheet_title}
                   </Text>
                   <Pressable onPress={onClose} hitSlop={8}>
-                    <Ionicons name="close" size={22} color={MUTED} />
+                    <Ionicons name="close" size={22} color={colors.muted} />
                   </Pressable>
                 </XStack>
 
@@ -133,7 +137,7 @@ export default function HomeBudgetEditSheet({
                     style={{
                       alignItems: 'center',
                       borderWidth: 1.5,
-                      borderColor: '#E5E5EA',
+                      borderColor: colors.border,
                       borderRadius: 14,
                       borderCurve: 'continuous',
                       paddingHorizontal: 16,
@@ -151,7 +155,7 @@ export default function HomeBudgetEditSheet({
                         flex: 1,
                         fontSize: 24,
                         fontWeight: '700',
-                        color: '#11181C',
+                        color: colors.primary,
                         fontVariant: ['tabular-nums'],
                       }}
                       autoFocus
@@ -161,37 +165,43 @@ export default function HomeBudgetEditSheet({
                 </YStack>
 
                 <XStack gap="$2" mb="$5">
-                  {PRESETS.map((amount) => (
-                    <Pressable
-                      key={amount}
-                      onPress={() => handlePreset(amount)}
-                      style={{
-                        flex: 1,
-                        paddingVertical: 10,
-                        borderRadius: 12,
-                        borderCurve: 'continuous',
-                        backgroundColor:
-                          value === String(amount) ? '#11181C' : '#F5F5F5',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <Text
-                        fontSize={13}
-                        fontWeight="600"
-                        color={value === String(amount) ? 'white' : '$color'}
+                  {PRESETS.map((amount) => {
+                    const isActive = value === String(amount);
+                    return (
+                      <Pressable
+                        key={amount}
+                        onPress={() => handlePreset(amount)}
+                        style={{
+                          flex: 1,
+                          paddingVertical: 10,
+                          borderRadius: 12,
+                          borderCurve: 'continuous',
+                          backgroundColor: isActive
+                            ? colors.primary
+                            : scheme === 'dark'
+                              ? '#2C2C2E'
+                              : '#F5F5F5',
+                          alignItems: 'center',
+                        }}
                       >
-                        {cs}
-                        {amount.toLocaleString()}
-                      </Text>
-                    </Pressable>
-                  ))}
+                        <Text
+                          fontSize={13}
+                          fontWeight="600"
+                          color={isActive ? '$primaryForeground' : '$color'}
+                        >
+                          {cs}
+                          {amount.toLocaleString()}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
                 </XStack>
 
                 <Pressable
                   onPress={() => void handleSave()}
                   disabled={saving}
                   style={{
-                    backgroundColor: PRIMARY,
+                    backgroundColor: colors.primary,
                     borderRadius: 14,
                     borderCurve: 'continuous',
                     paddingVertical: 14,
@@ -199,7 +209,11 @@ export default function HomeBudgetEditSheet({
                     opacity: saving ? 0.6 : 1,
                   }}
                 >
-                  <Text fontSize={16} fontWeight="700" color="white">
+                  <Text
+                    fontSize={16}
+                    fontWeight="700"
+                    color="$primaryForeground"
+                  >
                     {saving ? cl.saving : cl.save}
                   </Text>
                 </Pressable>

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useEffect, useMemo } from 'react';
-import { Modal, Pressable, Dimensions } from 'react-native';
+import { Modal, Pressable, Dimensions, useColorScheme } from 'react-native';
 import { YStack, XStack, Text } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
@@ -10,7 +10,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { MUTED, PRIMARY } from '@/common/consts/theme';
+import { getThemeColors } from '@/common/consts/theme';
+import type { ColorScheme } from '@/common/consts/theme';
 const SCREEN_H = Dimensions.get('window').height;
 
 interface CalendarLabels {
@@ -36,6 +37,8 @@ export default function HomeDatePickerSheet({
   onClose,
   labels,
 }: Props): ReactNode {
+  const scheme = (useColorScheme() ?? 'light') as ColorScheme;
+  const colors = getThemeColors(scheme);
   const translateY = useSharedValue(SCREEN_H);
 
   const calLabels = useMemo(() => {
@@ -103,7 +106,7 @@ export default function HomeDatePickerSheet({
       <Pressable
         style={{
           flex: 1,
-          backgroundColor: 'rgba(0,0,0,0.4)',
+          backgroundColor: colors.overlay,
           justifyContent: 'flex-end',
         }}
         onPress={onClose}
@@ -132,7 +135,7 @@ export default function HomeDatePickerSheet({
                   {labels?.date_picker_title ?? '选择日期'}
                 </Text>
                 <Pressable onPress={onClose} hitSlop={8}>
-                  <Ionicons name="close" size={22} color={MUTED} />
+                  <Ionicons name="close" size={22} color={colors.muted} />
                 </Pressable>
               </XStack>
 
@@ -140,20 +143,23 @@ export default function HomeDatePickerSheet({
                 current={currentDate}
                 firstDay={1}
                 markedDates={{
-                  [currentDate]: { selected: true, selectedColor: '#11181C' },
+                  [currentDate]: {
+                    selected: true,
+                    selectedColor: colors.primary,
+                  },
                 }}
                 onDayPress={(day) => onSelect(day.dateString)}
                 theme={{
                   backgroundColor: 'transparent',
                   calendarBackground: 'transparent',
-                  textSectionTitleColor: '#71717A',
-                  selectedDayBackgroundColor: '#11181C',
-                  selectedDayTextColor: '#FFFFFF',
-                  todayTextColor: PRIMARY,
-                  dayTextColor: '#11181C',
-                  textDisabledColor: '#D4D4D8',
-                  arrowColor: '#11181C',
-                  monthTextColor: '#11181C',
+                  textSectionTitleColor: colors.muted,
+                  selectedDayBackgroundColor: colors.primary,
+                  selectedDayTextColor: colors.primaryForeground,
+                  todayTextColor: colors.primary,
+                  dayTextColor: colors.primary,
+                  textDisabledColor: scheme === 'dark' ? '#52525B' : '#D4D4D8',
+                  arrowColor: colors.primary,
+                  monthTextColor: colors.primary,
                   textDayFontWeight: '500',
                   textMonthFontWeight: '700',
                   textDayHeaderFontWeight: '500',

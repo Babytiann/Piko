@@ -1,6 +1,12 @@
 import type { ReactNode } from 'react';
 import { useState, useEffect } from 'react';
-import { Modal, Pressable, FlatList, Dimensions } from 'react-native';
+import {
+  Modal,
+  Pressable,
+  FlatList,
+  Dimensions,
+  useColorScheme,
+} from 'react-native';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -9,7 +15,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { MUTED, CATEGORY_ICON_CONFIG } from '@/common/consts/theme';
+import { getCategoryIconConfig, getThemeColors } from '@/common/consts/theme';
+import type { ColorScheme } from '@/common/consts/theme';
 import type { CategoryCardItem, HomeLabels } from '@/common/typings/home';
 
 const SCREEN_H = Dimensions.get('window').height;
@@ -31,6 +38,9 @@ export default function HomeCategoryAllSheet({
   onSelectCategory,
 }: Props): ReactNode {
   const [sortMode, setSortMode] = useState<SortMode>('amount');
+  const scheme = (useColorScheme() ?? 'light') as ColorScheme;
+  const colors = getThemeColors(scheme);
+  const iconConfig = getCategoryIconConfig(scheme);
   const translateY = useSharedValue(SCREEN_H);
   const cl = labels.category_cards;
   const cs = labels.common.currency_symbol;
@@ -60,7 +70,7 @@ export default function HomeCategoryAllSheet({
       <Pressable
         style={{
           flex: 1,
-          backgroundColor: 'rgba(0,0,0,0.4)',
+          backgroundColor: colors.overlay,
           justifyContent: 'flex-end',
         }}
         onPress={onClose}
@@ -90,47 +100,35 @@ export default function HomeCategoryAllSheet({
                   {cl.all_sheet_title}
                 </Text>
                 <Pressable onPress={onClose} hitSlop={8}>
-                  <Ionicons name="close" size={22} color={MUTED} />
+                  <Ionicons name="close" size={22} color={colors.muted} />
                 </Pressable>
               </XStack>
 
               <XStack px="$5" mb="$3" gap="$2">
-                <Pressable
-                  onPress={() => setSortMode('amount')}
-                  style={{
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 10,
-                    backgroundColor:
-                      sortMode === 'amount' ? '#11181C' : '#F5F5F5',
-                  }}
-                >
-                  <Text
-                    fontSize={12}
-                    fontWeight="600"
-                    color={sortMode === 'amount' ? 'white' : '$muted'}
-                  >
-                    {cl.by_amount}
-                  </Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => setSortMode('name')}
-                  style={{
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 10,
-                    backgroundColor:
-                      sortMode === 'name' ? '#11181C' : '#F5F5F5',
-                  }}
-                >
-                  <Text
-                    fontSize={12}
-                    fontWeight="600"
-                    color={sortMode === 'name' ? 'white' : '$muted'}
-                  >
-                    {cl.by_name}
-                  </Text>
-                </Pressable>
+                {(['amount', 'name'] as const).map((mode) => {
+                  const isActive = sortMode === mode;
+                  const inactiveBg = scheme === 'dark' ? '#2C2C2E' : '#F5F5F5';
+                  return (
+                    <Pressable
+                      key={mode}
+                      onPress={() => setSortMode(mode)}
+                      style={{
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 10,
+                        backgroundColor: isActive ? colors.primary : inactiveBg,
+                      }}
+                    >
+                      <Text
+                        fontSize={12}
+                        fontWeight="600"
+                        color={isActive ? '$primaryForeground' : '$muted'}
+                      >
+                        {mode === 'amount' ? cl.by_amount : cl.by_name}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
               </XStack>
 
               <FlatList
@@ -139,9 +137,9 @@ export default function HomeCategoryAllSheet({
                 contentContainerStyle={{ paddingHorizontal: 20 }}
                 renderItem={({ item }) => {
                   const config =
-                    CATEGORY_ICON_CONFIG[item.category] ??
-                    CATEGORY_ICON_CONFIG[cl.fallback_category] ??
-                    CATEGORY_ICON_CONFIG['其他'];
+                    iconConfig[item.category] ??
+                    iconConfig[cl.fallback_category] ??
+                    iconConfig['其他'];
                   const pct =
                     totalAmount > 0
                       ? Math.round((item.amount / totalAmount) * 100)
@@ -185,7 +183,8 @@ export default function HomeCategoryAllSheet({
                           <View
                             style={{
                               height: 3,
-                              backgroundColor: '#F5F5F5',
+                              backgroundColor:
+                                scheme === 'dark' ? '#2C2C2E' : '#F5F5F5',
                               borderRadius: 2,
                               overflow: 'hidden',
                               marginTop: 6,

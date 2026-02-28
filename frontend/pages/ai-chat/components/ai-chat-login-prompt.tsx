@@ -24,7 +24,7 @@ export default function AiChatLoginPrompt({
   return (
     <YStack
       flex={1}
-      bg="white"
+      bg="$background"
       pt={paddingTop}
       pb={paddingBottom}
       px={paddingHorizontal}

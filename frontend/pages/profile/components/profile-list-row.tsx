@@ -1,8 +1,6 @@
 import type { ReactNode } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { XStack, YStack, Text } from 'tamagui';
-
-import { MUTED } from '@/common/consts/theme';
+import { XStack, YStack, Text, useTheme } from 'tamagui';
 
 interface ProfileListRowProps {
   icon: React.ComponentProps<typeof Ionicons>['name'];
@@ -21,6 +19,7 @@ export default function ProfileListRow({
   onPress,
   isLast = false,
 }: ProfileListRowProps): ReactNode {
+  const theme = useTheme();
   const content = (
     <XStack
       gap="$3"
@@ -36,7 +35,7 @@ export default function ProfileListRow({
         onPress: () => onPress(),
       })}
     >
-      <Ionicons name={icon} size={22} color={MUTED} />
+      <Ionicons name={icon} size={22} color={theme.muted.val} />
       <YStack flex={1} gap="$0.5">
         <Text fontSize="$4" fontWeight="600" color="$color">
           {title}
@@ -47,7 +46,9 @@ export default function ProfileListRow({
           </Text>
         ) : null}
       </YStack>
-      {right ?? <Ionicons name="chevron-forward" size={20} color={MUTED} />}
+      {right ?? (
+        <Ionicons name="chevron-forward" size={20} color={theme.muted.val} />
+      )}
     </XStack>
   );
 

@@ -2,11 +2,10 @@ import { useState, type ReactNode } from 'react';
 import { Platform } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { Ionicons } from '@expo/vector-icons';
-import { YStack, XStack, Text } from 'tamagui';
+import { YStack, XStack, Text, useTheme } from 'tamagui';
 
 import Avatar from '@/common/components/avatar';
 import { PikoCard } from '@/common/components/piko-card';
-import { MUTED } from '@/common/consts/theme';
 import { authClient } from '@/services/auth-client';
 
 import type {
@@ -23,6 +22,7 @@ export default function ProfileAppleSection({
   appUser,
   labels,
 }: ProfileAppleSectionProps): ReactNode {
+  const theme = useTheme();
   const [isSigningIn, setIsSigningIn] = useState(false);
 
   const handleAppleSignIn = async (): Promise<void> => {
@@ -64,7 +64,7 @@ export default function ProfileAppleSection({
             <Avatar
               url={undefined}
               text={(appUser.name ?? appUser.email ?? '?').charAt(0)}
-              color={MUTED}
+              color={theme.muted.val}
               size={56}
             />
             <YStack flex={1} gap="$1">
@@ -80,7 +80,7 @@ export default function ProfileAppleSection({
                 <Text fontSize="$2" color="$gray12">
                   {labels.apple_login_label}
                 </Text>
-                <Ionicons name="logo-apple" size={14} color={MUTED} />
+                <Ionicons name="logo-apple" size={14} color={theme.muted.val} />
               </XStack>
             </YStack>
           </XStack>

@@ -98,7 +98,7 @@ export default function TgLoginCountrySelect({
         <Text fontSize={15} fontWeight="500" color="$color">
           {selectedCode}
         </Text>
-        <ChevronDown size={16} color="#687076" />
+        <ChevronDown size={16} color={isDark ? '#9BA1A6' : '#687076'} />
       </TouchableOpacity>
 
       <Modal
@@ -181,7 +181,12 @@ export default function TgLoginCountrySelect({
                       >
                         {item.code}
                       </Text>
-                      {isSelected ? <Check size={16} color="#11181C" /> : null}
+                      {isSelected ? (
+                        <Check
+                          size={16}
+                          color={isDark ? '#ECEDEE' : '#11181C'}
+                        />
+                      ) : null}
                     </TouchableOpacity>
                   );
                 })}

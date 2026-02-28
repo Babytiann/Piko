@@ -71,7 +71,7 @@ export default function AiChatMarkdown({
         color: codeColor,
       },
       fence: {
-        backgroundColor: '#1A1A2E',
+        backgroundColor: themeName === 'dark' ? '#0D0D1A' : '#1A1A2E',
         color: '#D4D4D4',
         padding: 12,
         borderRadius: 8,
@@ -80,7 +80,7 @@ export default function AiChatMarkdown({
         marginVertical: 8,
       },
       code_block: {
-        backgroundColor: '#1A1A2E',
+        backgroundColor: themeName === 'dark' ? '#0D0D1A' : '#1A1A2E',
         color: '#D4D4D4',
         padding: 12,
         borderRadius: 8,

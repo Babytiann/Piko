@@ -1,6 +1,13 @@
 import type { ReactNode } from 'react';
 import { useContext, useState, useEffect, useCallback } from 'react';
-import { Image, Pressable, Modal, Dimensions, Alert } from 'react-native';
+import {
+  Image,
+  Pressable,
+  Modal,
+  Dimensions,
+  Alert,
+  useColorScheme,
+} from 'react-native';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -16,20 +23,21 @@ import Animated, {
 
 import { PikoCard } from '@/common/components/piko-card';
 import { RecognitionContext } from '@/contexts/recognition-context';
-import {
-  CATEGORY_ICON_CONFIG,
-  PRIMARY,
-  MUTED,
-  SUCCESS,
-  DESTRUCTIVE,
-} from '@/common/consts/theme';
+import { getCategoryIconConfig, getThemeColors } from '@/common/consts/theme';
+import type { ColorScheme } from '@/common/consts/theme';
 import { deleteExpenseApi } from '@/services/expense';
 import type { RecognizeResult } from '@/pages/scan/types/index';
 import type { HomeLabels } from '@/common/typings/home';
 
 const SCREEN_H = Dimensions.get('window').height;
 
-function ProgressBar({ progress }: { progress: number }): ReactNode {
+function ProgressBar({
+  progress,
+  colors,
+}: {
+  progress: number;
+  colors: ReturnType<typeof getThemeColors>;
+}): ReactNode {
   const animatedWidth = useSharedValue(0);
 
   useEffect(() => {
@@ -39,15 +47,17 @@ function ProgressBar({ progress }: { progress: number }): ReactNode {
   const barStyle = useAnimatedStyle(() => ({
     width: `${animatedWidth.value}%`,
     height: 6,
-    backgroundColor: PRIMARY,
+    backgroundColor: colors.primary,
     borderRadius: 3,
   }));
+
+  const trackColor = colors === getThemeColors('dark') ? '#2C2C2E' : '#F0F0F0';
 
   return (
     <View
       style={{
         height: 6,
-        backgroundColor: '#F0F0F0',
+        backgroundColor: trackColor,
         borderRadius: 3,
         overflow: 'hidden',
       }}
@@ -83,8 +93,10 @@ function ResultEditSheet({
 }): ReactNode {
   const rl = labels.recognition;
   const cs = labels.common.currency_symbol;
-  const config =
-    CATEGORY_ICON_CONFIG[result.category] ?? CATEGORY_ICON_CONFIG['其他'];
+  const scheme = (useColorScheme() ?? 'light') as ColorScheme;
+  const colors = getThemeColors(scheme);
+  const iconConfig = getCategoryIconConfig(scheme);
+  const config = iconConfig[result.category] ?? iconConfig['其他'];
   const translateY = useSharedValue(SCREEN_H);
 
   useEffect(() => {
@@ -105,7 +117,7 @@ function ResultEditSheet({
       <Pressable
         style={{
           flex: 1,
-          backgroundColor: 'rgba(0,0,0,0.4)',
+          backgroundColor: colors.overlay,
           justifyContent: 'flex-end',
         }}
         onPress={onClose}
@@ -133,7 +145,7 @@ function ResultEditSheet({
                   {rl.result_title}
                 </Text>
                 <Pressable onPress={onClose} hitSlop={8}>
-                  <Ionicons name="close" size={22} color={MUTED} />
+                  <Ionicons name="close" size={22} color={colors.muted} />
                 </Pressable>
               </XStack>
 
@@ -228,6 +240,8 @@ interface Props {
 export default function HomeRecognitionProgress({ labels }: Props): ReactNode {
   const recognition = useContext(RecognitionContext);
   const router = useRouter();
+  const scheme = (useColorScheme() ?? 'light') as ColorScheme;
+  const colors = getThemeColors(scheme);
   const [showResultSheet, setShowResultSheet] = useState(false);
 
   const rl = labels.recognition;
@@ -323,7 +337,7 @@ export default function HomeRecognitionProgress({ labels }: Props): ReactNode {
               width: 40,
               height: 40,
               borderRadius: 20,
-              backgroundColor: DESTRUCTIVE,
+              backgroundColor: colors.destructive,
               alignItems: 'center',
               justifyContent: 'center',
             }}
@@ -343,7 +357,8 @@ export default function HomeRecognitionProgress({ labels }: Props): ReactNode {
                       width: 72,
                       height: 72,
                       borderRadius: 12,
-                      backgroundColor: '#F5F5F5',
+                      backgroundColor:
+                        scheme === 'dark' ? '#2C2C2E' : '#F5F5F5',
                     }}
                     resizeMode="cover"
                   />
@@ -354,12 +369,17 @@ export default function HomeRecognitionProgress({ labels }: Props): ReactNode {
                       height: 72,
                       borderRadius: 12,
                       borderCurve: 'continuous',
-                      backgroundColor: '#F5F5F5',
+                      backgroundColor:
+                        scheme === 'dark' ? '#2C2C2E' : '#F5F5F5',
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}
                   >
-                    <Ionicons name="image-outline" size={28} color={MUTED} />
+                    <Ionicons
+                      name="image-outline"
+                      size={28}
+                      color={colors.muted}
+                    />
                   </View>
                 )}
 
@@ -381,7 +401,10 @@ export default function HomeRecognitionProgress({ labels }: Props): ReactNode {
                         </Text>
                         <ProgressNumber progress={recognition.progress} />
                       </XStack>
-                      <ProgressBar progress={recognition.progress} />
+                      <ProgressBar
+                        progress={recognition.progress}
+                        colors={colors}
+                      />
                       <Text fontSize={11} color="$muted" mt="$1">
                         {recognition.stepMessage}
                       </Text>
@@ -397,7 +420,7 @@ export default function HomeRecognitionProgress({ labels }: Props): ReactNode {
                         <Ionicons
                           name="checkmark-circle"
                           size={18}
-                          color={SUCCESS}
+                          color={colors.success}
                         />
                         <Text fontSize={13} fontWeight="600" color="$success">
                           {rl.complete}
@@ -429,7 +452,8 @@ export default function HomeRecognitionProgress({ labels }: Props): ReactNode {
                               paddingHorizontal: 12,
                               paddingVertical: 6,
                               borderRadius: 8,
-                              backgroundColor: '#F5F5F5',
+                              backgroundColor:
+                                scheme === 'dark' ? '#2C2C2E' : '#F5F5F5',
                             }}
                           >
                             <Text fontSize={12} fontWeight="600" color="$color">
@@ -443,7 +467,8 @@ export default function HomeRecognitionProgress({ labels }: Props): ReactNode {
                             paddingHorizontal: 12,
                             paddingVertical: 6,
                             borderRadius: 8,
-                            backgroundColor: '#F5F5F5',
+                            backgroundColor:
+                              scheme === 'dark' ? '#2C2C2E' : '#F5F5F5',
                           }}
                         >
                           <Text fontSize={12} fontWeight="600" color="$color">
@@ -456,10 +481,14 @@ export default function HomeRecognitionProgress({ labels }: Props): ReactNode {
                             paddingHorizontal: 12,
                             paddingVertical: 6,
                             borderRadius: 8,
-                            backgroundColor: PRIMARY,
+                            backgroundColor: colors.primary,
                           }}
                         >
-                          <Text fontSize={12} fontWeight="600" color="white">
+                          <Text
+                            fontSize={12}
+                            fontWeight="600"
+                            color="$primaryForeground"
+                          >
                             {rl.confirm}
                           </Text>
                         </Pressable>
@@ -476,7 +505,7 @@ export default function HomeRecognitionProgress({ labels }: Props): ReactNode {
                         <Ionicons
                           name="alert-circle"
                           size={18}
-                          color="#DC2626"
+                          color={colors.destructive}
                         />
                         <Text
                           fontSize={13}
@@ -496,7 +525,8 @@ export default function HomeRecognitionProgress({ labels }: Props): ReactNode {
                           paddingHorizontal: 12,
                           paddingVertical: 6,
                           borderRadius: 8,
-                          backgroundColor: '#F5F5F5',
+                          backgroundColor:
+                            scheme === 'dark' ? '#2C2C2E' : '#F5F5F5',
                           alignSelf: 'flex-start',
                         }}
                       >

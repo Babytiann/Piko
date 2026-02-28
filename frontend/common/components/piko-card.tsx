@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, View, useColorScheme } from 'react-native';
 import type { ViewStyle } from 'react-native';
 
-import { CARD_BACKGROUND } from '@/common/consts/theme';
+import { getThemeColors } from '@/common/consts/theme';
+import type { ColorScheme } from '@/common/consts/theme';
 
 type PikoCardPadding = '$2' | '$3' | '$4';
 
@@ -25,16 +26,17 @@ function cardContent(
   padding: PikoCardPadding | undefined,
   noPadding: boolean,
   style: ViewStyle | undefined,
-  backgroundColor: string,
+  scheme: ColorScheme,
 ): ReactNode {
+  const colors = getThemeColors(scheme);
   const baseStyle: ViewStyle = {
-    backgroundColor,
+    backgroundColor: colors.card,
     borderRadius: 20,
     borderCurve: 'continuous',
     padding: noPadding ? 0 : ((padding && PADDING_MAP[padding]) ?? 16),
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+    borderColor: colors.subtleBorder,
+    boxShadow: colors.subtleShadow,
   };
   return <View style={[baseStyle, style]}>{children}</View>;
 }
@@ -46,13 +48,8 @@ export function PikoCard({
   noPadding = false,
   style,
 }: PikoCardProps): ReactNode {
-  const content = cardContent(
-    children,
-    padding,
-    noPadding,
-    style,
-    CARD_BACKGROUND,
-  );
+  const scheme = (useColorScheme() ?? 'light') as ColorScheme;
+  const content = cardContent(children, padding, noPadding, style, scheme);
   if (onPress) {
     return (
       <Pressable

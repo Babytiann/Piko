@@ -1,13 +1,14 @@
 import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
-import { Pressable } from 'react-native';
-import { YStack, XStack, Text, View } from 'tamagui';
+import { Pressable, useColorScheme } from 'react-native';
+import { YStack, XStack, Text, View, useTheme } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 
 import { PikoCard } from '@/common/components/piko-card';
-import { CATEGORY_ICON_CONFIG, MUTED } from '@/common/consts/theme';
+import { getCategoryIconConfig } from '@/common/consts/theme';
+import type { ColorScheme } from '@/common/consts/theme';
 import type {
   ExpenseListData,
   ExpenseListItem,
@@ -34,8 +35,10 @@ function ExpenseRow({
   cs: string;
 }): ReactNode {
   const router = useRouter();
-  const config =
-    CATEGORY_ICON_CONFIG[item.category] ?? CATEGORY_ICON_CONFIG['其他'];
+  const scheme = (useColorScheme() ?? 'light') as ColorScheme;
+  const theme = useTheme();
+  const iconConfig = getCategoryIconConfig(scheme);
+  const config = iconConfig[item.category] ?? iconConfig['其他'];
 
   return (
     <Animated.View entering={FadeInRight.delay(index * 50 + 200).springify()}>
@@ -100,7 +103,11 @@ function ExpenseRow({
               -{cs}
               {item.amount}
             </Text>
-            <Ionicons name="chevron-forward" size={14} color={MUTED} />
+            <Ionicons
+              name="chevron-forward"
+              size={14}
+              color={theme.muted.val}
+            />
           </XStack>
         </XStack>
       </Pressable>
@@ -125,6 +132,7 @@ export default function HomeExpenseList({
   labels,
   selectedDate,
 }: Props): ReactNode {
+  const parentTheme = useTheme();
   const [showAll, setShowAll] = useState(false);
 
   const el = labels.expense_list;
@@ -183,13 +191,17 @@ export default function HomeExpenseList({
                 style={{ paddingVertical: 12, alignItems: 'center' }}
               >
                 <XStack style={{ alignItems: 'center', gap: 4 }}>
-                  <Text fontSize={13} color={MUTED} fontWeight="500">
+                  <Text fontSize={13} color="$muted" fontWeight="500">
                     {el.view_all_format.replace(
                       '{count}',
                       String(filtered.length),
                     )}
                   </Text>
-                  <Ionicons name="chevron-forward" size={14} color={MUTED} />
+                  <Ionicons
+                    name="chevron-forward"
+                    size={14}
+                    color={parentTheme.muted.val}
+                  />
                 </XStack>
               </Pressable>
             )}

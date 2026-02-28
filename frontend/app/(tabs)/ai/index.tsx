@@ -177,7 +177,7 @@ export default function AiScreen(): ReactNode {
 
   if (isPageLoading) {
     return (
-      <YStack flex={1} bg="white">
+      <YStack flex={1} bg="$background">
         <PageLoading />
       </YStack>
     );
@@ -185,7 +185,7 @@ export default function AiScreen(): ReactNode {
 
   if (errorType) {
     return (
-      <YStack flex={1} bg="white">
+      <YStack flex={1} bg="$background">
         <PageStatusView errorType={errorType} onRetry={handleRetry} />
       </YStack>
     );
@@ -193,7 +193,7 @@ export default function AiScreen(): ReactNode {
 
   if (appSession === undefined) {
     return (
-      <YStack flex={1} bg="white">
+      <YStack flex={1} bg="$background">
         <PageLoading />
       </YStack>
     );
@@ -217,7 +217,7 @@ export default function AiScreen(): ReactNode {
   }
 
   return (
-    <YStack flex={1} bg="white">
+    <YStack flex={1} bg="$background">
       <AiConversationDrawer
         visible={drawerVisible}
         onClose={handleCloseDrawer}
@@ -237,7 +237,7 @@ export default function AiScreen(): ReactNode {
         pointerEvents="box-none"
         style={[{ flex: 1 }, contentAnimatedStyle]}
       >
-        <YStack flex={1} pt={insets.top} bg="white">
+        <YStack flex={1} pt={insets.top} bg="$background">
           <Animated.View
             pointerEvents={drawerVisible ? 'auto' : 'none'}
             style={[

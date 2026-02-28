@@ -82,18 +82,14 @@ export function PikoWeekCalendar({
                 alignItems: 'center',
                 borderRadius: 14,
                 borderCurve: 'continuous',
-                backgroundColor: isToday
-                  ? '#11181C'
-                  : isSelected
-                    ? '#F0F0F0'
-                    : hasExpense
-                      ? theme.gray3?.val
-                      : 'transparent',
+                backgroundColor: isSelected
+                  ? theme.primary?.val
+                  : 'transparent',
               }}
             >
               <Text
                 fontSize={11}
-                color={isToday ? 'white' : '$gray10'}
+                color={isSelected ? '$primaryForeground' : '$gray10'}
                 style={{ opacity: 0.7 }}
               >
                 {weekdayLabels[i]}
@@ -101,18 +97,18 @@ export function PikoWeekCalendar({
               <Text
                 fontSize={16}
                 fontWeight={isSelected || isToday ? '700' : '500'}
-                color={isToday ? 'white' : isSelected ? '$color' : '$gray11'}
+                color={isSelected ? '$primaryForeground' : '$gray11'}
                 mt="$1"
               >
                 {date.getDate()}
               </Text>
               <Text
                 fontSize={10}
-                color={isToday ? 'rgba(255,255,255,0.7)' : '$gray10'}
+                color={isSelected ? '$primaryForeground' : '$gray10'}
                 mt={2}
                 style={{
                   fontVariant: ['tabular-nums'],
-                  opacity: hasExpense ? 1 : 0.5,
+                  opacity: isSelected ? 0.8 : hasExpense ? 1 : 0.5,
                 }}
               >
                 {hasExpense

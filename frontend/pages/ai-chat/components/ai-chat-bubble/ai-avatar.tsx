@@ -7,7 +7,7 @@ export default function AiAvatar(): ReactNode {
     <View
       width={32}
       height={32}
-      bg="white"
+      bg="$card"
       style={{
         borderRadius: 16,
         alignItems: 'center',

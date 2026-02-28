@@ -1,12 +1,19 @@
 import type { ReactNode } from 'react';
-import { useState } from 'react';
-import { Pressable } from 'react-native';
-import { XStack, YStack, Text, View } from 'tamagui';
+import { useState, useRef, useCallback } from 'react';
+import { Pressable, useColorScheme } from 'react-native';
+import { XStack, YStack, Text, View, useTheme } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 
 import { PikoCard } from '@/common/components/piko-card';
-import { CATEGORY_ICON_CONFIG } from '@/common/consts/theme';
+import {
+  CATEGORY_ICON_CONFIG,
+  getCategoryIconConfig,
+  getThemeColors,
+} from '@/common/consts/theme';
+import type { ColorScheme } from '@/common/consts/theme';
 import type {
   CategoryCardsData,
   CategoryCardItem,
@@ -26,15 +33,16 @@ function CategoryIcon({
   category,
   fallbackCategory,
   size = 32,
+  scheme = 'light',
 }: {
   category: string;
   fallbackCategory: string;
   size?: number;
+  scheme?: ColorScheme;
 }): ReactNode {
+  const iconConfig = getCategoryIconConfig(scheme);
   const config =
-    CATEGORY_ICON_CONFIG[category] ??
-    CATEGORY_ICON_CONFIG[fallbackCategory] ??
-    CATEGORY_ICON_CONFIG['其他'];
+    iconConfig[category] ?? iconConfig[fallbackCategory] ?? iconConfig['其他'];
   return (
     <View
       style={{
@@ -59,16 +67,20 @@ function CategoryIcon({
 function ProgressBar({
   percentage,
   category,
+  scheme = 'light',
 }: {
   percentage: number;
   category: string;
+  scheme?: ColorScheme;
 }): ReactNode {
-  const config = CATEGORY_ICON_CONFIG[category] ?? CATEGORY_ICON_CONFIG['其他'];
+  const iconConfig = getCategoryIconConfig(scheme);
+  const config = iconConfig[category] ?? iconConfig['其他'];
+  const trackColor = scheme === 'dark' ? '#2C2C2E' : '#F5F5F5';
   return (
     <View
       style={{
         height: 3,
-        backgroundColor: '#F5F5F5',
+        backgroundColor: trackColor,
         borderRadius: 2,
         overflow: 'hidden',
         marginTop: 8,
@@ -95,6 +107,29 @@ export default function HomeCategoryCards({
   const [selectedCategory, setSelectedCategory] =
     useState<CategoryCardItem | null>(null);
   const [showAllSheet, setShowAllSheet] = useState(false);
+  const pendingCategoryRef = useRef<CategoryCardItem | null>(null);
+  const router = useRouter();
+  const scheme = (useColorScheme() ?? 'light') as ColorScheme;
+  const theme = useTheme();
+  const colors = getThemeColors(scheme);
+
+  const handleItemPress = useCallback(
+    (id: string) => {
+      pendingCategoryRef.current = selectedCategory;
+      setSelectedCategory(null);
+      router.push({ pathname: '/expense-detail', params: { id } });
+    },
+    [selectedCategory, router],
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (pendingCategoryRef.current) {
+        setSelectedCategory(pendingCategoryRef.current);
+        pendingCategoryRef.current = null;
+      }
+    }, []),
+  );
 
   const cl = labels.category_cards;
   const cs = labels.common.currency_symbol;
@@ -132,13 +167,16 @@ export default function HomeCategoryCards({
                   borderRadius: 14,
                   borderCurve: 'continuous',
                   borderWidth: 1,
-                  borderColor: '#F0F0F0',
-                  backgroundColor: pressed ? '#FAFAFA' : 'white',
+                  borderColor: colors.border,
+                  backgroundColor: pressed
+                    ? (theme.gray3?.val ?? colors.card)
+                    : colors.card,
                 })}
               >
                 <CategoryIcon
                   category={item.category}
                   fallbackCategory={cl.fallback_category}
+                  scheme={scheme}
                 />
                 <Text fontSize={12} color="$muted" mt="$2">
                   {item.category}
@@ -155,6 +193,7 @@ export default function HomeCategoryCards({
                 <ProgressBar
                   percentage={item.percentage}
                   category={item.category}
+                  scheme={scheme}
                 />
               </Pressable>
             </Animated.View>
@@ -169,6 +208,7 @@ export default function HomeCategoryCards({
           allExpenses={allExpenses}
           labels={labels}
           onClose={() => setSelectedCategory(null)}
+          onItemPress={handleItemPress}
         />
       ) : null}
 

@@ -1,6 +1,12 @@
 import type { ReactNode } from 'react';
 import { useMemo, useEffect } from 'react';
-import { Modal, Pressable, FlatList, Dimensions } from 'react-native';
+import {
+  Modal,
+  Pressable,
+  FlatList,
+  Dimensions,
+  useColorScheme,
+} from 'react-native';
 import { YStack, XStack, Text } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -9,7 +15,12 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { MUTED, CATEGORY_ICON_CONFIG } from '@/common/consts/theme';
+import {
+  CATEGORY_ICON_CONFIG,
+  getCategoryIconConfig,
+  getThemeColors,
+} from '@/common/consts/theme';
+import type { ColorScheme } from '@/common/consts/theme';
 import type {
   CategoryCardItem,
   ExpenseListItem,
@@ -24,6 +35,7 @@ interface Props {
   allExpenses: ExpenseListItem[];
   labels: HomeLabels;
   onClose: () => void;
+  onItemPress?: (id: string) => void;
 }
 
 export default function HomeCategoryDetailSheet({
@@ -32,7 +44,11 @@ export default function HomeCategoryDetailSheet({
   allExpenses,
   labels,
   onClose,
+  onItemPress,
 }: Props): ReactNode {
+  const scheme = (useColorScheme() ?? 'light') as ColorScheme;
+  const colors = getThemeColors(scheme);
+  const iconConfig = getCategoryIconConfig(scheme);
   const translateY = useSharedValue(SCREEN_H);
   const cl = labels.category_cards;
   const cs = labels.common.currency_symbol;
@@ -47,9 +63,9 @@ export default function HomeCategoryDetailSheet({
   );
 
   const config =
-    CATEGORY_ICON_CONFIG[category.category] ??
-    CATEGORY_ICON_CONFIG[cl.fallback_category] ??
-    CATEGORY_ICON_CONFIG['其他'];
+    iconConfig[category.category] ??
+    iconConfig[cl.fallback_category] ??
+    iconConfig['其他'];
 
   const sheetStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
@@ -65,7 +81,7 @@ export default function HomeCategoryDetailSheet({
       <Pressable
         style={{
           flex: 1,
-          backgroundColor: 'rgba(0,0,0,0.4)',
+          backgroundColor: colors.overlay,
           justifyContent: 'flex-end',
         }}
         onPress={onClose}
@@ -102,7 +118,7 @@ export default function HomeCategoryDetailSheet({
                   </Text>
                 </XStack>
                 <Pressable onPress={onClose} hitSlop={8}>
-                  <Ionicons name="close" size={22} color={MUTED} />
+                  <Ionicons name="close" size={22} color={colors.muted} />
                 </Pressable>
               </XStack>
 
@@ -137,34 +153,43 @@ export default function HomeCategoryDetailSheet({
                 style={{ flexGrow: 1 }}
                 contentContainerStyle={{ paddingHorizontal: 20, flexGrow: 1 }}
                 renderItem={({ item }) => (
-                  <XStack
-                    py="$3"
-                    style={{
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                    }}
-                    borderBottomWidth={0.5}
-                    borderBottomColor="$gray4"
-                  >
-                    <YStack>
-                      <Text fontSize={14} fontWeight="600" color="$color">
-                        {item.merchant ?? category.category}
-                      </Text>
-                      <Text fontSize={11} color="$muted" mt={2}>
-                        {item.date.slice(5, 10)}
-                        {item.time ? ` ${item.time}` : ''}
-                      </Text>
-                    </YStack>
-                    <Text
-                      fontSize={14}
-                      fontWeight="600"
-                      color="$color"
-                      style={{ fontVariant: ['tabular-nums'] }}
+                  <Pressable onPress={() => onItemPress?.(item.id)}>
+                    <XStack
+                      py="$3"
+                      style={{
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                      borderBottomWidth={0.5}
+                      borderBottomColor="$gray4"
                     >
-                      -{cs}
-                      {item.amount}
-                    </Text>
-                  </XStack>
+                      <YStack flex={1} style={{ minWidth: 0 }}>
+                        <Text fontSize={14} fontWeight="600" color="$color">
+                          {item.merchant ?? category.category}
+                        </Text>
+                        <Text fontSize={11} color="$muted" mt={2}>
+                          {item.date.slice(5, 10)}
+                          {item.time ? ` ${item.time}` : ''}
+                        </Text>
+                      </YStack>
+                      <XStack style={{ alignItems: 'center', gap: 6 }}>
+                        <Text
+                          fontSize={14}
+                          fontWeight="600"
+                          color="$color"
+                          style={{ fontVariant: ['tabular-nums'] }}
+                        >
+                          -{cs}
+                          {item.amount}
+                        </Text>
+                        <Ionicons
+                          name="chevron-forward"
+                          size={14}
+                          color={colors.muted}
+                        />
+                      </XStack>
+                    </XStack>
+                  </Pressable>
                 )}
                 ListEmptyComponent={
                   <YStack

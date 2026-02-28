@@ -1,19 +1,15 @@
 import type { ReactNode } from 'react';
 import { useState, useEffect, useCallback, useContext } from 'react';
-import { Pressable, Alert, Image } from 'react-native';
-import { YStack, XStack, Text, View, ScrollView } from 'tamagui';
+import { Pressable, Alert, Image, useColorScheme } from 'react-native';
+import { YStack, XStack, Text, View, ScrollView, useTheme } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 import PageLoading from '@/common/components/page-loading';
-import {
-  CATEGORY_ICON_CONFIG,
-  MUTED,
-  PRIMARY,
-  DESTRUCTIVE,
-} from '@/common/consts/theme';
+import { getCategoryIconConfig, getThemeColors } from '@/common/consts/theme';
+import type { ColorScheme } from '@/common/consts/theme';
 import { RecognitionContext } from '@/contexts/recognition-context';
 import { fetchExpenseDetail, deleteExpenseApi } from '@/services/expense';
 import type { ExpenseDetail } from '@/services/expense';
@@ -56,6 +52,10 @@ export default function ExpenseDetailScreen(): ReactNode {
   const router = useRouter();
   const { top } = useSafeAreaInsets();
   const recognition = useContext(RecognitionContext);
+  const scheme = (useColorScheme() ?? 'light') as ColorScheme;
+  const colors = getThemeColors(scheme);
+  const theme = useTheme();
+  const iconConfig = getCategoryIconConfig(scheme);
   const [expense, setExpense] = useState<ExpenseDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -101,7 +101,7 @@ export default function ExpenseDetailScreen(): ReactNode {
     return (
       <YStack flex={1} bg="$background" pt={top + 16} px="$4">
         <Pressable onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#11181C" />
+          <Ionicons name="arrow-back" size={24} color={theme.color.val} />
         </Pressable>
         <YStack
           flex={1}
@@ -115,8 +115,7 @@ export default function ExpenseDetailScreen(): ReactNode {
     );
   }
 
-  const config =
-    CATEGORY_ICON_CONFIG[expense.category] ?? CATEGORY_ICON_CONFIG['其他'];
+  const config = iconConfig[expense.category] ?? iconConfig['其他'];
   const sourceLabel: Record<string, string> = {
     camera: '拍照识别',
     album: '相册识别',
@@ -135,10 +134,14 @@ export default function ExpenseDetailScreen(): ReactNode {
           style={{ alignItems: 'center', justifyContent: 'space-between' }}
         >
           <Pressable onPress={() => router.back()} hitSlop={12}>
-            <Ionicons name="arrow-back" size={24} color="#11181C" />
+            <Ionicons name="arrow-back" size={24} color={theme.color.val} />
           </Pressable>
           <Pressable onPress={handleDelete} hitSlop={12}>
-            <Ionicons name="trash-outline" size={22} color={DESTRUCTIVE} />
+            <Ionicons
+              name="trash-outline"
+              size={22}
+              color={colors.destructive}
+            />
           </Pressable>
         </XStack>
 
@@ -244,7 +247,7 @@ export default function ExpenseDetailScreen(): ReactNode {
                   width: '100%',
                   height: 200,
                   borderRadius: 12,
-                  backgroundColor: '#F5F5F5',
+                  backgroundColor: scheme === 'dark' ? '#2C2C2E' : '#F5F5F5',
                 }}
                 resizeMode="contain"
               />

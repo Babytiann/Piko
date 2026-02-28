@@ -29,8 +29,12 @@ export default function RootLayout() {
                 <Stack
                   screenOptions={{
                     headerShown: false,
-                    headerStyle: { backgroundColor: '#ffffff' },
+                    headerStyle: {
+                      backgroundColor:
+                        scheme === 'dark' ? '#1C1C1E' : '#FFFFFF',
+                    },
                     headerShadowVisible: true,
+                    headerTintColor: scheme === 'dark' ? '#ECEDEE' : '#11181C',
                   }}
                 >
                   <Stack.Screen name="(tabs)" options={{ title: '' }} />
@@ -40,7 +44,10 @@ export default function RootLayout() {
                       headerShown: true,
                       title: 'Chat',
                       headerShadowVisible: true,
-                      headerStyle: { backgroundColor: '#FFFFFF' },
+                      headerStyle: {
+                        backgroundColor:
+                          scheme === 'dark' ? '#1C1C1E' : '#FFFFFF',
+                      },
                     }}
                   />
                   <Stack.Screen
