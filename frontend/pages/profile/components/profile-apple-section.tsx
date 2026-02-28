@@ -9,16 +9,19 @@ import { PikoCard } from '@/common/components/piko-card';
 import { MUTED } from '@/common/consts/theme';
 import { authClient } from '@/services/auth-client';
 
-import type { ProfilePageCopy, ProfileAppUser } from '@/common/typings/profile';
+import type {
+  ProfilePageLabels,
+  ProfileAppUser,
+} from '@/common/typings/profile';
 
 interface ProfileAppleSectionProps {
   appUser: ProfileAppUser | null;
-  copy: ProfilePageCopy['user_section'];
+  labels: ProfilePageLabels['user_section'];
 }
 
 export default function ProfileAppleSection({
   appUser,
-  copy,
+  labels,
 }: ProfileAppleSectionProps): ReactNode {
   const [isSigningIn, setIsSigningIn] = useState(false);
 
@@ -75,7 +78,7 @@ export default function ProfileAppleSection({
               ) : null}
               <XStack gap="$2" style={{ alignItems: 'center' }}>
                 <Text fontSize="$2" color="$gray12">
-                  {copy.apple_login_label}
+                  {labels.apple_login_label}
                 </Text>
                 <Ionicons name="logo-apple" size={14} color={MUTED} />
               </XStack>
@@ -84,7 +87,7 @@ export default function ProfileAppleSection({
         ) : (
           <>
             <Text fontSize="$2" color="$gray12">
-              {copy.sign_in_prompt}
+              {labels.sign_in_prompt}
             </Text>
             {Platform.OS === 'ios' ? (
               <AppleAuthentication.AppleAuthenticationButton
@@ -100,7 +103,7 @@ export default function ProfileAppleSection({
               />
             ) : (
               <Text fontSize="$2" color="$gray12">
-                {copy.ios_only_hint}
+                {labels.ios_only_hint}
               </Text>
             )}
           </>

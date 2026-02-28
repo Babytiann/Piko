@@ -1,5 +1,5 @@
 import type {
-  ProfilePageCopy,
+  ProfilePageLabels,
   ProfilePageData,
   ProfileAppUser,
 } from '../../../types/profile.js';
@@ -21,7 +21,7 @@ function getAvatarColor(id: string): string {
   return AVATAR_COLORS[index];
 }
 
-const PROFILE_COPY: ProfilePageCopy = {
+const PROFILE_LABELS: ProfilePageLabels = {
   page_title: '个人主页',
   user_section: {
     apple_login_label: '通过 Apple 登录',
@@ -57,9 +57,9 @@ const PROFILE_COPY: ProfilePageCopy = {
 
 function buildUnboundPageData(appUser: ProfileAppUser | null): ProfilePageData {
   return {
-    header: { title: PROFILE_COPY.page_title },
+    header: { title: PROFILE_LABELS.page_title },
     app_user: appUser,
-    copy: PROFILE_COPY,
+    labels: PROFILE_LABELS,
     telegram_section: {
       title: 'Telegram 账号',
       is_logged_in: false,
@@ -89,9 +89,9 @@ export async function getProfilePageData(
     .toUpperCase();
 
   return {
-    header: { title: PROFILE_COPY.page_title },
+    header: { title: PROFILE_LABELS.page_title },
     app_user: appUser,
-    copy: PROFILE_COPY,
+    labels: PROFILE_LABELS,
     telegram_section: {
       title: 'Telegram 账号',
       is_logged_in: true,

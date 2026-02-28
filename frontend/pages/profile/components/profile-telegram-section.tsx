@@ -5,18 +5,18 @@ import { XStack, YStack, Text } from 'tamagui';
 import { PikoCard } from '@/common/components/piko-card';
 
 import type {
-  ProfilePageCopy,
+  ProfilePageLabels,
   TelegramSection as TelegramSectionData,
 } from '@/common/typings/profile';
 
 interface ProfileTelegramSectionProps {
-  copy: ProfilePageCopy['linked_account'];
+  labels: ProfilePageLabels['linked_account'];
   data: TelegramSectionData;
   onPress: () => void;
 }
 
 export default function ProfileTelegramSection({
-  copy,
+  labels,
   data,
   onPress,
 }: ProfileTelegramSectionProps): ReactNode {
@@ -32,7 +32,7 @@ export default function ProfileTelegramSection({
         py="$2"
         textTransform="uppercase"
       >
-        {copy.title}
+        {labels.title}
       </Text>
       <PikoCard onPress={onPress} padding="$4">
         <XStack
@@ -49,14 +49,14 @@ export default function ProfileTelegramSection({
               {isBound ? (
                 <>
                   <Text fontSize="$3" color="$success">
-                    {copy.bound_label}
+                    {labels.bound_label}
                   </Text>
                   <Ionicons name="checkmark-circle" size={18} color="#34C759" />
                 </>
               ) : null}
             </XStack>
             <Text fontSize="$2" color="$gray12">
-              {isBound ? copy.bound_hint : copy.unbound_hint}
+              {isBound ? labels.bound_hint : labels.unbound_hint}
             </Text>
           </YStack>
           <Ionicons name="chevron-forward" size={20} color="#687076" />

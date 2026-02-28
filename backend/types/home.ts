@@ -1,5 +1,10 @@
 /** Slash 式首页：layout 定序，nodes 载数。 */
 
+export interface HomeHeaderData {
+  greeting: string;
+  subtitle: string;
+}
+
 export interface WeekCalendarData {
   weekLabel: string;
   selectedDate: string;
@@ -59,6 +64,7 @@ export interface ExpenseListData {
   expenses: ExpenseListItem[];
   total_count: number;
   total_amount: number;
+  today_date: string;
 }
 
 export interface QuickStatsData {
@@ -79,6 +85,7 @@ export interface HomeSlashNode<T = unknown> {
 }
 
 export interface HomeSlashNodes {
+  header?: HomeSlashNode<HomeHeaderData>;
   quick_stats?: HomeSlashNode<QuickStatsData>;
   week_calendar?: HomeSlashNode<WeekCalendarData>;
   budget_card?: HomeSlashNode<BudgetCardNodeData>;
@@ -94,15 +101,4 @@ export interface HomeSlashLayout {
 export interface HomeSlashResponse {
   layout: HomeSlashLayout;
   nodes: HomeSlashNodes;
-}
-
-/** 兼容旧版：仅保留以便渐进迁移 */
-export interface WelcomeCard {
-  title: string;
-  description: string;
-}
-
-export interface HomePageData {
-  header: { title: string };
-  welcome_card: WelcomeCard;
 }

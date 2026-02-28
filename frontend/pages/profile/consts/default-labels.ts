@@ -1,7 +1,7 @@
-import type { ProfilePageCopy } from '@/common/typings/profile';
+import type { ProfilePageLabels } from '@/common/typings/profile';
 
-/** Fallback copy when API data is not yet available (e.g. before login). */
-export const DEFAULT_PROFILE_COPY: ProfilePageCopy = {
+/** Fallback labels when API data is not yet available (e.g. before login). */
+export const DEFAULT_PROFILE_LABELS: ProfilePageLabels = {
   page_title: '个人主页',
   user_section: {
     apple_login_label: '通过 Apple 登录',

@@ -4,6 +4,7 @@ import type {
   CategoryCardsData,
   ExpenseListData,
   ExpenseListItem,
+  HomeHeaderData,
   HomeSlashResponse,
   QuickStatsData,
   WeatherCardData,
@@ -37,20 +38,15 @@ function getMonthBounds(anchor: Date): { start: Date; end: Date } {
   return { start, end };
 }
 
-function getTodayBounds(now: Date): { start: Date; end: Date } {
-  const start = new Date(now);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(now);
-  end.setHours(23, 59, 59, 999);
-  return { start, end };
-}
-
 function formatDateKey(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
 function formatTime(dateStr: string): string {
   const d = new Date(dateStr);
+  if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0) {
+    return '';
+  }
   const h = String(d.getHours()).padStart(2, '0');
   const m = String(d.getMinutes()).padStart(2, '0');
   return `${h}:${m}`;
@@ -65,6 +61,15 @@ function getWeekLabel(date: Date): string {
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
+}
+
+function getGreeting(now: Date): string {
+  const h = now.getHours();
+  if (h < 6) return '夜深了';
+  if (h < 12) return '早上好';
+  if (h < 14) return '中午好';
+  if (h < 18) return '下午好';
+  return '晚上好';
 }
 
 export async function getHomePageData(
@@ -84,49 +89,35 @@ export async function getHomePageData(
   const lastWeekStartStr = formatDateKey(lastWeekStart);
   const lastWeekEndStr = formatDateKey(lastWeekEnd);
 
-  const todayBounds = getTodayBounds(now);
-  const todayStr = formatDateKey(todayBounds.start);
-  const todayEndStr = formatDateKey(todayBounds.end);
+  const todayStr = formatDateKey(now);
 
   const monthBounds = getMonthBounds(now);
   const monthStartStr = formatDateKey(monthBounds.start);
   const monthEndStr = formatDateKey(monthBounds.end);
 
-  const [
-    weeklyBudget,
-    expenseRes,
-    lastWeekRes,
-    todayRes,
-    monthRes,
-    weatherResult,
-  ] = await Promise.all([
-    getUserBudget(userId),
-    listExpenses(userId, {
-      startDate: startStr,
-      endDate: endStr,
-      pageSize: 100,
-      page: 1,
-    }),
-    listExpenses(userId, {
-      startDate: lastWeekStartStr,
-      endDate: lastWeekEndStr,
-      pageSize: 100,
-      page: 1,
-    }),
-    listExpenses(userId, {
-      startDate: todayStr,
-      endDate: todayEndStr,
-      pageSize: 50,
-      page: 1,
-    }),
-    listExpenses(userId, {
-      startDate: monthStartStr,
-      endDate: monthEndStr,
-      pageSize: 500,
-      page: 1,
-    }),
-    fetchCurrentWeather(DEFAULT_CITY).catch(() => null),
-  ]);
+  const [weeklyBudget, expenseRes, lastWeekRes, monthRes, weatherResult] =
+    await Promise.all([
+      getUserBudget(userId),
+      listExpenses(userId, {
+        startDate: startStr,
+        endDate: endStr,
+        pageSize: 500,
+        page: 1,
+      }),
+      listExpenses(userId, {
+        startDate: lastWeekStartStr,
+        endDate: lastWeekEndStr,
+        pageSize: 100,
+        page: 1,
+      }),
+      listExpenses(userId, {
+        startDate: monthStartStr,
+        endDate: monthEndStr,
+        pageSize: 500,
+        page: 1,
+      }),
+      fetchCurrentWeather(DEFAULT_CITY).catch(() => null),
+    ]);
 
   const expenses = expenseRes.expenses;
   const byDate: Record<string, number> = {};
@@ -152,7 +143,6 @@ export async function getHomePageData(
   const daysInWeek = 7;
   const dailyAverage = totalSpent / daysInWeek;
 
-  // Build daily_spent arrays for sparkline
   const dailySpent: number[] = [];
   const lastWeekDailySpent: number[] = [];
   for (let i = 0; i < 7; i++) {
@@ -164,6 +154,12 @@ export async function getHomePageData(
     ld.setDate(lastWeekStart.getDate() + i);
     lastWeekDailySpent.push(round2(lastWeekByDate[formatDateKey(ld)] ?? 0));
   }
+
+  // --- header ---
+  const headerData: HomeHeaderData = {
+    greeting: getGreeting(now),
+    subtitle: '记录每一笔',
+  };
 
   // --- week_calendar ---
   const weekLabel = getWeekLabel(anchor);
@@ -241,11 +237,11 @@ export async function getHomePageData(
     })),
   };
 
-  // --- expense_list (today) ---
-  const todayExpenses = todayRes.expenses;
-  const todayTotal = todayExpenses.reduce((s, e) => s + e.amount, 0);
+  // --- expense_list (all week, frontend filters by date) ---
+  const allWeekExpenses = expenses;
+  const weekTotal = allWeekExpenses.reduce((s, e) => s + e.amount, 0);
   const expenseListData: ExpenseListData = {
-    expenses: todayExpenses.map(
+    expenses: allWeekExpenses.map(
       (e): ExpenseListItem => ({
         id: e.id,
         category: e.category,
@@ -257,11 +253,16 @@ export async function getHomePageData(
         image_url: e.imageUrl,
       }),
     ),
-    total_count: todayRes.total,
-    total_amount: round2(todayTotal),
+    total_count: allWeekExpenses.length,
+    total_amount: round2(weekTotal),
+    today_date: todayStr,
   };
 
   // --- quick_stats ---
+  const todayExpenses = expenses.filter(
+    (e) => e.date.slice(0, 10) === todayStr,
+  );
+  const todayTotal = todayExpenses.reduce((s, e) => s + e.amount, 0);
   const monthTotal = monthRes.expenses.reduce((s, e) => s + e.amount, 0);
   const quickStatsData: QuickStatsData = {
     today_amount: round2(todayTotal),
@@ -270,6 +271,7 @@ export async function getHomePageData(
   };
 
   const nodes: HomeSlashResponse['nodes'] = {
+    header: { type: 'component', data: headerData },
     quick_stats: { type: 'component', data: quickStatsData },
     week_calendar: { type: 'component', data: weekCalendarData },
     budget_card: { type: 'component', data: budgetCardData },

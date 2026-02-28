@@ -10,12 +10,14 @@ import { CATEGORY_ICON_CONFIG } from '@/common/consts/theme';
 import type {
   CategoryCardsData,
   CategoryCardItem,
+  ExpenseListItem,
 } from '@/common/typings/home';
 import HomeCategoryDetailSheet from './home-category-detail-sheet';
 import HomeCategoryAllSheet from './home-category-all-sheet';
 
 interface Props {
   data: CategoryCardsData;
+  allExpenses?: ExpenseListItem[];
 }
 
 function CategoryIcon({
@@ -78,7 +80,10 @@ function ProgressBar({
   );
 }
 
-export default function HomeCategoryCards({ data }: Props): ReactNode {
+export default function HomeCategoryCards({
+  data,
+  allExpenses = [],
+}: Props): ReactNode {
   const [selectedCategory, setSelectedCategory] =
     useState<CategoryCardItem | null>(null);
   const [showAllSheet, setShowAllSheet] = useState(false);
@@ -146,6 +151,7 @@ export default function HomeCategoryCards({ data }: Props): ReactNode {
         <HomeCategoryDetailSheet
           visible
           category={selectedCategory}
+          allExpenses={allExpenses}
           onClose={() => setSelectedCategory(null)}
         />
       ) : null}

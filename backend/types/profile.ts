@@ -23,8 +23,8 @@ export interface TelegramSection {
   bind_button_text?: string;
 }
 
-/** Copy for settings/help list rows. */
-export interface ProfileCopyItem {
+/** Label item for settings/help list rows. */
+export interface ProfileLabelItem {
   title: string;
   description: string;
 }
@@ -36,8 +36,8 @@ export interface ProfileAppUser {
   email: string | null;
 }
 
-/** All profile page copy (backend-driven). */
-export interface ProfilePageCopy {
+/** All profile page labels (backend-driven). */
+export interface ProfilePageLabels {
   page_title: string;
   user_section: {
     apple_login_label: string;
@@ -54,11 +54,11 @@ export interface ProfilePageCopy {
   };
   settings: {
     title: string;
-    items: ProfileCopyItem[];
+    items: ProfileLabelItem[];
   };
   help: {
     title: string;
-    items: ProfileCopyItem[];
+    items: ProfileLabelItem[];
   };
   logout_button: string;
   logout_ingress: string;
@@ -68,6 +68,6 @@ export interface ProfilePageData {
   header: { title: string };
   /** 当前 Apple 登录用户，未登录为 null。首屏 Apple 区块据此渲染。 */
   app_user: ProfileAppUser | null;
-  copy: ProfilePageCopy;
+  labels: ProfilePageLabels;
   telegram_section: TelegramSection;
 }

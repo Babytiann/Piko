@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable } from 'react-native';
 import { XStack, YStack, Text } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,18 +10,24 @@ import { PikoWeekCalendar } from '@/common/components/piko-week-calendar';
 import { MUTED } from '@/common/consts/theme';
 import type { WeekCalendarData } from '@/common/typings/home';
 
+import HomeDatePickerSheet from './home-date-picker-sheet';
+
 interface Props {
   data: WeekCalendarData;
   onWeekChange?: (dateInTargetWeek: string) => void;
+  onDateSelect?: (dateStr: string) => void;
+  selectedDate?: string;
 }
 
 export default function HomeWeekCalendar({
   data,
   onWeekChange,
+  onDateSelect: onDateSelectProp,
+  selectedDate: selectedDateProp,
 }: Props): ReactNode {
-  const [selectedDate, setSelectedDate] = useState<Date>(
-    () => new Date(data.selectedDate),
-  );
+  const effectiveDate = selectedDateProp ?? data.selectedDate;
+
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const markedDates = useMemo(() => {
     const out: Record<string, { amount?: number }> = {};
@@ -32,11 +38,28 @@ export default function HomeWeekCalendar({
   }, [data.days]);
 
   const navigateWeek = (direction: -1 | 1): void => {
-    const next = new Date(selectedDate);
-    next.setDate(next.getDate() + direction * 7);
-    setSelectedDate(next);
-    const iso = next.toISOString().slice(0, 10);
+    const d = new Date(effectiveDate + 'T00:00:00');
+    d.setDate(d.getDate() + direction * 7);
+    const iso = d.toISOString().slice(0, 10);
+    onDateSelectProp?.(iso);
     onWeekChange?.(iso);
+  };
+
+  const handleDateSelect = useCallback(
+    (dateStr: string): void => {
+      onDateSelectProp?.(dateStr);
+    },
+    [onDateSelectProp],
+  );
+
+  const handlePickerSelect = (dateStr: string): void => {
+    setShowDatePicker(false);
+    const currentWeekDates = data.days.map((d) => d.date);
+    const isInCurrentWeek = currentWeekDates.includes(dateStr);
+    onDateSelectProp?.(dateStr);
+    if (!isInCurrentWeek) {
+      onWeekChange?.(dateStr);
+    }
   };
 
   return (
@@ -46,14 +69,19 @@ export default function HomeWeekCalendar({
           mb="$3"
           style={{ alignItems: 'center', justifyContent: 'space-between' }}
         >
-          <YStack>
-            <Text fontSize={11} color="$muted">
-              {data.weekLabel}
-            </Text>
-            <Text fontSize={16} fontWeight="700" color="$color">
-              本周概览
-            </Text>
-          </YStack>
+          <Pressable onPress={() => setShowDatePicker(true)}>
+            <YStack>
+              <Text fontSize={11} color="$muted">
+                {data.weekLabel}
+              </Text>
+              <XStack style={{ alignItems: 'center', gap: 4 }}>
+                <Text fontSize={16} fontWeight="700" color="$color">
+                  本周概览
+                </Text>
+                <Ionicons name="calendar-outline" size={14} color={MUTED} />
+              </XStack>
+            </YStack>
+          </Pressable>
           <XStack gap="$1" style={{ alignItems: 'center' }}>
             <Pressable
               onPress={() => navigateWeek(-1)}
@@ -84,11 +112,18 @@ export default function HomeWeekCalendar({
           </XStack>
         </XStack>
         <PikoWeekCalendar
-          selectedDate={selectedDate}
-          onDateSelect={setSelectedDate}
+          selectedDate={effectiveDate}
+          onDateSelect={handleDateSelect}
           markedDates={markedDates}
         />
       </PikoCard>
+
+      <HomeDatePickerSheet
+        visible={showDatePicker}
+        currentDate={effectiveDate}
+        onSelect={handlePickerSelect}
+        onClose={() => setShowDatePicker(false)}
+      />
     </Animated.View>
   );
 }

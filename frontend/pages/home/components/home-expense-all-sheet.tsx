@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { Modal, Pressable, FlatList, Dimensions } from 'react-native';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -18,6 +19,7 @@ interface Props {
   visible: boolean;
   expenses: ExpenseListItem[];
   totalAmount: number;
+  title?: string;
   onClose: () => void;
 }
 
@@ -25,8 +27,10 @@ export default function HomeExpenseAllSheet({
   visible,
   expenses,
   totalAmount,
+  title = '今日消费',
   onClose,
 }: Props): ReactNode {
+  const router = useRouter();
   const translateY = useSharedValue(SCREEN_H);
 
   useEffect(() => {
@@ -75,11 +79,11 @@ export default function HomeExpenseAllSheet({
               >
                 <YStack>
                   <Text fontSize={18} fontWeight="700" color="$color">
-                    今日消费
+                    {title}
                   </Text>
                   <Text fontSize={12} color="$muted" mt={2}>
                     共 {expenses.length} 笔，合计 ¥
-                    {totalAmount.toLocaleString()}
+                    {Math.round(totalAmount * 100) / 100}
                   </Text>
                 </YStack>
                 <Pressable onPress={onClose} hitSlop={8}>
@@ -96,64 +100,87 @@ export default function HomeExpenseAllSheet({
                     CATEGORY_ICON_CONFIG[item.category] ??
                     CATEGORY_ICON_CONFIG['其他'];
                   return (
-                    <XStack
-                      py="$3"
-                      style={{ alignItems: 'center', gap: 12 }}
-                      borderBottomWidth={0.5}
-                      borderBottomColor="$gray4"
+                    <Pressable
+                      onPress={() => {
+                        onClose();
+                        setTimeout(() => {
+                          router.push({
+                            pathname: '/expense-detail',
+                            params: { id: item.id },
+                          });
+                        }, 300);
+                      }}
                     >
-                      <View
-                        style={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: 10,
-                          borderCurve: 'continuous',
-                          backgroundColor: config.bgColor,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                        }}
+                      <XStack
+                        py="$3"
+                        style={{ alignItems: 'center', gap: 12 }}
+                        borderBottomWidth={0.5}
+                        borderBottomColor="$gray4"
                       >
-                        <Ionicons
-                          name={config.icon as keyof typeof Ionicons.glyphMap}
-                          size={18}
-                          color={config.iconColor}
-                        />
-                      </View>
-                      <YStack flex={1} style={{ minWidth: 0 }}>
-                        <Text
-                          fontSize={14}
-                          fontWeight="600"
-                          color="$color"
-                          numberOfLines={1}
+                        <View
+                          style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 10,
+                            borderCurve: 'continuous',
+                            backgroundColor: config.bgColor,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
                         >
-                          {item.merchant ?? item.category}
-                        </Text>
-                        <XStack
-                          mt={2}
-                          gap="$1"
-                          style={{ alignItems: 'center' }}
-                        >
-                          <Text fontSize={11} color="$muted">
-                            {item.category}
+                          <Ionicons
+                            name={config.icon as keyof typeof Ionicons.glyphMap}
+                            size={18}
+                            color={config.iconColor}
+                          />
+                        </View>
+                        <YStack flex={1} style={{ minWidth: 0 }}>
+                          <Text
+                            fontSize={14}
+                            fontWeight="600"
+                            color="$color"
+                            numberOfLines={1}
+                          >
+                            {item.merchant ?? item.category}
                           </Text>
-                          <Text fontSize={11} color="$gray6">
-                            ·
+                          <XStack
+                            mt={2}
+                            gap="$1"
+                            style={{ alignItems: 'center' }}
+                          >
+                            <Text fontSize={11} color="$muted">
+                              {item.category}
+                            </Text>
+                            {item.time ? (
+                              <>
+                                <Text fontSize={11} color="$gray6">
+                                  ·
+                                </Text>
+                                <Text fontSize={11} color="$muted">
+                                  {item.time}
+                                </Text>
+                              </>
+                            ) : null}
+                          </XStack>
+                        </YStack>
+                        <XStack style={{ alignItems: 'center', gap: 6 }}>
+                          <Text
+                            fontSize={14}
+                            fontWeight="700"
+                            color="$color"
+                            style={{ fontVariant: ['tabular-nums'] }}
+                          >
+                            -¥{item.amount}
                           </Text>
-                          <Text fontSize={11} color="$muted">
-                            {item.time}
-                          </Text>
+                          <Ionicons
+                            name="chevron-forward"
+                            size={14}
+                            color={MUTED}
+                          />
                         </XStack>
-                      </YStack>
-                      <Text
-                        fontSize={14}
-                        fontWeight="700"
-                        color="$color"
-                        style={{ fontVariant: ['tabular-nums'] }}
-                      >
-                        -¥{item.amount}
-                      </Text>
-                    </XStack>
+                      </XStack>
+                    </Pressable>
                   );
                 }}
                 ListEmptyComponent={

@@ -1,5 +1,10 @@
 /** Data contract for the Home page (mirrors backend Slash). */
 
+export interface HomeHeaderData {
+  greeting: string;
+  subtitle: string;
+}
+
 export interface WeekCalendarData {
   weekLabel: string;
   selectedDate: string;
@@ -62,6 +67,7 @@ export interface ExpenseListData {
   expenses: ExpenseListItem[];
   total_count: number;
   total_amount: number;
+  today_date: string;
 }
 
 export interface QuickStatsData {
@@ -78,6 +84,7 @@ export interface HomeSlashNode<T = unknown> {
 }
 
 export interface HomeSlashNodes {
+  header?: HomeSlashNode<HomeHeaderData>;
   quick_stats?: HomeSlashNode<QuickStatsData>;
   week_calendar?: HomeSlashNode<WeekCalendarData>;
   budget_card?: HomeSlashNode<BudgetCardNodeData>;

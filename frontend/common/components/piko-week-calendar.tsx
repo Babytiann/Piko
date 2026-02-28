@@ -12,29 +12,15 @@ function formatDateKey(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-function getWeekDates(anchor: Date): Date[] {
-  const d = new Date(anchor);
-  const dow = d.getDay();
-  const mondayOffset = dow === 0 ? 6 : dow - 1;
-  const start = new Date(d);
-  start.setDate(d.getDate() - mondayOffset);
-  const out: Date[] = [];
-  for (let i = 0; i < 7; i++) {
-    const x = new Date(start);
-    x.setDate(start.getDate() + i);
-    out.push(x);
-  }
-  return out;
-}
-
 export interface MarkedDateItem {
   dot?: boolean;
   amount?: number;
 }
 
 interface PikoWeekCalendarProps {
-  selectedDate: Date;
-  onDateSelect: (date: Date) => void;
+  /** ISO date string, e.g. "2024-01-15" */
+  selectedDate: string;
+  onDateSelect: (dateStr: string) => void;
   markedDates?: Record<string, MarkedDateItem>;
 }
 
@@ -44,8 +30,27 @@ export function PikoWeekCalendar({
   markedDates = {},
 }: PikoWeekCalendarProps): ReactNode {
   const theme = useTheme();
-  const weekDates = useMemo(() => getWeekDates(selectedDate), [selectedDate]);
-  const selectedKey = formatDateKey(selectedDate);
+
+  // Stable week-start key — only changes when selectedDate crosses a week boundary
+  const weekStartKey = useMemo(() => {
+    const d = new Date(selectedDate + 'T00:00:00');
+    const dow = d.getDay();
+    const mondayOffset = dow === 0 ? 6 : dow - 1;
+    d.setDate(d.getDate() - mondayOffset);
+    return formatDateKey(d);
+  }, [selectedDate]);
+
+  const weekDates = useMemo(() => {
+    const monday = new Date(weekStartKey + 'T00:00:00');
+    const out: Date[] = [];
+    for (let i = 0; i < 7; i++) {
+      const x = new Date(monday);
+      x.setDate(monday.getDate() + i);
+      out.push(x);
+    }
+    return out;
+  }, [weekStartKey]);
+
   const todayKey = formatDateKey(new Date());
 
   return (
@@ -55,7 +60,7 @@ export function PikoWeekCalendar({
     >
       {weekDates.map((date, i) => {
         const key = formatDateKey(date);
-        const isSelected = key === selectedKey;
+        const isSelected = key === selectedDate;
         const isToday = key === todayKey;
         const marked = markedDates[key];
         const amount = marked?.amount;
@@ -64,7 +69,7 @@ export function PikoWeekCalendar({
         return (
           <Pressable
             key={key}
-            onPress={() => onDateSelect(date)}
+            onPress={() => onDateSelect(key)}
             style={{ flex: 1, minWidth: 40 }}
           >
             <YStack

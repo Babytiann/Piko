@@ -71,7 +71,7 @@ export default function HomeCategoryAllSheet({
                 borderCurve: 'continuous',
                 paddingTop: 20,
                 paddingBottom: 40,
-                maxHeight: '80%',
+                height: SCREEN_H * 0.7,
               }}
             >
               <XStack

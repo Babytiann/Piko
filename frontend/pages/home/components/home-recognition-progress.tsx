@@ -1,19 +1,19 @@
 import type { ReactNode } from 'react';
-import { useContext, useState } from 'react';
-import { Image, Pressable, Modal } from 'react-native';
+import { useContext, useState, useEffect, useCallback } from 'react';
+import { Image, Pressable, Modal, Dimensions, Alert } from 'react-native';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   FadeInDown,
   FadeInUp,
-  FadeOutDown,
   ZoomIn,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { useEffect } from 'react';
 
 import { PikoCard } from '@/common/components/piko-card';
 import { RecognitionContext } from '@/contexts/recognition-context';
@@ -22,8 +22,12 @@ import {
   PRIMARY,
   MUTED,
   SUCCESS,
+  DESTRUCTIVE,
 } from '@/common/consts/theme';
+import { deleteExpenseApi } from '@/services/expense';
 import type { RecognizeResult } from '@/pages/scan/types/index';
+
+const SCREEN_H = Dimensions.get('window').height;
 
 function ProgressBar({ progress }: { progress: number }): ReactNode {
   const animatedWidth = useSharedValue(0);
@@ -54,12 +58,6 @@ function ProgressBar({ progress }: { progress: number }): ReactNode {
 }
 
 function ProgressNumber({ progress }: { progress: number }): ReactNode {
-  const animatedNum = useSharedValue(0);
-
-  useEffect(() => {
-    animatedNum.value = withTiming(progress, { duration: 400 });
-  }, [progress, animatedNum]);
-
   return (
     <Text
       fontSize={24}
@@ -83,12 +81,21 @@ function ResultEditSheet({
 }): ReactNode {
   const config =
     CATEGORY_ICON_CONFIG[result.category] ?? CATEGORY_ICON_CONFIG['其他'];
+  const translateY = useSharedValue(SCREEN_H);
+
+  useEffect(() => {
+    translateY.value = withTiming(visible ? 0 : SCREEN_H, { duration: 300 });
+  }, [visible, translateY]);
+
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
 
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType="fade"
       onRequestClose={onClose}
     >
       <Pressable
@@ -100,111 +107,172 @@ function ResultEditSheet({
         onPress={onClose}
       >
         <Pressable onPress={() => {}}>
-          <YStack
-            bg="$card"
-            style={{
-              borderTopLeftRadius: 24,
-              borderTopRightRadius: 24,
-              borderCurve: 'continuous',
-              padding: 24,
-              paddingBottom: 40,
-            }}
-          >
-            <XStack
-              mb="$4"
-              style={{ alignItems: 'center', justifyContent: 'space-between' }}
+          <Animated.View style={sheetStyle}>
+            <YStack
+              bg="$card"
+              style={{
+                borderTopLeftRadius: 24,
+                borderTopRightRadius: 24,
+                borderCurve: 'continuous',
+                padding: 24,
+                paddingBottom: 40,
+              }}
             >
-              <Text fontSize={18} fontWeight="700" color="$color">
-                识别结果
-              </Text>
-              <Pressable onPress={onClose} hitSlop={8}>
-                <Ionicons name="close" size={22} color={MUTED} />
-              </Pressable>
-            </XStack>
-
-            <YStack gap="$4">
-              <YStack>
-                <Text fontSize={12} color="$muted" mb="$1">
-                  金额
+              <XStack
+                mb="$4"
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Text fontSize={18} fontWeight="700" color="$color">
+                  识别结果
                 </Text>
-                <Text
-                  fontSize={28}
-                  fontWeight="800"
-                  color="$color"
-                  style={{ fontVariant: ['tabular-nums'] }}
-                >
-                  ¥{result.amount}
-                </Text>
-              </YStack>
-
-              <XStack gap="$4">
-                <YStack flex={1}>
-                  <Text fontSize={12} color="$muted" mb="$1">
-                    商户
-                  </Text>
-                  <Text fontSize={15} fontWeight="600" color="$color">
-                    {result.merchant}
-                  </Text>
-                </YStack>
-                <YStack flex={1}>
-                  <Text fontSize={12} color="$muted" mb="$1">
-                    分类
-                  </Text>
-                  <XStack style={{ alignItems: 'center', gap: 6 }}>
-                    <Ionicons
-                      name={config.icon as keyof typeof Ionicons.glyphMap}
-                      size={16}
-                      color={config.iconColor}
-                    />
-                    <Text fontSize={15} fontWeight="600" color="$color">
-                      {result.category}
-                    </Text>
-                  </XStack>
-                </YStack>
+                <Pressable onPress={onClose} hitSlop={8}>
+                  <Ionicons name="close" size={22} color={MUTED} />
+                </Pressable>
               </XStack>
 
-              <XStack gap="$4">
-                <YStack flex={1}>
-                  <Text fontSize={12} color="$muted" mb="$1">
-                    日期
-                  </Text>
-                  <Text fontSize={15} fontWeight="600" color="$color">
-                    {result.date}
-                  </Text>
-                </YStack>
-                <YStack flex={1}>
-                  <Text fontSize={12} color="$muted" mb="$1">
-                    置信度
-                  </Text>
-                  <Text fontSize={15} fontWeight="600" color="$color">
-                    {Math.round((result.confidence ?? 0) * 100)}%
-                  </Text>
-                </YStack>
-              </XStack>
-
-              {result.items && result.items.length > 0 ? (
+              <YStack gap="$4">
                 <YStack>
                   <Text fontSize={12} color="$muted" mb="$1">
-                    明细
+                    金额
                   </Text>
-                  {result.items.map((item, i) => (
-                    <Text key={i} fontSize={14} color="$color" mt={2}>
-                      · {item}
-                    </Text>
-                  ))}
+                  <Text
+                    fontSize={28}
+                    fontWeight="800"
+                    color="$color"
+                    style={{ fontVariant: ['tabular-nums'] }}
+                  >
+                    ¥{result.amount}
+                  </Text>
                 </YStack>
-              ) : null}
+
+                <XStack gap="$4">
+                  <YStack flex={1}>
+                    <Text fontSize={12} color="$muted" mb="$1">
+                      商户
+                    </Text>
+                    <Text fontSize={15} fontWeight="600" color="$color">
+                      {result.merchant}
+                    </Text>
+                  </YStack>
+                  <YStack flex={1}>
+                    <Text fontSize={12} color="$muted" mb="$1">
+                      分类
+                    </Text>
+                    <XStack style={{ alignItems: 'center', gap: 6 }}>
+                      <Ionicons
+                        name={config.icon as keyof typeof Ionicons.glyphMap}
+                        size={16}
+                        color={config.iconColor}
+                      />
+                      <Text fontSize={15} fontWeight="600" color="$color">
+                        {result.category}
+                      </Text>
+                    </XStack>
+                  </YStack>
+                </XStack>
+
+                <XStack gap="$4">
+                  <YStack flex={1}>
+                    <Text fontSize={12} color="$muted" mb="$1">
+                      日期
+                    </Text>
+                    <Text fontSize={15} fontWeight="600" color="$color">
+                      {result.date}
+                    </Text>
+                  </YStack>
+                  <YStack flex={1}>
+                    <Text fontSize={12} color="$muted" mb="$1">
+                      置信度
+                    </Text>
+                    <Text fontSize={15} fontWeight="600" color="$color">
+                      {Math.round((result.confidence ?? 0) * 100)}%
+                    </Text>
+                  </YStack>
+                </XStack>
+
+                {result.items && result.items.length > 0 ? (
+                  <YStack>
+                    <Text fontSize={12} color="$muted" mb="$1">
+                      明细
+                    </Text>
+                    {result.items.map((item, i) => (
+                      <Text key={i} fontSize={14} color="$color" mt={2}>
+                        · {item}
+                      </Text>
+                    ))}
+                  </YStack>
+                ) : null}
+              </YStack>
             </YStack>
-          </YStack>
+          </Animated.View>
         </Pressable>
       </Pressable>
     </Modal>
   );
 }
 
+const DELETE_BTN_WIDTH = 72;
+
 export default function HomeRecognitionProgress(): ReactNode {
   const recognition = useContext(RecognitionContext);
+  const router = useRouter();
   const [showResultSheet, setShowResultSheet] = useState(false);
+
+  const translateX = useSharedValue(0);
+  const contextX = useSharedValue(0);
+
+  const confirmDelete = useCallback(() => {
+    const expenseId = recognition.expenseId;
+    Alert.alert('删除消费', '确认删除这笔消费记录？', [
+      {
+        text: '取消',
+        style: 'cancel',
+        onPress: () => {
+          translateX.value = withSpring(0);
+        },
+      },
+      {
+        text: '删除',
+        style: 'destructive',
+        onPress: async () => {
+          if (expenseId) {
+            await deleteExpenseApi(expenseId);
+          }
+          recognition.dismiss();
+        },
+      },
+    ]);
+  }, [recognition, translateX]);
+
+  const panGesture = Gesture.Pan()
+    .activeOffsetX([-10, 10])
+    .failOffsetY([-5, 5])
+    .onStart(() => {
+      contextX.value = translateX.value;
+    })
+    .onUpdate((e) => {
+      const next = contextX.value + e.translationX;
+      translateX.value = Math.max(-DELETE_BTN_WIDTH, Math.min(0, next));
+    })
+    .onEnd((e) => {
+      if (e.translationX < -30 || e.velocityX < -500) {
+        translateX.value = withSpring(-DELETE_BTN_WIDTH, { damping: 20 });
+      } else {
+        translateX.value = withSpring(0, { damping: 20 });
+      }
+    });
+
+  const cardSlideStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
+
+  const deleteBtnStyle = useAnimatedStyle(() => ({
+    width: -translateX.value > 0 ? -translateX.value : 0,
+    opacity: -translateX.value > 10 ? 1 : 0,
+  }));
 
   if (recognition.status === 'idle') return null;
 
@@ -215,138 +283,224 @@ export default function HomeRecognitionProgress(): ReactNode {
 
   return (
     <Animated.View entering={FadeInDown.springify()}>
-      <PikoCard>
-        <XStack gap="$3" style={{ alignItems: 'center' }}>
-          {recognition.thumbnailUri ? (
-            <Image
-              source={{ uri: recognition.thumbnailUri }}
-              style={{
-                width: 72,
-                height: 72,
-                borderRadius: 12,
-                backgroundColor: '#F5F5F5',
-              }}
-              resizeMode="cover"
-            />
-          ) : (
-            <View
-              style={{
-                width: 72,
-                height: 72,
-                borderRadius: 12,
-                borderCurve: 'continuous',
-                backgroundColor: '#F5F5F5',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Ionicons name="image-outline" size={28} color={MUTED} />
-            </View>
-          )}
+      <View
+        style={{
+          overflow: 'hidden',
+          borderRadius: 20,
+          borderCurve: 'continuous',
+        }}
+      >
+        <Animated.View
+          style={[
+            deleteBtnStyle,
+            {
+              position: 'absolute',
+              right: 0,
+              top: 0,
+              bottom: 0,
+              backgroundColor: DESTRUCTIVE,
+              borderTopRightRadius: 20,
+              borderBottomRightRadius: 20,
+              alignItems: 'center',
+              justifyContent: 'center',
+            },
+          ]}
+        >
+          <Pressable
+            onPress={confirmDelete}
+            style={{
+              flex: 1,
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: DELETE_BTN_WIDTH,
+            }}
+          >
+            <Ionicons name="trash-outline" size={22} color="white" />
+            <Text fontSize={10} color="white" mt={2} fontWeight="600">
+              删除
+            </Text>
+          </Pressable>
+        </Animated.View>
 
-          <YStack flex={1}>
-            {isStreaming ? (
-              <Animated.View entering={FadeInUp.duration(200)} key="streaming">
-                <XStack
-                  style={{
-                    alignItems: 'baseline',
-                    justifyContent: 'space-between',
-                  }}
-                  mb="$2"
-                >
-                  <Text fontSize={13} fontWeight="600" color="$color">
-                    AI 识别中
-                  </Text>
-                  <ProgressNumber progress={recognition.progress} />
-                </XStack>
-                <ProgressBar progress={recognition.progress} />
-                <Text fontSize={11} color="$muted" mt="$1">
-                  {recognition.stepMessage}
-                </Text>
-              </Animated.View>
-            ) : null}
-
-            {isComplete && recognition.result ? (
-              <Animated.View entering={ZoomIn.duration(300)} key="complete">
-                <XStack style={{ alignItems: 'center', gap: 6 }} mb="$1">
-                  <Ionicons name="checkmark-circle" size={18} color={SUCCESS} />
-                  <Text fontSize={13} fontWeight="600" color="$success">
-                    识别完成
-                  </Text>
-                </XStack>
-                <Text
-                  fontSize={20}
-                  fontWeight="800"
-                  color="$color"
-                  style={{ fontVariant: ['tabular-nums'] }}
-                >
-                  ¥{recognition.result.amount}
-                </Text>
-                <Text fontSize={12} color="$muted" mt={2}>
-                  {recognition.result.merchant} · {recognition.result.category}
-                </Text>
-                <XStack mt="$2" gap="$2">
-                  <Pressable
-                    onPress={() => setShowResultSheet(true)}
+        <GestureDetector gesture={panGesture}>
+          <Animated.View style={cardSlideStyle}>
+            <PikoCard>
+              <XStack gap="$3" style={{ alignItems: 'center' }}>
+                {recognition.thumbnailUri ? (
+                  <Image
+                    source={{ uri: recognition.thumbnailUri }}
                     style={{
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 8,
+                      width: 72,
+                      height: 72,
+                      borderRadius: 12,
                       backgroundColor: '#F5F5F5',
                     }}
-                  >
-                    <Text fontSize={12} fontWeight="600" color="$color">
-                      查看详情
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={recognition.dismiss}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View
                     style={{
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 8,
-                      backgroundColor: PRIMARY,
+                      width: 72,
+                      height: 72,
+                      borderRadius: 12,
+                      borderCurve: 'continuous',
+                      backgroundColor: '#F5F5F5',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                   >
-                    <Text fontSize={12} fontWeight="600" color="white">
-                      确认
-                    </Text>
-                  </Pressable>
-                </XStack>
-              </Animated.View>
-            ) : null}
+                    <Ionicons name="image-outline" size={28} color={MUTED} />
+                  </View>
+                )}
 
-            {isError ? (
-              <Animated.View entering={FadeInUp.duration(200)} key="error">
-                <XStack style={{ alignItems: 'center', gap: 6 }} mb="$1">
-                  <Ionicons name="alert-circle" size={18} color="#DC2626" />
-                  <Text fontSize={13} fontWeight="600" color="$destructive">
-                    识别失败
-                  </Text>
-                </XStack>
-                <Text fontSize={12} color="$muted" mt={2}>
-                  {recognition.errorMessage}
-                </Text>
-                <Pressable
-                  onPress={recognition.dismiss}
-                  style={{
-                    marginTop: 8,
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 8,
-                    backgroundColor: '#F5F5F5',
-                    alignSelf: 'flex-start',
-                  }}
-                >
-                  <Text fontSize={12} fontWeight="600" color="$color">
-                    关闭
-                  </Text>
-                </Pressable>
-              </Animated.View>
-            ) : null}
-          </YStack>
-        </XStack>
-      </PikoCard>
+                <YStack flex={1}>
+                  {isStreaming ? (
+                    <Animated.View
+                      entering={FadeInUp.duration(200)}
+                      key="streaming"
+                    >
+                      <XStack
+                        style={{
+                          alignItems: 'baseline',
+                          justifyContent: 'space-between',
+                        }}
+                        mb="$2"
+                      >
+                        <Text fontSize={13} fontWeight="600" color="$color">
+                          AI 识别中
+                        </Text>
+                        <ProgressNumber progress={recognition.progress} />
+                      </XStack>
+                      <ProgressBar progress={recognition.progress} />
+                      <Text fontSize={11} color="$muted" mt="$1">
+                        {recognition.stepMessage}
+                      </Text>
+                    </Animated.View>
+                  ) : null}
+
+                  {isComplete && recognition.result ? (
+                    <Animated.View
+                      entering={ZoomIn.duration(300)}
+                      key="complete"
+                    >
+                      <XStack style={{ alignItems: 'center', gap: 6 }} mb="$1">
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={18}
+                          color={SUCCESS}
+                        />
+                        <Text fontSize={13} fontWeight="600" color="$success">
+                          识别完成
+                        </Text>
+                      </XStack>
+                      <Text
+                        fontSize={20}
+                        fontWeight="800"
+                        color="$color"
+                        style={{ fontVariant: ['tabular-nums'] }}
+                      >
+                        ¥{recognition.result.amount}
+                      </Text>
+                      <Text fontSize={12} color="$muted" mt={2}>
+                        {recognition.result.merchant} ·{' '}
+                        {recognition.result.category}
+                      </Text>
+                      <XStack mt="$2" gap="$2" style={{ flexWrap: 'wrap' }}>
+                        {recognition.expenseId ? (
+                          <Pressable
+                            onPress={() => {
+                              router.push({
+                                pathname: '/expense-detail',
+                                params: { id: recognition.expenseId! },
+                              });
+                            }}
+                            style={{
+                              paddingHorizontal: 12,
+                              paddingVertical: 6,
+                              borderRadius: 8,
+                              backgroundColor: '#F5F5F5',
+                            }}
+                          >
+                            <Text fontSize={12} fontWeight="600" color="$color">
+                              查看详情
+                            </Text>
+                          </Pressable>
+                        ) : null}
+                        <Pressable
+                          onPress={() => setShowResultSheet(true)}
+                          style={{
+                            paddingHorizontal: 12,
+                            paddingVertical: 6,
+                            borderRadius: 8,
+                            backgroundColor: '#F5F5F5',
+                          }}
+                        >
+                          <Text fontSize={12} fontWeight="600" color="$color">
+                            识别结果
+                          </Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={recognition.dismiss}
+                          style={{
+                            paddingHorizontal: 12,
+                            paddingVertical: 6,
+                            borderRadius: 8,
+                            backgroundColor: PRIMARY,
+                          }}
+                        >
+                          <Text fontSize={12} fontWeight="600" color="white">
+                            确认
+                          </Text>
+                        </Pressable>
+                      </XStack>
+                    </Animated.View>
+                  ) : null}
+
+                  {isError ? (
+                    <Animated.View
+                      entering={FadeInUp.duration(200)}
+                      key="error"
+                    >
+                      <XStack style={{ alignItems: 'center', gap: 6 }} mb="$1">
+                        <Ionicons
+                          name="alert-circle"
+                          size={18}
+                          color="#DC2626"
+                        />
+                        <Text
+                          fontSize={13}
+                          fontWeight="600"
+                          color="$destructive"
+                        >
+                          识别失败
+                        </Text>
+                      </XStack>
+                      <Text fontSize={12} color="$muted" mt={2}>
+                        {recognition.errorMessage}
+                      </Text>
+                      <Pressable
+                        onPress={recognition.dismiss}
+                        style={{
+                          marginTop: 8,
+                          paddingHorizontal: 12,
+                          paddingVertical: 6,
+                          borderRadius: 8,
+                          backgroundColor: '#F5F5F5',
+                          alignSelf: 'flex-start',
+                        }}
+                      >
+                        <Text fontSize={12} fontWeight="600" color="$color">
+                          关闭
+                        </Text>
+                      </Pressable>
+                    </Animated.View>
+                  ) : null}
+                </YStack>
+              </XStack>
+            </PikoCard>
+          </Animated.View>
+        </GestureDetector>
+      </View>
 
       {isComplete && recognition.result ? (
         <ResultEditSheet

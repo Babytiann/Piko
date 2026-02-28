@@ -3,6 +3,7 @@ import { Alert, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, Spacer } from 'tamagui';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
 import PageLoading from '@/common/components/page-loading';
@@ -12,8 +13,7 @@ import PageStatusView, {
 } from '@/common/components/page-status-view';
 import { useAuth } from '@/common/hooks';
 import { authClient } from '@/services/auth-client';
-
-import { DEFAULT_PROFILE_COPY } from '@/pages/profile/consts/default-copy';
+import { DEFAULT_PROFILE_LABELS } from '@/pages/profile/consts/default-labels';
 import { useProfileData } from '@/pages/profile/hooks/useProfileData';
 import ProfileAppleSection from '@/pages/profile/components/profile-apple-section';
 import ProfileTelegramSection from '@/pages/profile/components/profile-telegram-section';
@@ -48,7 +48,7 @@ export default function ProfileScreen(): ReactNode {
     );
   }, [errorType, appSession?.user, logout]);
 
-  const copy = data?.copy ?? DEFAULT_PROFILE_COPY;
+  const labels = data?.labels ?? DEFAULT_PROFILE_LABELS;
   const appUser =
     data?.app_user ??
     (appSession?.user
@@ -143,68 +143,83 @@ export default function ProfileScreen(): ReactNode {
         contentContainerStyle={contentPadding}
         showsVerticalScrollIndicator={false}
       >
-        <XStack px="$4" py="$3">
-          <Text
-            fontSize="$7"
-            fontWeight="700"
-            color="$color"
-            letterSpacing={-0.5}
-          >
-            {copy.page_title}
-          </Text>
-          <Spacer flex={1} />
-        </XStack>
+        <Animated.View entering={FadeInDown.delay(50).springify()}>
+          <XStack px="$5" pt="$4" pb="$2" style={{ alignItems: 'center' }}>
+            <Text
+              fontSize={26}
+              fontWeight="800"
+              color="$color"
+              letterSpacing={-0.5}
+            >
+              {labels.page_title}
+            </Text>
+            <Spacer flex={1} />
+          </XStack>
+        </Animated.View>
 
-        <YStack px="$4" gap="$4">
-          <ProfileAppleSection appUser={appUser} copy={copy.user_section} />
+        <YStack px="$4" gap="$3" pt="$1">
+          <Animated.View entering={FadeInDown.delay(100).springify()}>
+            <ProfileAppleSection
+              appUser={appUser}
+              labels={labels.user_section}
+            />
+          </Animated.View>
 
           {showProfileError ? (
             <PageStatusView errorType={errorType} onRetry={handleRetry} />
           ) : null}
 
-          {telegramSectionData ? (
-            <ProfileTelegramSection
-              copy={copy.linked_account}
-              data={telegramSectionData}
-              onPress={handleTelegramPress}
-            />
-          ) : !hasAppSession ? (
-            <PikoCard>
-              <YStack gap="$3">
-                <Text fontSize="$4" fontWeight="600" color="$color">
-                  {copy.linked_account.title}
-                </Text>
-                <Text fontSize="$2" color="$gray12">
-                  {copy.linked_account.login_first_hint}
-                </Text>
-              </YStack>
-            </PikoCard>
-          ) : null}
+          <Animated.View entering={FadeInDown.delay(200).springify()}>
+            {telegramSectionData ? (
+              <ProfileTelegramSection
+                labels={labels.linked_account}
+                data={telegramSectionData}
+                onPress={handleTelegramPress}
+              />
+            ) : !hasAppSession ? (
+              <PikoCard>
+                <YStack gap="$3">
+                  <Text fontSize="$4" fontWeight="600" color="$color">
+                    {labels.linked_account.title}
+                  </Text>
+                  <Text fontSize="$2" color="$gray12">
+                    {labels.linked_account.login_first_hint}
+                  </Text>
+                </YStack>
+              </PikoCard>
+            ) : null}
+          </Animated.View>
 
-          <ProfileSettingsSection copy={copy} />
+          <Animated.View entering={FadeInDown.delay(300).springify()}>
+            <ProfileSettingsSection labels={labels} />
+          </Animated.View>
 
           {hasAppSession ? (
-            <PikoCard
-              onPress={isLoggingOut ? undefined : handleLogoutPress}
-              noPadding
-              style={{
-                height: 50,
-                justifyContent: 'center',
-                alignItems: 'center',
-                opacity: isLoggingOut ? 0.7 : 1,
-              }}
-            >
-              <XStack gap="$2" style={{ alignItems: 'center' }}>
-                <Text color="$destructive" fontWeight="600" fontSize="$4">
-                  {isLoggingOut ? copy.logout_ingress : copy.logout_button}
-                </Text>
-                {isLoggingOut ? null : (
-                  <Text color="$destructive" fontSize="$4">
-                    →
+            <Animated.View entering={FadeInDown.delay(400).springify()}>
+              <PikoCard
+                onPress={isLoggingOut ? undefined : handleLogoutPress}
+                noPadding
+                style={{
+                  height: 50,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  opacity: isLoggingOut ? 0.7 : 1,
+                }}
+              >
+                <XStack gap="$2" style={{ alignItems: 'center' }}>
+                  <Text color="$destructive" fontWeight="600" fontSize="$4">
+                    {isLoggingOut
+                      ? labels.logout_ingress
+                      : labels.logout_button}
                   </Text>
-                )}
-              </XStack>
-            </PikoCard>
+                  {isLoggingOut ? null : (
+                    <Text color="$destructive" fontSize="$4">
+                      →
+                    </Text>
+                  )}
+                </XStack>
+              </PikoCard>
+            </Animated.View>
           ) : null}
         </YStack>
       </ScrollView>

@@ -78,6 +78,15 @@ export default function RootLayout() {
                     animation: 'slide_from_right',
                   }}
                 />
+                <Stack.Screen
+                  name="expense-detail/index"
+                  options={{
+                    headerShown: false,
+                    animation: 'slide_from_right',
+                    gestureEnabled: true,
+                    gestureDirection: 'horizontal',
+                  }}
+                />
               </Stack>
             </RecognitionProvider>
           </AuthProvider>

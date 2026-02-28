@@ -5,8 +5,8 @@ import { YStack, Text } from 'tamagui';
 import { PikoCard } from '@/common/components/piko-card';
 
 import type {
-  ProfileCopyItem,
-  ProfilePageCopy,
+  ProfileLabelItem,
+  ProfilePageLabels,
 } from '@/common/typings/profile';
 
 import ProfileListRow from './profile-list-row';
@@ -22,7 +22,7 @@ const SETTINGS_ICONS: IoniconsName[] = [
 const HELP_ICONS: IoniconsName[] = ['help-circle-outline', 'mail-outline'];
 
 interface ProfileSettingsSectionProps {
-  copy: ProfilePageCopy;
+  labels: ProfilePageLabels;
 }
 
 function SectionBlock({
@@ -31,7 +31,7 @@ function SectionBlock({
   icons,
 }: {
   title: string;
-  items: ProfileCopyItem[];
+  items: ProfileLabelItem[];
   icons: IoniconsName[];
 }): ReactNode {
   return (
@@ -62,18 +62,18 @@ function SectionBlock({
 }
 
 export default function ProfileSettingsSection({
-  copy,
+  labels,
 }: ProfileSettingsSectionProps): ReactNode {
   return (
     <YStack gap="$4">
       <SectionBlock
-        title={copy.settings.title}
-        items={copy.settings.items}
+        title={labels.settings.title}
+        items={labels.settings.items}
         icons={SETTINGS_ICONS}
       />
       <SectionBlock
-        title={copy.help.title}
-        items={copy.help.items}
+        title={labels.help.title}
+        items={labels.help.items}
         icons={HELP_ICONS}
       />
     </YStack>

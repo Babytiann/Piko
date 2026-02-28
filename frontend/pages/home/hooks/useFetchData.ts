@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePathname } from 'expo-router';
 
 import {
@@ -22,21 +22,35 @@ interface UseFetchDataReturn {
   nodes: HomeSlashNodes | undefined;
   handleRetry: () => void;
   handleRefreshWithDate: (date?: string) => void;
+  handleSilentRefresh: () => void;
 }
 
 function normalizeCacheKey(pathname: string): string {
   return pathname.replace(/\/$/, '') || '/';
 }
 
+function hasCachedData(key: string): boolean {
+  const cached = get<HomeCachePayload>(key);
+  return cached != null && (cached.bodyLayout?.length ?? 0) > 0;
+}
+
 export function useFetchData(selectedDate?: string): UseFetchDataReturn {
   const pathname = usePathname();
   const cacheKey = normalizeCacheKey(pathname ?? '/');
-  const [isLoading, setIsLoading] = useState(true);
+  const initializedRef = useRef(false);
+
+  const [isLoading, setIsLoading] = useState(() => !hasCachedData(cacheKey));
   const [errorType, setErrorType] = useState<PageErrorType | undefined>(
     undefined,
   );
-  const [bodyLayout, setBodyLayout] = useState<string[]>([]);
-  const [nodes, setNodes] = useState<HomeSlashNodes | undefined>(undefined);
+  const [bodyLayout, setBodyLayout] = useState<string[]>(() => {
+    const cached = get<HomeCachePayload>(cacheKey);
+    return cached?.bodyLayout ?? [];
+  });
+  const [nodes, setNodes] = useState<HomeSlashNodes | undefined>(() => {
+    const cached = get<HomeCachePayload>(cacheKey);
+    return cached?.nodes ?? undefined;
+  });
   const [fetchKey, setFetchKey] = useState(0);
   const [dateParam, setDateParam] = useState<string | undefined>(selectedDate);
 
@@ -45,15 +59,11 @@ export function useFetchData(selectedDate?: string): UseFetchDataReturn {
     const cached = get<HomeCachePayload>(cacheKey);
     const hadCache = cached != null && (cached.bodyLayout?.length ?? 0) > 0;
 
-    if (hadCache && !dateParam) {
-      setBodyLayout(cached.bodyLayout ?? []);
-      setNodes(cached.nodes ?? undefined);
-      setIsLoading(false);
-      setErrorType(undefined);
-    } else if (!hadCache) {
+    if (!hadCache && !initializedRef.current) {
       setIsLoading(true);
       setErrorType(undefined);
     }
+    initializedRef.current = true;
 
     async function load(): Promise<void> {
       try {
@@ -89,6 +99,7 @@ export function useFetchData(selectedDate?: string): UseFetchDataReturn {
               set(cacheKey, fresh);
             }
           }
+          setErrorType(undefined);
         }
       } catch {
         if (cancelled) return;
@@ -111,11 +122,16 @@ export function useFetchData(selectedDate?: string): UseFetchDataReturn {
   const handleRetry = useCallback((): void => {
     clear(cacheKey);
     setDateParam(undefined);
+    setIsLoading(true);
     setFetchKey((k) => k + 1);
   }, [cacheKey]);
 
   const handleRefreshWithDate = useCallback((date?: string): void => {
     setDateParam(date);
+    setFetchKey((k) => k + 1);
+  }, []);
+
+  const handleSilentRefresh = useCallback((): void => {
     setFetchKey((k) => k + 1);
   }, []);
 
@@ -126,5 +142,6 @@ export function useFetchData(selectedDate?: string): UseFetchDataReturn {
     nodes,
     handleRetry,
     handleRefreshWithDate,
+    handleSilentRefresh,
   };
 }

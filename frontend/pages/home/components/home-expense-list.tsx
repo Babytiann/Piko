@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable } from 'react-native';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 
 import { PikoCard } from '@/common/components/piko-card';
@@ -11,10 +12,11 @@ import type { ExpenseListData, ExpenseListItem } from '@/common/typings/home';
 
 import HomeExpenseAllSheet from './home-expense-all-sheet';
 
-const MAX_VISIBLE = 5;
+const MAX_VISIBLE = 3;
 
 interface Props {
   data: ExpenseListData;
+  selectedDate?: string;
 }
 
 function ExpenseRow({
@@ -24,72 +26,106 @@ function ExpenseRow({
   item: ExpenseListItem;
   index: number;
 }): ReactNode {
+  const router = useRouter();
   const config =
     CATEGORY_ICON_CONFIG[item.category] ?? CATEGORY_ICON_CONFIG['其他'];
 
   return (
-    <Animated.View entering={FadeInRight.delay(index * 50 + 400).springify()}>
-      <XStack
-        style={{
-          alignItems: 'center',
-          gap: 12,
-          paddingVertical: 12,
-          paddingHorizontal: 4,
-        }}
+    <Animated.View entering={FadeInRight.delay(index * 50 + 200).springify()}>
+      <Pressable
+        onPress={() =>
+          router.push({ pathname: '/expense-detail', params: { id: item.id } })
+        }
       >
-        <View
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 12,
-            borderCurve: 'continuous',
-            backgroundColor: config.bgColor,
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}
-        >
-          <Ionicons
-            name={config.icon as keyof typeof Ionicons.glyphMap}
-            size={20}
-            color={config.iconColor}
-          />
-        </View>
+        <XStack py="$3" px="$1" style={{ alignItems: 'center', gap: 12 }}>
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 12,
+              borderCurve: 'continuous',
+              backgroundColor: config.bgColor,
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <Ionicons
+              name={config.icon as keyof typeof Ionicons.glyphMap}
+              size={20}
+              color={config.iconColor}
+            />
+          </View>
 
-        <YStack flex={1} style={{ minWidth: 0 }}>
-          <Text fontSize={14} fontWeight="600" color="$color" numberOfLines={1}>
-            {item.merchant ?? item.category}
-          </Text>
-          <XStack mt={2} gap="$1" style={{ alignItems: 'center' }}>
-            <Text fontSize={11} color="$muted">
-              {item.category}
+          <YStack flex={1} style={{ minWidth: 0 }}>
+            <Text
+              fontSize={14}
+              fontWeight="600"
+              color="$color"
+              numberOfLines={1}
+            >
+              {item.merchant ?? item.category}
             </Text>
-            <Text fontSize={11} color="$gray6">
-              ·
+            <XStack mt={2} gap="$1" style={{ alignItems: 'center' }}>
+              <Text fontSize={11} color="$muted">
+                {item.category}
+              </Text>
+              {item.time ? (
+                <>
+                  <Text fontSize={11} color="$gray6">
+                    ·
+                  </Text>
+                  <Text fontSize={11} color="$muted">
+                    {item.time}
+                  </Text>
+                </>
+              ) : null}
+            </XStack>
+          </YStack>
+
+          <XStack style={{ alignItems: 'center', gap: 6 }}>
+            <Text
+              fontSize={14}
+              fontWeight="700"
+              color="$color"
+              style={{ fontVariant: ['tabular-nums'] }}
+            >
+              -¥{item.amount}
             </Text>
-            <Text fontSize={11} color="$muted">
-              {item.time}
-            </Text>
+            <Ionicons name="chevron-forward" size={14} color={MUTED} />
           </XStack>
-        </YStack>
-
-        <Text
-          fontSize={14}
-          fontWeight="700"
-          color="$color"
-          style={{ fontVariant: ['tabular-nums'] }}
-        >
-          -¥{item.amount}
-        </Text>
-      </XStack>
+        </XStack>
+      </Pressable>
     </Animated.View>
   );
 }
 
-export default function HomeExpenseList({ data }: Props): ReactNode {
+function getDateLabel(dateStr: string, todayDate: string): string {
+  if (dateStr === todayDate) return '今日消费';
+  const d = new Date(dateStr + 'T00:00:00');
+  return `${d.getMonth() + 1}月${d.getDate()}日消费`;
+}
+
+export default function HomeExpenseList({
+  data,
+  selectedDate,
+}: Props): ReactNode {
   const [showAll, setShowAll] = useState(false);
-  const visibleExpenses = data.expenses.slice(0, MAX_VISIBLE);
-  const hasMore = data.expenses.length > MAX_VISIBLE;
+
+  const effectiveDate = selectedDate ?? data.today_date;
+
+  const filtered = useMemo(() => {
+    return data.expenses.filter((e) => e.date === effectiveDate);
+  }, [data.expenses, effectiveDate]);
+
+  const totalAmount = useMemo(
+    () => filtered.reduce((s, e) => s + e.amount, 0),
+    [filtered],
+  );
+
+  const visibleExpenses = filtered.slice(0, MAX_VISIBLE);
+  const hasMore = filtered.length > MAX_VISIBLE;
+  const title = getDateLabel(effectiveDate, data.today_date);
 
   return (
     <Animated.View entering={FadeInDown.delay(400).springify()}>
@@ -100,14 +136,14 @@ export default function HomeExpenseList({ data }: Props): ReactNode {
         >
           <YStack>
             <Text fontSize={16} fontWeight="700" color="$color">
-              今日消费
+              {title}
             </Text>
             <Text fontSize={11} color="$muted" mt={2}>
-              共 {data.total_count} 笔，合计 ¥
-              {data.total_amount.toLocaleString()}
+              共 {filtered.length} 笔，合计 ¥
+              {Math.round(totalAmount * 100) / 100}
             </Text>
           </YStack>
-          {data.expenses.length > 0 && (
+          {filtered.length > 0 && (
             <Pressable hitSlop={8} onPress={() => setShowAll(true)}>
               <Text fontSize={13} color="$muted">
                 查看全部
@@ -124,14 +160,11 @@ export default function HomeExpenseList({ data }: Props): ReactNode {
             {hasMore && (
               <Pressable
                 onPress={() => setShowAll(true)}
-                style={{
-                  paddingVertical: 12,
-                  alignItems: 'center',
-                }}
+                style={{ paddingVertical: 12, alignItems: 'center' }}
               >
                 <XStack style={{ alignItems: 'center', gap: 4 }}>
                   <Text fontSize={13} color={MUTED} fontWeight="500">
-                    查看全部 {data.expenses.length} 笔
+                    查看全部 {filtered.length} 笔
                   </Text>
                   <Ionicons name="chevron-forward" size={14} color={MUTED} />
                 </XStack>
@@ -141,7 +174,7 @@ export default function HomeExpenseList({ data }: Props): ReactNode {
         ) : (
           <YStack py="$4" style={{ alignItems: 'center' }}>
             <Text fontSize={13} color="$muted">
-              今日暂无消费记录
+              当日暂无消费记录
             </Text>
           </YStack>
         )}
@@ -149,8 +182,9 @@ export default function HomeExpenseList({ data }: Props): ReactNode {
 
       <HomeExpenseAllSheet
         visible={showAll}
-        expenses={data.expenses}
-        totalAmount={data.total_amount}
+        expenses={filtered}
+        totalAmount={totalAmount}
+        title={title}
         onClose={() => setShowAll(false)}
       />
     </Animated.View>

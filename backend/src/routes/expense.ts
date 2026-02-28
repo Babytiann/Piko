@@ -3,6 +3,8 @@ import { getUserId, UnauthorizedError } from '../../lib/auth.js';
 import {
   createExpense,
   listExpenses,
+  getExpenseDetail,
+  deleteExpense,
   type CreateExpenseInput,
 } from '../../lib/services/expense/index.js';
 import { recognizePayment } from '../../lib/services/tools/recognize-payment.js';
@@ -110,6 +112,53 @@ expenseRoutes.post('/list/v1', async (c) => {
     const message =
       err instanceof Error ? err.message : 'Failed to list expenses';
     console.error('[Expense list] error:', err);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ── POST /detail/v1 ──────────────────────────────────────────────────────────
+expenseRoutes.post('/detail/v1', async (c) => {
+  try {
+    const userId = await getUserId(c.req.raw);
+    const body = (await c.req.json()) as Record<string, unknown>;
+    const expenseId = body.id as string;
+    if (!expenseId) {
+      return c.json({ success: false, error: 'Missing expense id' }, 400);
+    }
+    const detail = await getExpenseDetail(userId, expenseId);
+    if (!detail) {
+      return c.json({ success: false, error: 'Expense not found' }, 404);
+    }
+    return c.json({ success: true, data: detail });
+  } catch (err: unknown) {
+    if (err instanceof UnauthorizedError) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const message =
+      err instanceof Error ? err.message : 'Failed to get expense detail';
+    console.error('[Expense detail] error:', err);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ── POST /delete/v1 ──────────────────────────────────────────────────────────
+expenseRoutes.post('/delete/v1', async (c) => {
+  try {
+    const userId = await getUserId(c.req.raw);
+    const body = (await c.req.json()) as Record<string, unknown>;
+    const expenseId = body.id as string;
+    if (!expenseId) {
+      return c.json({ success: false, error: 'Missing expense id' }, 400);
+    }
+    await deleteExpense(userId, expenseId);
+    return c.json({ success: true });
+  } catch (err: unknown) {
+    if (err instanceof UnauthorizedError) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const message =
+      err instanceof Error ? err.message : 'Failed to delete expense';
+    console.error('[Expense delete] error:', err);
     return c.json({ success: false, error: message }, 500);
   }
 });

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useContext } from 'react';
+import { useState, useCallback, useContext } from 'react';
 
 import { ScrollView } from 'react-native';
 import { YStack, XStack, Text, Spacer } from 'tamagui';
@@ -12,6 +12,7 @@ import type {
   BudgetCardNodeData,
   CategoryCardsData,
   ExpenseListData,
+  HomeHeaderData,
   HomeSlashNodes,
   QuickStatsData,
   WeatherCardData,
@@ -30,20 +31,13 @@ import HomeRecognitionProgress from '@/pages/home/components/home-recognition-pr
 
 import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
 
-function getGreeting(): string {
-  const h = new Date().getHours();
-  if (h < 6) return '夜深了';
-  if (h < 12) return '早上好';
-  if (h < 14) return '中午好';
-  if (h < 18) return '下午好';
-  return '晚上好';
-}
-
 function renderSlot(
   slotId: string,
   nodes: HomeSlashNodes,
   onWeekChange: (date: string) => void,
   onBudgetUpdated: () => void,
+  onDateSelect: (date: string) => void,
+  selectedDate: string,
 ): ReactNode {
   const node = nodes[slotId as keyof HomeSlashNodes];
   const data = node?.type === 'component' ? node.data : undefined;
@@ -57,6 +51,8 @@ function renderSlot(
         <HomeWeekCalendar
           data={data as WeekCalendarData}
           onWeekChange={onWeekChange}
+          onDateSelect={onDateSelect}
+          selectedDate={selectedDate}
         />
       );
     case 'budget_card':
@@ -68,10 +64,26 @@ function renderSlot(
       );
     case 'weather_card':
       return <HomeWeatherCard data={data as WeatherCardData} />;
-    case 'category_cards':
-      return <HomeCategoryCards data={data as CategoryCardsData} />;
+    case 'category_cards': {
+      const expNode = nodes.expense_list;
+      const expData =
+        expNode?.type === 'component'
+          ? (expNode.data as ExpenseListData | undefined)
+          : undefined;
+      return (
+        <HomeCategoryCards
+          data={data as CategoryCardsData}
+          allExpenses={expData?.expenses}
+        />
+      );
+    }
     case 'expense_list':
-      return <HomeExpenseList data={data as ExpenseListData} />;
+      return (
+        <HomeExpenseList
+          data={data as ExpenseListData}
+          selectedDate={selectedDate}
+        />
+      );
     default:
       return null;
   }
@@ -86,16 +98,43 @@ export default function HomeScreen(): ReactNode {
     nodes,
     handleRetry,
     handleRefreshWithDate,
+    handleSilentRefresh,
   } = useFetchData();
   const recognition = useContext(RecognitionContext);
 
-  const onWeekChange = (date: string): void => {
-    handleRefreshWithDate(date);
-  };
+  const headerNode = nodes?.header;
+  const headerData =
+    headerNode?.type === 'component'
+      ? (headerNode.data as HomeHeaderData | undefined)
+      : undefined;
 
-  const onBudgetUpdated = (): void => {
-    handleRetry();
-  };
+  const expenseNode = nodes?.expense_list;
+  const expenseData =
+    expenseNode?.type === 'component'
+      ? (expenseNode.data as ExpenseListData | undefined)
+      : undefined;
+  const todayDate =
+    expenseData?.today_date ?? new Date().toISOString().slice(0, 10);
+
+  const [selectedDate, setSelectedDate] = useState<string>(todayDate);
+
+  const currentSelectedDate = selectedDate;
+
+  const onWeekChange = useCallback(
+    (date: string): void => {
+      handleRefreshWithDate(date);
+      setSelectedDate(date);
+    },
+    [handleRefreshWithDate],
+  );
+
+  const onDateSelect = useCallback((date: string): void => {
+    setSelectedDate(date);
+  }, []);
+
+  const onBudgetUpdated = useCallback((): void => {
+    handleSilentRefresh();
+  }, [handleSilentRefresh]);
 
   if (isLoading) return <PageLoading />;
   if (errorType) {
@@ -159,7 +198,14 @@ export default function HomeScreen(): ReactNode {
     }
     slots.push(
       <YStack key={slotId}>
-        {renderSlot(slotId, nodes, onWeekChange, onBudgetUpdated)}
+        {renderSlot(
+          slotId,
+          nodes,
+          onWeekChange,
+          onBudgetUpdated,
+          onDateSelect,
+          currentSelectedDate,
+        )}
       </YStack>,
     );
   }
@@ -175,10 +221,10 @@ export default function HomeScreen(): ReactNode {
         <Animated.View entering={FadeInDown.delay(50).springify()}>
           <YStack px="$1" mb="$2">
             <Text fontSize={26} fontWeight="800" color="$color">
-              {getGreeting()}
+              {headerData?.greeting ?? '你好'}
             </Text>
             <Text fontSize={13} color="$muted" mt={2}>
-              记录每一笔
+              {headerData?.subtitle ?? '记录每一笔'}
             </Text>
           </YStack>
         </Animated.View>

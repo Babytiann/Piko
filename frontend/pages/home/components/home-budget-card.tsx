@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useState } from 'react';
+import { Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { YStack, XStack, Text } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
@@ -130,15 +131,20 @@ function BudgetCardContent({
 
   return (
     <Animated.View entering={FadeInDown.delay(200).springify()}>
-      <PikoCard padding="$3" onPress={onEditPress}>
+      <PikoCard padding="$3">
         <XStack
           mb="$2"
           style={{ alignItems: 'flex-start', justifyContent: 'space-between' }}
         >
           <YStack>
-            <Text fontSize={11} color="$muted">
-              本周预算
-            </Text>
+            <XStack style={{ alignItems: 'center', gap: 6 }}>
+              <Text fontSize={11} color="$muted">
+                本周预算
+              </Text>
+              <Pressable onPress={onEditPress} hitSlop={8}>
+                <Ionicons name="create-outline" size={14} color={MUTED} />
+              </Pressable>
+            </XStack>
             <Text
               fontSize={16}
               fontWeight="700"
