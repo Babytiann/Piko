@@ -1,22 +1,20 @@
 import type { ReactNode } from 'react';
-import { View, useTheme } from 'tamagui';
+import { View } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function AiAvatar(): ReactNode {
-  const theme = useTheme();
-
   return (
     <View
       width={32}
       height={32}
-      bg="$gray4"
+      bg="white"
       style={{
         borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
       }}
     >
-      <Ionicons name="sparkles" size={16} color={theme.primary.val} />
+      <Ionicons name="sparkles" size={16} color="#60A5FA" />
     </View>
   );
 }

@@ -63,7 +63,7 @@ function MiniSparkline({ data }: { data: BudgetCardData }): ReactNode {
         />
       ) : null}
       {thisPath ? (
-        <Path d={thisPath} stroke="#11181C" strokeWidth={2} fill="none" />
+        <Path d={thisPath} stroke="#FBBF24" strokeWidth={2} fill="none" />
       ) : null}
     </Svg>
   );
@@ -143,6 +143,7 @@ function BudgetCardContent({
   onEditPress: () => void;
 }): ReactNode {
   const progress = Math.min(1, data.usedPercent / 100);
+  const isOverBudget = data.usedPercent > 100;
 
   return (
     <Animated.View entering={FadeInDown.delay(200).springify()}>
@@ -220,6 +221,7 @@ function BudgetCardContent({
             progress={progress}
             size={112}
             strokeWidth={15}
+            color={isOverBudget ? '#FF4D4F' : undefined}
             centerIcon={
               <YStack
                 style={{ alignItems: 'center', justifyContent: 'center' }}
@@ -227,7 +229,7 @@ function BudgetCardContent({
                 <Text
                   fontSize={20}
                   fontWeight="800"
-                  color="$color"
+                  color={isOverBudget ? '$destructive' : '$color'}
                   style={{ fontVariant: ['tabular-nums'] }}
                 >
                   {data.usedPercent}%

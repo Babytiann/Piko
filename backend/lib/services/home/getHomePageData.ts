@@ -291,9 +291,7 @@ export async function getHomePageData(
   } else {
     const { weeklyBudget, monthlyBudget } = budgetResult;
     const usedPercent =
-      weeklyBudget > 0
-        ? Math.min(100, Math.round((totalSpent / weeklyBudget) * 100))
-        : 0;
+      weeklyBudget > 0 ? Math.round((totalSpent / weeklyBudget) * 100) : 0;
     const remaining = Math.max(0, weeklyBudget - totalSpent);
     let trendPercent: number | undefined;
     if (lastWeekSpent > 0) {

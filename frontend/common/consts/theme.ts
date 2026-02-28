@@ -44,7 +44,7 @@ export const SUCCESS = '#34C759';
 export const WARNING = '#E67E00';
 
 /** 预算环形图（主色系） */
-export const BUDGET_RING_COLOR = '#11181C';
+export const BUDGET_RING_COLOR = '#FBBF24';
 export const BUDGET_RING_BG_COLOR = '#E5E5EA';
 
 /** 消费分类卡片背景（浅浅多巴胺，低饱和统一） */

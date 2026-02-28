@@ -97,7 +97,7 @@ function AiChatBubble({
         style={[{ maxWidth: '80%' }, isTooltipTarget && { opacity: 0 }]}
       >
         <YStack
-          bg="$primary"
+          bg="#60A5FA"
           px="$3.5"
           py="$2.5"
           pressStyle={{ opacity: 0.85 }}

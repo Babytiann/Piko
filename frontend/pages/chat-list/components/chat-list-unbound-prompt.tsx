@@ -30,7 +30,7 @@ export default function ChatListUnboundPrompt({
         mt="$4"
         height={44}
         px="$5"
-        bg="$color"
+        bg="#60A5FA"
         pressStyle={{ opacity: 0.8 }}
         onPress={onBind}
         style={{
@@ -39,7 +39,7 @@ export default function ChatListUnboundPrompt({
           alignItems: 'center',
         }}
       >
-        <Text color="$background" fontWeight="600" fontSize="$3">
+        <Text color="white" fontWeight="600" fontSize="$3">
           {data.bind_button_text}
         </Text>
       </YStack>
