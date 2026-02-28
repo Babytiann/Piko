@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { useState, useCallback, useContext } from 'react';
 
 import { ScrollView } from 'react-native';
-import { YStack, XStack, Text, Spacer } from 'tamagui';
+import { YStack, Text, Spacer } from 'tamagui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
@@ -26,6 +26,7 @@ import HomeQuickStats from '@/pages/home/components/home-quick-stats';
 import HomeWeekCalendar from '@/pages/home/components/home-week-calendar';
 import HomeBudgetCard from '@/pages/home/components/home-budget-card';
 import HomeWeatherCard from '@/pages/home/components/home-weather-card';
+import HomeHeroCard from '@/pages/home/components/home-hero-card';
 import HomeCategoryCards from '@/pages/home/components/home-category-cards';
 import HomeExpenseList from '@/pages/home/components/home-expense-list';
 import HomeRecognitionProgress from '@/pages/home/components/home-recognition-progress';
@@ -46,8 +47,23 @@ function renderSlot(
   if (data == null) return null;
 
   switch (slotId) {
-    case 'quick_stats':
+    case 'quick_stats': {
+      const wNode = nodes.weather_card;
+      const wData =
+        wNode?.type === 'component'
+          ? (wNode.data as WeatherCardData | undefined)
+          : undefined;
+      if (wData) {
+        return (
+          <HomeHeroCard
+            quickStats={data as QuickStatsData}
+            weather={wData}
+            labels={labels}
+          />
+        );
+      }
       return <HomeQuickStats data={data as QuickStatsData} labels={labels} />;
+    }
     case 'week_calendar':
       return (
         <HomeWeekCalendar
@@ -177,39 +193,8 @@ export default function HomeScreen(): ReactNode {
       );
     }
 
-    if (slotId === 'budget_card' && bodyLayout[i + 1] === 'weather_card') {
-      const budgetNode = nodes.budget_card;
-      const weatherNode = nodes.weather_card;
-      const budgetData =
-        budgetNode?.type === 'component' ? budgetNode.data : undefined;
-      const weatherData =
-        weatherNode?.type === 'component' ? weatherNode.data : undefined;
-      slots.push(
-        <Animated.View
-          key="middle_row"
-          entering={FadeInDown.delay(200).springify()}
-        >
-          <XStack gap="$3" flexDirection="row">
-            {budgetData ? (
-              <YStack flex={1}>
-                <HomeBudgetCard
-                  data={budgetData as BudgetCardNodeData}
-                  labels={labels}
-                  onBudgetUpdated={onBudgetUpdated}
-                />
-              </YStack>
-            ) : null}
-            {weatherData ? (
-              <YStack flex={1}>
-                <HomeWeatherCard data={weatherData} />
-              </YStack>
-            ) : null}
-          </XStack>
-        </Animated.View>,
-      );
-      i += 1;
-      continue;
-    }
+    if (slotId === 'weather_card') continue;
+
     slots.push(
       <YStack key={slotId}>
         {renderSlot(
