@@ -8,12 +8,16 @@ interface Props {
   variant: NavigationVariant;
   url: string;
   label: string;
+  amapTitle?: string;
+  googleTitle?: string;
+  openHint?: string;
 }
 
 interface VariantConfig {
   emoji: string;
   emojiRegex: RegExp;
-  title: string;
+  titleKey: 'amapTitle' | 'googleTitle';
+  fallbackTitle: string;
   borderColor: string;
   bgColor: string;
   titleColor: string;
@@ -26,7 +30,8 @@ const VARIANT_CONFIG: Record<NavigationVariant, VariantConfig> = {
   amap: {
     emoji: '🧭',
     emojiRegex: /🧭\s*/,
-    title: '在高德地图中导航',
+    titleKey: 'amapTitle',
+    fallbackTitle: '在高德地图中导航',
     borderColor: '$blue7',
     bgColor: '$blue2',
     titleColor: '$blue11',
@@ -38,7 +43,8 @@ const VARIANT_CONFIG: Record<NavigationVariant, VariantConfig> = {
   'google-maps': {
     emoji: '📍',
     emojiRegex: /📍\s*/,
-    title: '在 Google Maps 中导航',
+    titleKey: 'googleTitle',
+    fallbackTitle: '在 Google Maps 中导航',
     borderColor: '$green7',
     bgColor: '$green2',
     titleColor: '$green11',
@@ -53,9 +59,15 @@ export default function NavigationCard({
   variant,
   url,
   label,
+  amapTitle,
+  googleTitle,
+  openHint,
 }: Props): ReactNode {
   const config = VARIANT_CONFIG[variant];
   const displayLabel = label.replace(config.emojiRegex, '');
+  const titles: Record<string, string | undefined> = { amapTitle, googleTitle };
+  const title = titles[config.titleKey] || config.fallbackTitle;
+  const hint = openHint || '点击打开 >';
 
   const handlePress = async (): Promise<void> => {
     const nativeUrl = config.urlTransform(url);
@@ -78,7 +90,7 @@ export default function NavigationCard({
       <XStack gap="$2" style={{ alignItems: 'center' }}>
         <Text fontSize={16}>{config.emoji}</Text>
         <Text fontSize={14} fontWeight="600" color={config.titleColor}>
-          {config.title}
+          {title}
         </Text>
       </XStack>
       <Text
@@ -92,7 +104,7 @@ export default function NavigationCard({
       </Text>
       <YStack style={{ alignItems: 'flex-end' }} mt="$1">
         <Text fontSize={12} color={config.hintColor}>
-          点击打开 &gt;
+          {hint}
         </Text>
       </YStack>
     </YStack>

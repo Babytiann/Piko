@@ -19,6 +19,14 @@ import {
   DESTRUCTIVE,
 } from '@/common/consts/theme';
 import { setBudget } from '@/services/budget';
+import { get } from '@/common/lib/route-cache';
+import type { HomeLabels, HomeSlashNodes } from '@/common/typings/home';
+
+interface HomeCachePayload {
+  bodyLayout: string[];
+  nodes: HomeSlashNodes | undefined;
+  labels: HomeLabels | undefined;
+}
 
 export default function BudgetSetupScreen(): ReactNode {
   const insets = useSafeAreaInsets();
@@ -26,6 +34,10 @@ export default function BudgetSetupScreen(): ReactNode {
   const [value, setValue] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const cached = get<HomeCachePayload>('/');
+  const bl = cached?.labels?.budget_setup;
+  const cl = cached?.labels?.common;
 
   const num = value.trim() === '' ? NaN : Number(value.trim());
   const valid = Number.isFinite(num) && num >= 0;
@@ -40,9 +52,9 @@ export default function BudgetSetupScreen(): ReactNode {
         router.back();
         return;
       }
-      setError(res.error ?? '设置失败');
+      setError(res.error ?? cl?.save_failed ?? '');
     } catch {
-      setError('网络异常');
+      setError(cl?.network_error ?? '');
     } finally {
       setSubmitting(false);
     }
@@ -74,15 +86,15 @@ export default function BudgetSetupScreen(): ReactNode {
         </TouchableOpacity>
 
         <Text fontSize="$6" fontWeight="700" color="$color" mb="$2">
-          设置每月预算
+          {bl?.title ?? ''}
         </Text>
         <Text fontSize="$3" color="$gray10" mb="$4">
-          设置后可在首页查看月度预算与每周进度
+          {bl?.subtitle ?? ''}
         </Text>
 
         <YStack mb="$4">
           <Text fontSize="$2" color="$gray10" mb="$2">
-            每月预算（元）
+            {bl?.input_label ?? ''}
           </Text>
           <TextInput
             value={value}
@@ -90,7 +102,7 @@ export default function BudgetSetupScreen(): ReactNode {
               setValue(t);
               setError(null);
             }}
-            placeholder="例如 5000"
+            placeholder={bl?.placeholder ?? ''}
             placeholderTextColor={MUTED}
             keyboardType="decimal-pad"
             style={{
@@ -125,7 +137,7 @@ export default function BudgetSetupScreen(): ReactNode {
             fontWeight="600"
             color={valid && !submitting ? PRIMARY_FOREGROUND : MUTED}
           >
-            {submitting ? '保存中…' : '保存'}
+            {submitting ? (cl?.saving ?? '') : (cl?.save ?? '')}
           </Text>
         </TouchableOpacity>
       </ScrollView>

@@ -31,9 +31,14 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 interface Props {
   target: TooltipTarget | null;
   onClose: () => void;
+  copyLabel?: string;
 }
 
-export default function AiChatTooltip({ target, onClose }: Props): ReactNode {
+export default function AiChatTooltip({
+  target,
+  onClose,
+  copyLabel,
+}: Props): ReactNode {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const themeName = useThemeName();
@@ -199,7 +204,7 @@ export default function AiChatTooltip({ target, onClose }: Props): ReactNode {
         >
           <Ionicons name="copy-outline" size={16} color={theme.gray11.val} />
           <Text fontSize="$2" fontWeight="600" color="$color">
-            复制
+            {copyLabel || '复制'}
           </Text>
         </XStack>
       </Animated.View>

@@ -1,66 +1,66 @@
 /** Types for AI chat SSE streaming. */
 
 /** Role of a message participant. */
-export type MessageRole = 'user' | 'model'
+export type MessageRole = 'user' | 'model';
 
 /** A single message in the conversation history. */
 export interface ChatMessage {
-  role: MessageRole
-  content: string
+  role: MessageRole;
+  content: string;
 }
 
 /** Request body for POST /piko/ai/chat/v1 */
 export interface AiChatRequest {
-  messages: ChatMessage[]
+  messages: ChatMessage[];
   /** 对话 ID。"new" 或不传 = 新建对话，已有值 = 追加到现有对话 */
-  conversation_id?: string
+  conversation_id?: string;
   /** 客户端请求 ID（用于重连幂等） */
-  request_id?: string
+  request_id?: string;
 }
 
 export interface SseConversationEvent {
-  type: 'conversation'
-  conversation_id: string
+  type: 'conversation';
+  conversation_id: string;
 }
 
 /** SSE event data shapes. */
 export interface SseChunkEvent {
-  type: 'chunk'
-  content: string
+  type: 'chunk';
+  content: string;
 }
 
 export interface SseDoneEvent {
-  type: 'done'
+  type: 'done';
   /** 对话 ID（新建对话时返回给前端） */
-  conversation_id?: string
+  conversation_id?: string;
 }
 
 export interface SseErrorEvent {
-  type: 'error'
-  message: string
+  type: 'error';
+  message: string;
 }
 
 /** [模块 2] Agent 开始调用工具 */
 export interface SseToolStartEvent {
-  type: 'tool_start'
-  tool: string
-  args: Record<string, unknown>
+  type: 'tool_start';
+  tool: string;
+  args: Record<string, unknown>;
   /** 前端展示的状态文案，如 "正在查询天气..." */
-  message: string
+  message: string;
 }
 
 /** [模块 2] Agent 工具调用结束 */
 export interface SseToolEndEvent {
-  type: 'tool_end'
-  tool: string
-  success: boolean
+  type: 'tool_end';
+  tool: string;
+  success: boolean;
 }
 
 /** 请求前端获取用户地理位置 */
 export interface SseRequestLocationEvent {
-  type: 'request_location'
+  type: 'request_location';
   /** 用于关联位置回传的唯一请求 ID */
-  request_id: string
+  request_id: string;
 }
 
 export type SseEvent =
@@ -70,7 +70,7 @@ export type SseEvent =
   | SseToolStartEvent
   | SseToolEndEvent
   | SseRequestLocationEvent
-  | SseConversationEvent
+  | SseConversationEvent;
 
 export enum LoginStatus {
   LOGGED_OUT = 0,
@@ -80,23 +80,44 @@ export enum LoginStatus {
 /** Page data for the AI chat page. */
 export interface AiPageData {
   /** Login status, 0: logged out, 1: logged in */
-  login_status?: LoginStatus
+  login_status?: LoginStatus;
   /** Page header title, e.g. "AI 助手" */
-  header_title?: string
+  header_title?: string;
   /** Empty-state greeting title, e.g. "Hi，我是 Piko AI" */
-  empty_title?: string
+  empty_title?: string;
   /** Empty-state subtitle, e.g. "问我任何问题，我会尽力帮你解答。" */
-  empty_subtitle?: string
+  empty_subtitle?: string;
   /** Input placeholder, e.g. "问我任何问题..." */
-  input_placeholder?: string
+  input_placeholder?: string;
   /** Conversation drawer title, e.g. "历史对话" */
-  drawer_title?: string
+  drawer_title?: string;
   /** New chat button label in drawer, e.g. "新对话" */
-  new_chat_label?: string
+  new_chat_label?: string;
   /** Login prompt title, e.g. "请使用 Apple 登录" */
-  login_prompt_title?: string
+  login_prompt_title?: string;
   /** Login prompt description, e.g. "登录后即可使用 AI 聊天、对话历史等功能。" */
-  login_prompt_desc?: string
+  login_prompt_desc?: string;
   /** Login prompt button text, e.g. "去登录" */
-  login_prompt_btn?: string
+  login_prompt_btn?: string;
+  /** Relative time labels */
+  time_just_now?: string;
+  time_minutes_ago?: string;
+  time_hours_ago?: string;
+  time_days_ago?: string;
+  /** Drawer states */
+  drawer_loading?: string;
+  drawer_empty?: string;
+  drawer_delete_title?: string;
+  drawer_delete_desc?: string;
+  drawer_delete_cancel?: string;
+  drawer_delete_confirm?: string;
+  drawer_message_count?: string;
+  /** Tooltip */
+  tooltip_copy?: string;
+  /** Bubble */
+  bubble_grant_location?: string;
+  /** Navigation card */
+  nav_amap_title?: string;
+  nav_google_title?: string;
+  nav_open_hint?: string;
 }

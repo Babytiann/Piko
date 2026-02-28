@@ -96,6 +96,96 @@ export interface HomeSlashNodes {
   expense_list?: HomeSlashNode<ExpenseListData>;
 }
 
+export interface HomeLabels {
+  quick_stats: {
+    today: string;
+    week: string;
+    month: string;
+  };
+  week_calendar: {
+    title: string;
+    weekday_labels: string[];
+    date_picker_title: string;
+    today_label: string;
+    month_names: string[];
+    day_names: string[];
+    day_names_short: string[];
+  };
+  budget_card: {
+    set_cta_title: string;
+    set_cta_desc: string;
+    set_cta_button: string;
+    monthly_budget_label: string;
+    month_spent_label: string;
+    weekly_budget_label: string;
+    week_used_label: string;
+    week_spent_label: string;
+    week_remaining_label: string;
+    daily_avg_label: string;
+    edit_sheet_title: string;
+    edit_amount_label: string;
+  };
+  budget_setup: {
+    title: string;
+    subtitle: string;
+    input_label: string;
+    placeholder: string;
+  };
+  category_cards: {
+    title: string;
+    view_all: string;
+    all_sheet_title: string;
+    by_amount: string;
+    by_name: string;
+    week_total: string;
+    ratio_label: string;
+    no_records: string;
+    fallback_category: string;
+  };
+  expense_list: {
+    today_label: string;
+    date_format: string;
+    count_format: string;
+    view_all: string;
+    view_all_format: string;
+    no_records: string;
+  };
+  recognition: {
+    recognizing: string;
+    complete: string;
+    failed: string;
+    view_detail: string;
+    result_title: string;
+    confirm: string;
+    close: string;
+    amount_label: string;
+    merchant_label: string;
+    category_label: string;
+    date_label: string;
+    confidence_label: string;
+    items_label: string;
+    delete_title: string;
+    delete_confirm: string;
+    delete_button: string;
+  };
+  common: {
+    currency_symbol: string;
+    retry: string;
+    cancel: string;
+    ok: string;
+    save: string;
+    saving: string;
+    loading: string;
+    network_error: string;
+    save_failed: string;
+    error_default: string;
+    error_network: string;
+    error_empty: string;
+    error_unavailable: string;
+    error_auth: string;
+  };
+}
+
 export interface HomeSlashLayout {
   body: string[];
 }
@@ -103,4 +193,5 @@ export interface HomeSlashLayout {
 export interface HomeSlashResponse {
   layout: HomeSlashLayout;
   nodes: HomeSlashNodes;
+  labels: HomeLabels;
 }

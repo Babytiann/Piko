@@ -7,12 +7,17 @@ import {
 } from '@/common/components/page-status-view';
 import { deepEqual } from '@/common/utils';
 import { get, set, clear } from '@/common/lib/route-cache';
-import type { HomeSlashNodes, HomeSlashResponse } from '@/common/typings/home';
+import type {
+  HomeLabels,
+  HomeSlashNodes,
+  HomeSlashResponse,
+} from '@/common/typings/home';
 import { fetchHomePage } from '@/services/home';
 
 interface HomeCachePayload {
   bodyLayout: string[];
   nodes: HomeSlashNodes | undefined;
+  labels: HomeLabels | undefined;
 }
 
 interface UseFetchDataReturn {
@@ -20,6 +25,7 @@ interface UseFetchDataReturn {
   errorType: PageErrorType | undefined;
   bodyLayout: string[];
   nodes: HomeSlashNodes | undefined;
+  labels: HomeLabels | undefined;
   handleRetry: () => void;
   handleRefreshWithDate: (date?: string) => void;
   handleSilentRefresh: () => void;
@@ -51,6 +57,10 @@ export function useFetchData(selectedDate?: string): UseFetchDataReturn {
     const cached = get<HomeCachePayload>(cacheKey);
     return cached?.nodes ?? undefined;
   });
+  const [labels, setLabels] = useState<HomeLabels | undefined>(() => {
+    const cached = get<HomeCachePayload>(cacheKey);
+    return cached?.labels ?? undefined;
+  });
   const [fetchKey, setFetchKey] = useState(0);
   const [dateParam, setDateParam] = useState<string | undefined>(selectedDate);
 
@@ -76,25 +86,30 @@ export function useFetchData(selectedDate?: string): UseFetchDataReturn {
             setErrorType(mappedError);
             setBodyLayout([]);
             setNodes(undefined);
+            setLabels(undefined);
           }
         } else {
           const data = response.data as HomeSlashResponse | null | undefined;
           const nextLayout = data?.layout?.body ?? [];
           const nextNodes = data?.nodes ?? undefined;
+          const nextLabels = data?.labels ?? undefined;
           const fresh: HomeCachePayload = {
             bodyLayout: nextLayout,
             nodes: nextNodes,
+            labels: nextLabels,
           };
 
           if (hadCache && !dateParam) {
             if (!deepEqual(fresh, cached)) {
               setBodyLayout(nextLayout);
               setNodes(nextNodes);
+              setLabels(nextLabels);
               set(cacheKey, fresh);
             }
           } else {
             setBodyLayout(nextLayout);
             setNodes(nextNodes);
+            setLabels(nextLabels);
             if (!dateParam) {
               set(cacheKey, fresh);
             }
@@ -107,6 +122,7 @@ export function useFetchData(selectedDate?: string): UseFetchDataReturn {
           setErrorType(PageErrorType.NETWORK);
           setBodyLayout([]);
           setNodes(undefined);
+          setLabels(undefined);
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -140,6 +156,7 @@ export function useFetchData(selectedDate?: string): UseFetchDataReturn {
     errorType,
     bodyLayout,
     nodes,
+    labels,
     handleRetry,
     handleRefreshWithDate,
     handleSilentRefresh,

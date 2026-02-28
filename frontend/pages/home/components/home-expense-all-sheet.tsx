@@ -11,7 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { MUTED, CATEGORY_ICON_CONFIG } from '@/common/consts/theme';
-import type { ExpenseListItem } from '@/common/typings/home';
+import type { ExpenseListItem, HomeLabels } from '@/common/typings/home';
 
 const SCREEN_H = Dimensions.get('window').height;
 
@@ -20,6 +20,7 @@ interface Props {
   expenses: ExpenseListItem[];
   totalAmount: number;
   title?: string;
+  labels: HomeLabels;
   onClose: () => void;
 }
 
@@ -27,11 +28,15 @@ export default function HomeExpenseAllSheet({
   visible,
   expenses,
   totalAmount,
-  title = '今日消费',
+  title,
+  labels,
   onClose,
 }: Props): ReactNode {
   const router = useRouter();
   const translateY = useSharedValue(SCREEN_H);
+  const el = labels.expense_list;
+  const cs = labels.common.currency_symbol;
+  const displayTitle = title ?? el.today_label;
 
   useEffect(() => {
     translateY.value = withTiming(visible ? 0 : SCREEN_H, { duration: 300 });
@@ -40,6 +45,8 @@ export default function HomeExpenseAllSheet({
   const sheetStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
   }));
+
+  const countLine = el.count_format.replace('{count}', String(expenses.length));
 
   return (
     <Modal
@@ -79,10 +86,10 @@ export default function HomeExpenseAllSheet({
               >
                 <YStack>
                   <Text fontSize={18} fontWeight="700" color="$color">
-                    {title}
+                    {displayTitle}
                   </Text>
                   <Text fontSize={12} color="$muted" mt={2}>
-                    共 {expenses.length} 笔，合计 ¥
+                    {countLine} {cs}
                     {Math.round(totalAmount * 100) / 100}
                   </Text>
                 </YStack>
@@ -171,7 +178,8 @@ export default function HomeExpenseAllSheet({
                             color="$color"
                             style={{ fontVariant: ['tabular-nums'] }}
                           >
-                            -¥{item.amount}
+                            -{cs}
+                            {item.amount}
                           </Text>
                           <Ionicons
                             name="chevron-forward"
@@ -190,7 +198,7 @@ export default function HomeExpenseAllSheet({
                     style={{ alignItems: 'center', justifyContent: 'center' }}
                   >
                     <Text fontSize={13} color="$muted">
-                      暂无消费记录
+                      {el.no_records}
                     </Text>
                   </YStack>
                 }

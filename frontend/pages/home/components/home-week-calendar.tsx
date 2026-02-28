@@ -8,12 +8,13 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { PikoCard } from '@/common/components/piko-card';
 import { PikoWeekCalendar } from '@/common/components/piko-week-calendar';
 import { MUTED } from '@/common/consts/theme';
-import type { WeekCalendarData } from '@/common/typings/home';
+import type { HomeLabels, WeekCalendarData } from '@/common/typings/home';
 
 import HomeDatePickerSheet from './home-date-picker-sheet';
 
 interface Props {
   data: WeekCalendarData;
+  labels: HomeLabels;
   onWeekChange?: (dateInTargetWeek: string) => void;
   onDateSelect?: (dateStr: string) => void;
   selectedDate?: string;
@@ -21,6 +22,7 @@ interface Props {
 
 export default function HomeWeekCalendar({
   data,
+  labels,
   onWeekChange,
   onDateSelect: onDateSelectProp,
   selectedDate: selectedDateProp,
@@ -76,7 +78,7 @@ export default function HomeWeekCalendar({
               </Text>
               <XStack style={{ alignItems: 'center', gap: 4 }}>
                 <Text fontSize={16} fontWeight="700" color="$color">
-                  本周概览
+                  {labels.week_calendar.title}
                 </Text>
                 <Ionicons name="calendar-outline" size={14} color={MUTED} />
               </XStack>
@@ -115,6 +117,8 @@ export default function HomeWeekCalendar({
           selectedDate={effectiveDate}
           onDateSelect={handleDateSelect}
           markedDates={markedDates}
+          weekdayLabels={labels.week_calendar.weekday_labels}
+          currencySymbol={labels.common.currency_symbol}
         />
       </PikoCard>
 
@@ -123,6 +127,7 @@ export default function HomeWeekCalendar({
         currentDate={effectiveDate}
         onSelect={handlePickerSelect}
         onClose={() => setShowDatePicker(false)}
+        labels={labels.week_calendar}
       />
     </Animated.View>
   );

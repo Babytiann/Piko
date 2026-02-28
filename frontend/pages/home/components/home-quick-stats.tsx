@@ -1,25 +1,32 @@
 import type { ReactNode } from 'react';
+import { useMemo } from 'react';
 import { XStack, YStack, Text } from 'tamagui';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { PikoCard } from '@/common/components/piko-card';
-import type { QuickStatsData } from '@/common/typings/home';
+import type { HomeLabels, QuickStatsData } from '@/common/typings/home';
 
 interface Props {
   data: QuickStatsData;
+  labels: HomeLabels;
 }
 
-const ITEMS: Array<{ key: keyof QuickStatsData; label: string }> = [
-  { key: 'today_amount', label: '今日' },
-  { key: 'week_amount', label: '本周' },
-  { key: 'month_amount', label: '本月' },
-];
+export default function HomeQuickStats({ data, labels }: Props): ReactNode {
+  const items = useMemo(
+    (): Array<{ key: keyof QuickStatsData; label: string }> => [
+      { key: 'today_amount', label: labels.quick_stats.today },
+      { key: 'week_amount', label: labels.quick_stats.week },
+      { key: 'month_amount', label: labels.quick_stats.month },
+    ],
+    [labels.quick_stats],
+  );
 
-export default function HomeQuickStats({ data }: Props): ReactNode {
+  const cs = labels.common.currency_symbol;
+
   return (
     <Animated.View entering={FadeInDown.delay(50).springify()}>
       <XStack gap="$2">
-        {ITEMS.map((item) => (
+        {items.map((item) => (
           <YStack key={item.key} flex={1}>
             <PikoCard padding="$3">
               <YStack style={{ alignItems: 'center' }}>
@@ -33,7 +40,8 @@ export default function HomeQuickStats({ data }: Props): ReactNode {
                   mt="$1"
                   style={{ fontVariant: ['tabular-nums'] }}
                 >
-                  ¥{(data[item.key] ?? 0).toLocaleString()}
+                  {cs}
+                  {(data[item.key] ?? 0).toLocaleString()}
                 </Text>
               </YStack>
             </PikoCard>

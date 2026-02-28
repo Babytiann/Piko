@@ -11,11 +11,17 @@ import NavigationCard from './navigation-card';
 interface Props {
   content: string;
   isStreaming?: boolean;
+  navAmapTitle?: string;
+  navGoogleTitle?: string;
+  navOpenHint?: string;
 }
 
 export default function AiChatMarkdown({
   content,
   isStreaming,
+  navAmapTitle,
+  navGoogleTitle,
+  navOpenHint,
 }: Props): ReactNode {
   const theme = useTheme();
   const themeName = useThemeName();
@@ -118,6 +124,9 @@ export default function AiChatMarkdown({
             variant="amap"
             url={seg.url}
             label={seg.label}
+            amapTitle={navAmapTitle}
+            googleTitle={navGoogleTitle}
+            openHint={navOpenHint}
           />
         ) : seg.type === 'google-maps-navigation' ? (
           <NavigationCard
@@ -125,6 +134,9 @@ export default function AiChatMarkdown({
             variant="google-maps"
             url={seg.url}
             label={seg.label}
+            amapTitle={navAmapTitle}
+            googleTitle={navGoogleTitle}
+            openHint={navOpenHint}
           />
         ) : (
           <Markdown key={idx} style={markdownStyles}>

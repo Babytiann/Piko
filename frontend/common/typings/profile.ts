@@ -62,6 +62,13 @@ export interface ProfilePageLabels {
   };
   logout_button: string;
   logout_ingress: string;
+  alert_auth_expired_title: string;
+  alert_auth_expired_desc: string;
+  alert_auth_expired_ok: string;
+  alert_logout_title: string;
+  alert_logout_desc: string;
+  alert_logout_cancel: string;
+  alert_logout_ok: string;
 }
 
 export interface ProfilePageData {

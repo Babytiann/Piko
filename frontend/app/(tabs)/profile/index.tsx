@@ -34,11 +34,11 @@ export default function ProfileScreen(): ReactNode {
     if (errorType !== PageErrorType.AUTH || !appSession?.user) return;
 
     Alert.alert(
-      '登录已失效',
-      'Telegram 登录已失效，请重新绑定账号。',
+      labels.alert_auth_expired_title,
+      labels.alert_auth_expired_desc,
       [
         {
-          text: '确定',
+          text: labels.alert_auth_expired_ok,
           onPress: async () => {
             await logout();
           },
@@ -87,11 +87,11 @@ export default function ProfileScreen(): ReactNode {
 
   const handleLogoutPress = (): void => {
     Alert.alert(
-      '确认退出',
-      '确定要退出登录吗？',
+      labels.alert_logout_title,
+      labels.alert_logout_desc,
       [
-        { text: '取消', style: 'cancel' },
-        { text: '确定', onPress: () => void handleAppLogout() },
+        { text: labels.alert_logout_cancel, style: 'cancel' },
+        { text: labels.alert_logout_ok, onPress: () => void handleAppLogout() },
       ],
       { cancelable: true },
     );

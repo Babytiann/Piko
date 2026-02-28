@@ -3,8 +3,6 @@ import { useMemo } from 'react';
 import { Pressable } from 'react-native';
 import { XStack, YStack, Text, useTheme } from 'tamagui';
 
-const WEEKDAY_LABELS = ['一', '二', '三', '四', '五', '六', '日'];
-
 function formatDateKey(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -22,12 +20,16 @@ interface PikoWeekCalendarProps {
   selectedDate: string;
   onDateSelect: (dateStr: string) => void;
   markedDates?: Record<string, MarkedDateItem>;
+  weekdayLabels?: string[];
+  currencySymbol?: string;
 }
 
 export function PikoWeekCalendar({
   selectedDate,
   onDateSelect,
   markedDates = {},
+  weekdayLabels = ['一', '二', '三', '四', '五', '六', '日'],
+  currencySymbol = '¥',
 }: PikoWeekCalendarProps): ReactNode {
   const theme = useTheme();
 
@@ -94,7 +96,7 @@ export function PikoWeekCalendar({
                 color={isToday ? 'white' : '$gray10'}
                 style={{ opacity: 0.7 }}
               >
-                {WEEKDAY_LABELS[i]}
+                {weekdayLabels[i]}
               </Text>
               <Text
                 fontSize={16}
@@ -113,7 +115,9 @@ export function PikoWeekCalendar({
                   opacity: hasExpense ? 1 : 0.5,
                 }}
               >
-                {hasExpense ? `¥${amount.toFixed(0)}` : '0¥'}
+                {hasExpense
+                  ? `${currencySymbol}${amount.toFixed(0)}`
+                  : `0${currencySymbol}`}
               </Text>
             </YStack>
           </Pressable>

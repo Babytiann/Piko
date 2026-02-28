@@ -8,7 +8,11 @@ import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 
 import { PikoCard } from '@/common/components/piko-card';
 import { CATEGORY_ICON_CONFIG, MUTED } from '@/common/consts/theme';
-import type { ExpenseListData, ExpenseListItem } from '@/common/typings/home';
+import type {
+  ExpenseListData,
+  ExpenseListItem,
+  HomeLabels,
+} from '@/common/typings/home';
 
 import HomeExpenseAllSheet from './home-expense-all-sheet';
 
@@ -16,15 +20,18 @@ const MAX_VISIBLE = 3;
 
 interface Props {
   data: ExpenseListData;
+  labels: HomeLabels;
   selectedDate?: string;
 }
 
 function ExpenseRow({
   item,
   index,
+  cs,
 }: {
   item: ExpenseListItem;
   index: number;
+  cs: string;
 }): ReactNode {
   const router = useRouter();
   const config =
@@ -90,7 +97,8 @@ function ExpenseRow({
               color="$color"
               style={{ fontVariant: ['tabular-nums'] }}
             >
-              -¥{item.amount}
+              -{cs}
+              {item.amount}
             </Text>
             <Ionicons name="chevron-forward" size={14} color={MUTED} />
           </XStack>
@@ -100,18 +108,27 @@ function ExpenseRow({
   );
 }
 
-function getDateLabel(dateStr: string, todayDate: string): string {
-  if (dateStr === todayDate) return '今日消费';
+function getDateLabel(
+  dateStr: string,
+  todayDate: string,
+  el: HomeLabels['expense_list'],
+): string {
+  if (dateStr === todayDate) return el.today_label;
   const d = new Date(dateStr + 'T00:00:00');
-  return `${d.getMonth() + 1}月${d.getDate()}日消费`;
+  return el.date_format
+    .replace('{month}', String(d.getMonth() + 1))
+    .replace('{day}', String(d.getDate()));
 }
 
 export default function HomeExpenseList({
   data,
+  labels,
   selectedDate,
 }: Props): ReactNode {
   const [showAll, setShowAll] = useState(false);
 
+  const el = labels.expense_list;
+  const cs = labels.common.currency_symbol;
   const effectiveDate = selectedDate ?? data.today_date;
 
   const expenses = data.expenses ?? [];
@@ -126,7 +143,9 @@ export default function HomeExpenseList({
 
   const visibleExpenses = filtered.slice(0, MAX_VISIBLE);
   const hasMore = filtered.length > MAX_VISIBLE;
-  const title = getDateLabel(effectiveDate, data.today_date);
+  const title = getDateLabel(effectiveDate, data.today_date, el);
+
+  const countLine = el.count_format.replace('{count}', String(filtered.length));
 
   return (
     <Animated.View entering={FadeInDown.delay(400).springify()}>
@@ -140,14 +159,14 @@ export default function HomeExpenseList({
               {title}
             </Text>
             <Text fontSize={11} color="$muted" mt={2}>
-              共 {filtered.length} 笔，合计 ¥
+              {countLine} {cs}
               {Math.round(totalAmount * 100) / 100}
             </Text>
           </YStack>
           {filtered.length > 0 && (
             <Pressable hitSlop={8} onPress={() => setShowAll(true)}>
               <Text fontSize={13} color="$muted">
-                查看全部
+                {el.view_all}
               </Text>
             </Pressable>
           )}
@@ -156,7 +175,7 @@ export default function HomeExpenseList({
         {visibleExpenses.length > 0 ? (
           <YStack>
             {visibleExpenses.map((item, index) => (
-              <ExpenseRow key={item.id} item={item} index={index} />
+              <ExpenseRow key={item.id} item={item} index={index} cs={cs} />
             ))}
             {hasMore && (
               <Pressable
@@ -165,7 +184,10 @@ export default function HomeExpenseList({
               >
                 <XStack style={{ alignItems: 'center', gap: 4 }}>
                   <Text fontSize={13} color={MUTED} fontWeight="500">
-                    查看全部 {filtered.length} 笔
+                    {el.view_all_format.replace(
+                      '{count}',
+                      String(filtered.length),
+                    )}
                   </Text>
                   <Ionicons name="chevron-forward" size={14} color={MUTED} />
                 </XStack>
@@ -175,7 +197,7 @@ export default function HomeExpenseList({
         ) : (
           <YStack py="$4" style={{ alignItems: 'center' }}>
             <Text fontSize={13} color="$muted">
-              当日暂无消费记录
+              {el.no_records}
             </Text>
           </YStack>
         )}
@@ -186,6 +208,7 @@ export default function HomeExpenseList({
         expenses={filtered}
         totalAmount={totalAmount}
         title={title}
+        labels={labels}
         onClose={() => setShowAll(false)}
       />
     </Animated.View>

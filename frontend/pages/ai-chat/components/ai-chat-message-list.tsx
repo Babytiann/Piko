@@ -8,7 +8,7 @@ import {
   type NativeScrollEvent,
 } from 'react-native';
 
-import type { AiMessage, BubbleLayout } from '../types';
+import type { AiMessage, AiPageData, BubbleLayout } from '../types';
 import { NEAR_BOTTOM_THRESHOLD, SCROLL_DELAY_MS } from '../consts';
 import AiChatBubble from './ai-chat-bubble';
 import AiChatEmpty from './ai-chat-empty';
@@ -21,6 +21,7 @@ interface Props {
   tooltipMessageId?: string;
   onMessageLongPress?: (message: AiMessage, layout: BubbleLayout) => void;
   onRequestLocationPermission?: (messageId: string) => void;
+  pageData?: AiPageData;
 }
 
 export default function AiChatMessageList({
@@ -31,6 +32,7 @@ export default function AiChatMessageList({
   tooltipMessageId,
   onMessageLongPress,
   onRequestLocationPermission,
+  pageData,
 }: Props): ReactElement {
   const listRef = useRef<FlatList<AiMessage>>(null);
   const isNearBottomRef = useRef(true);
@@ -73,9 +75,15 @@ export default function AiChatMessageList({
         isTooltipTarget={item.id === tooltipMessageId}
         onLongPress={onMessageLongPress}
         onRequestLocationPermission={onRequestLocationPermission}
+        pageData={pageData}
       />
     ),
-    [tooltipMessageId, onMessageLongPress, onRequestLocationPermission],
+    [
+      tooltipMessageId,
+      onMessageLongPress,
+      onRequestLocationPermission,
+      pageData,
+    ],
   );
 
   if (messages.length === 0) {

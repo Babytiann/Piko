@@ -10,11 +10,16 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { PikoCard } from '@/common/components/piko-card';
 import { PikoRingChart } from '@/common/components/piko-ring-chart';
 import { SUCCESS, DESTRUCTIVE, MUTED } from '@/common/consts/theme';
-import type { BudgetCardNodeData, BudgetCardData } from '@/common/typings/home';
+import type {
+  BudgetCardNodeData,
+  BudgetCardData,
+  HomeLabels,
+} from '@/common/typings/home';
 import HomeBudgetEditSheet from './home-budget-edit-sheet';
 
 interface Props {
   data: BudgetCardNodeData;
+  labels: HomeLabels;
   onBudgetUpdated?: () => void;
 }
 
@@ -93,7 +98,13 @@ function TrendBadge({ trendPercent }: { trendPercent: number }): ReactNode {
   );
 }
 
-function BudgetCardSetCta({ onPress }: { onPress: () => void }): ReactNode {
+function BudgetCardSetCta({
+  onPress,
+  labels,
+}: {
+  onPress: () => void;
+  labels: HomeLabels['budget_card'];
+}): ReactNode {
   return (
     <Animated.View entering={FadeInDown.delay(200).springify()}>
       <PikoCard
@@ -103,15 +114,15 @@ function BudgetCardSetCta({ onPress }: { onPress: () => void }): ReactNode {
       >
         <YStack style={{ alignItems: 'center', gap: 8 }}>
           <Text fontSize={15} fontWeight="600" color="$gray10">
-            设置每月预算
+            {labels.set_cta_title}
           </Text>
           <Text fontSize={12} color="$gray9">
-            设置后即可查看月度预算与每周进度
+            {labels.set_cta_desc}
           </Text>
           <XStack mt="$2" style={{ alignItems: 'center', gap: 4 }}>
             <Ionicons name="add-circle-outline" size={20} color={MUTED} />
             <Text fontSize={14} color="$primary">
-              去设置
+              {labels.set_cta_button}
             </Text>
           </XStack>
         </YStack>
@@ -122,9 +133,13 @@ function BudgetCardSetCta({ onPress }: { onPress: () => void }): ReactNode {
 
 function BudgetCardContent({
   data,
+  labels,
+  cs,
   onEditPress,
 }: {
   data: BudgetCardData;
+  labels: HomeLabels['budget_card'];
+  cs: string;
   onEditPress: () => void;
 }): ReactNode {
   const progress = Math.min(1, data.usedPercent / 100);
@@ -132,7 +147,6 @@ function BudgetCardContent({
   return (
     <Animated.View entering={FadeInDown.delay(200).springify()}>
       <PikoCard padding="$3">
-        {/* Month overview header */}
         <XStack
           mb="$2"
           pb="$2"
@@ -143,7 +157,7 @@ function BudgetCardContent({
           <YStack>
             <XStack style={{ alignItems: 'center', gap: 6 }}>
               <Text fontSize={11} color="$muted">
-                月预算
+                {labels.monthly_budget_label}
               </Text>
               <Pressable onPress={onEditPress} hitSlop={8}>
                 <Ionicons name="create-outline" size={14} color={MUTED} />
@@ -155,12 +169,13 @@ function BudgetCardContent({
               color="$color"
               style={{ fontVariant: ['tabular-nums'] }}
             >
-              ¥{data.monthlyBudget.toLocaleString()}
+              {cs}
+              {data.monthlyBudget.toLocaleString()}
             </Text>
           </YStack>
           <YStack style={{ alignItems: 'flex-end' }}>
             <Text fontSize={11} color="$muted">
-              本月已花
+              {labels.month_spent_label}
             </Text>
             <Text
               fontSize={14}
@@ -168,19 +183,19 @@ function BudgetCardContent({
               color={data.monthRemaining <= 0 ? '$destructive' : '$color'}
               style={{ fontVariant: ['tabular-nums'] }}
             >
-              ¥{data.monthSpent.toLocaleString()}
+              {cs}
+              {data.monthSpent.toLocaleString()}
             </Text>
           </YStack>
         </XStack>
 
-        {/* Weekly progress section */}
         <XStack
           mb="$2"
           style={{ alignItems: 'flex-start', justifyContent: 'space-between' }}
         >
           <YStack>
             <Text fontSize={11} color="$muted">
-              本周预算
+              {labels.weekly_budget_label}
             </Text>
             <Text
               fontSize={14}
@@ -188,7 +203,8 @@ function BudgetCardContent({
               color="$color"
               style={{ fontVariant: ['tabular-nums'] }}
             >
-              ¥{data.weeklyBudget.toLocaleString()}
+              {cs}
+              {data.weeklyBudget.toLocaleString()}
             </Text>
           </YStack>
           <YStack style={{ alignItems: 'flex-end', gap: 4 }}>
@@ -217,7 +233,7 @@ function BudgetCardContent({
                   {data.usedPercent}%
                 </Text>
                 <Text fontSize={10} color="$gray10">
-                  本周已用
+                  {labels.week_used_label}
                 </Text>
               </YStack>
             }
@@ -225,7 +241,7 @@ function BudgetCardContent({
           <YStack flex={1} gap="$2">
             <YStack>
               <Text fontSize={11} color="$muted">
-                本周已花
+                {labels.week_spent_label}
               </Text>
               <Text
                 fontSize={15}
@@ -233,12 +249,13 @@ function BudgetCardContent({
                 color="$color"
                 style={{ fontVariant: ['tabular-nums'] }}
               >
-                ¥{data.spent.toLocaleString()}
+                {cs}
+                {data.spent.toLocaleString()}
               </Text>
             </YStack>
             <YStack>
               <Text fontSize={11} color="$muted">
-                本周剩余
+                {labels.week_remaining_label}
               </Text>
               <Text
                 fontSize={15}
@@ -246,7 +263,8 @@ function BudgetCardContent({
                 color={data.remaining <= 0 ? '$destructive' : '$color'}
                 style={{ fontVariant: ['tabular-nums'] }}
               >
-                ¥{data.remaining.toLocaleString()}
+                {cs}
+                {data.remaining.toLocaleString()}
               </Text>
             </YStack>
           </YStack>
@@ -260,7 +278,7 @@ function BudgetCardContent({
           style={{ alignItems: 'center', justifyContent: 'space-between' }}
         >
           <Text fontSize={12} color="$muted">
-            日均消费
+            {labels.daily_avg_label}
           </Text>
           <Text
             fontSize={14}
@@ -268,7 +286,8 @@ function BudgetCardContent({
             color="$color"
             style={{ fontVariant: ['tabular-nums'] }}
           >
-            ¥{data.dailyAverage.toLocaleString()}
+            {cs}
+            {data.dailyAverage.toLocaleString()}
           </Text>
         </XStack>
       </PikoCard>
@@ -278,24 +297,36 @@ function BudgetCardContent({
 
 export default function HomeBudgetCard({
   data,
+  labels,
   onBudgetUpdated,
 }: Props): ReactNode {
   const router = useRouter();
   const [showEditSheet, setShowEditSheet] = useState(false);
+  const bl = labels.budget_card;
+  const cl = labels.common;
+  const cs = cl.currency_symbol;
 
   if ('needSetBudget' in data) {
-    return <BudgetCardSetCta onPress={() => router.push('/budget-setup')} />;
+    return (
+      <BudgetCardSetCta
+        onPress={() => router.push('/budget-setup')}
+        labels={bl}
+      />
+    );
   }
 
   return (
     <>
       <BudgetCardContent
         data={data}
+        labels={bl}
+        cs={cs}
         onEditPress={() => setShowEditSheet(true)}
       />
       <HomeBudgetEditSheet
         visible={showEditSheet}
         currentBudget={data.monthlyBudget}
+        labels={labels}
         onClose={() => setShowEditSheet(false)}
         onSaved={() => {
           setShowEditSheet(false);

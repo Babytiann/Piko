@@ -19,12 +19,14 @@ import Animated, {
 
 import { setBudget } from '@/services/budget';
 import { MUTED, PRIMARY } from '@/common/consts/theme';
+import type { HomeLabels } from '@/common/typings/home';
 
 const SCREEN_H = Dimensions.get('window').height;
 
 interface Props {
   visible: boolean;
   currentBudget: number;
+  labels: HomeLabels;
   onClose: () => void;
   onSaved: () => void;
 }
@@ -34,9 +36,14 @@ const PRESETS = [2000, 4000, 6000, 8000];
 export default function HomeBudgetEditSheet({
   visible,
   currentBudget,
+  labels,
   onClose,
   onSaved,
 }: Props): ReactNode {
+  const bl = labels.budget_card;
+  const cl = labels.common;
+  const cs = cl.currency_symbol;
+
   const [value, setValue] = useState(String(currentBudget));
   const [saving, setSaving] = useState(false);
   const translateY = useSharedValue(SCREEN_H);
@@ -111,7 +118,7 @@ export default function HomeBudgetEditSheet({
                   }}
                 >
                   <Text fontSize={18} fontWeight="700" color="$color">
-                    修改月预算
+                    {bl.edit_sheet_title}
                   </Text>
                   <Pressable onPress={onClose} hitSlop={8}>
                     <Ionicons name="close" size={22} color={MUTED} />
@@ -120,7 +127,7 @@ export default function HomeBudgetEditSheet({
 
                 <YStack mb="$4">
                   <Text fontSize={12} color="$muted" mb="$2">
-                    每月预算金额
+                    {bl.edit_amount_label}
                   </Text>
                   <XStack
                     style={{
@@ -134,7 +141,7 @@ export default function HomeBudgetEditSheet({
                     }}
                   >
                     <Text fontSize={18} fontWeight="600" color="$color" mr="$1">
-                      ¥
+                      {cs}
                     </Text>
                     <TextInput
                       value={value}
@@ -173,7 +180,8 @@ export default function HomeBudgetEditSheet({
                         fontWeight="600"
                         color={value === String(amount) ? 'white' : '$color'}
                       >
-                        ¥{amount.toLocaleString()}
+                        {cs}
+                        {amount.toLocaleString()}
                       </Text>
                     </Pressable>
                   ))}
@@ -192,7 +200,7 @@ export default function HomeBudgetEditSheet({
                   }}
                 >
                   <Text fontSize={16} fontWeight="700" color="white">
-                    {saving ? '保存中...' : '保存'}
+                    {saving ? cl.saving : cl.save}
                   </Text>
                 </Pressable>
               </YStack>

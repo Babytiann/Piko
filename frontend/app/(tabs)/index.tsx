@@ -13,6 +13,7 @@ import type {
   CategoryCardsData,
   ExpenseListData,
   HomeHeaderData,
+  HomeLabels,
   HomeSlashNodes,
   QuickStatsData,
   WeatherCardData,
@@ -34,6 +35,7 @@ import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
 function renderSlot(
   slotId: string,
   nodes: HomeSlashNodes,
+  labels: HomeLabels,
   onWeekChange: (date: string) => void,
   onBudgetUpdated: () => void,
   onDateSelect: (date: string) => void,
@@ -45,11 +47,12 @@ function renderSlot(
 
   switch (slotId) {
     case 'quick_stats':
-      return <HomeQuickStats data={data as QuickStatsData} />;
+      return <HomeQuickStats data={data as QuickStatsData} labels={labels} />;
     case 'week_calendar':
       return (
         <HomeWeekCalendar
           data={data as WeekCalendarData}
+          labels={labels}
           onWeekChange={onWeekChange}
           onDateSelect={onDateSelect}
           selectedDate={selectedDate}
@@ -59,6 +62,7 @@ function renderSlot(
       return (
         <HomeBudgetCard
           data={data as BudgetCardNodeData}
+          labels={labels}
           onBudgetUpdated={onBudgetUpdated}
         />
       );
@@ -73,6 +77,7 @@ function renderSlot(
       return (
         <HomeCategoryCards
           data={data as CategoryCardsData}
+          labels={labels}
           allExpenses={expData?.expenses}
         />
       );
@@ -81,6 +86,7 @@ function renderSlot(
       return (
         <HomeExpenseList
           data={data as ExpenseListData}
+          labels={labels}
           selectedDate={selectedDate}
         />
       );
@@ -96,6 +102,7 @@ export default function HomeScreen(): ReactNode {
     errorType,
     bodyLayout,
     nodes,
+    labels,
     handleRetry,
     handleRefreshWithDate,
     handleSilentRefresh,
@@ -138,9 +145,15 @@ export default function HomeScreen(): ReactNode {
 
   if (isLoading) return <PageLoading />;
   if (errorType) {
-    return <PageStatusView errorType={errorType} onRetry={handleRetry} />;
+    return (
+      <PageStatusView
+        errorType={errorType}
+        onRetry={handleRetry}
+        labels={labels?.common}
+      />
+    );
   }
-  if (!nodes || bodyLayout.length === 0) {
+  if (!nodes || !labels || bodyLayout.length === 0) {
     return null;
   }
 
@@ -159,7 +172,7 @@ export default function HomeScreen(): ReactNode {
     if (slotId === 'category_cards' && showRecognition) {
       slots.push(
         <YStack key="recognition_progress">
-          <HomeRecognitionProgress />
+          <HomeRecognitionProgress labels={labels} />
         </YStack>,
       );
     }
@@ -181,6 +194,7 @@ export default function HomeScreen(): ReactNode {
               <YStack flex={1}>
                 <HomeBudgetCard
                   data={budgetData as BudgetCardNodeData}
+                  labels={labels}
                   onBudgetUpdated={onBudgetUpdated}
                 />
               </YStack>
@@ -201,6 +215,7 @@ export default function HomeScreen(): ReactNode {
         {renderSlot(
           slotId,
           nodes,
+          labels,
           onWeekChange,
           onBudgetUpdated,
           onDateSelect,

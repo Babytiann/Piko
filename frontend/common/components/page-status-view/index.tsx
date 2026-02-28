@@ -5,13 +5,23 @@ import { PageErrorType } from './utils';
 
 export { PageErrorType, getPageErrorType } from './utils';
 
+interface CommonLabels {
+  error_default?: string;
+  error_network?: string;
+  error_empty?: string;
+  error_unavailable?: string;
+  error_auth?: string;
+  retry?: string;
+}
+
 interface Props {
   message?: string;
   onRetry?: () => void;
   errorType?: PageErrorType;
+  labels?: CommonLabels;
 }
 
-const ERROR_TITLE: Record<PageErrorType, string> = {
+const FALLBACK_TITLE: Record<PageErrorType, string> = {
   [PageErrorType.DEFAULT]: '出错了',
   [PageErrorType.NETWORK]: '网络连接异常',
   [PageErrorType.EMPTY]: '暂无数据',
@@ -19,11 +29,23 @@ const ERROR_TITLE: Record<PageErrorType, string> = {
   [PageErrorType.AUTH]: '登录已失效',
 };
 
+const LABEL_KEY_MAP: Record<PageErrorType, keyof CommonLabels> = {
+  [PageErrorType.DEFAULT]: 'error_default',
+  [PageErrorType.NETWORK]: 'error_network',
+  [PageErrorType.EMPTY]: 'error_empty',
+  [PageErrorType.UNAVAILABLE]: 'error_unavailable',
+  [PageErrorType.AUTH]: 'error_auth',
+};
+
 export default function PageStatusView({
   message,
   onRetry,
   errorType = PageErrorType.DEFAULT,
+  labels,
 }: Props): ReactNode {
+  const title = labels?.[LABEL_KEY_MAP[errorType]] ?? FALLBACK_TITLE[errorType];
+  const retryLabel = labels?.retry ?? '重试';
+
   return (
     <YStack
       flex={1}
@@ -37,7 +59,7 @@ export default function PageStatusView({
         fontWeight="600"
         style={{ textAlign: 'center' }}
       >
-        {ERROR_TITLE[errorType]}
+        {title}
       </Text>
 
       {message ? (
@@ -67,7 +89,7 @@ export default function PageStatusView({
           }}
         >
           <Text color="$background" fontWeight="600" fontSize="$3">
-            重试
+            {retryLabel}
           </Text>
         </YStack>
       ) : null}

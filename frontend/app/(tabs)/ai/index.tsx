@@ -59,6 +59,7 @@ export default function AiScreen(): ReactNode {
   const { data: appSession } = authClient.useSession();
   const { data, isPageLoading, errorType, handleRetry } = useFetchAiPageData();
 
+  const pageData = data ?? {};
   const {
     login_status,
     header_title,
@@ -70,7 +71,7 @@ export default function AiScreen(): ReactNode {
     login_prompt_title,
     login_prompt_desc,
     login_prompt_btn,
-  } = data ?? {};
+  } = pageData;
   const convList = useConversationList(appSession?.user?.id ?? null);
 
   const contentTranslateX = useSharedValue(0);
@@ -229,6 +230,7 @@ export default function AiScreen(): ReactNode {
         onLoadMore={convList.loadMore}
         drawerTitle={drawer_title ?? ''}
         newChatLabel={new_chat_label ?? ''}
+        pageData={pageData}
       />
 
       <Animated.View
@@ -313,6 +315,7 @@ export default function AiScreen(): ReactNode {
               tooltipMessageId={tooltipTarget?.message.id}
               onMessageLongPress={handleMessageLongPress}
               onRequestLocationPermission={requestLocationPermission}
+              pageData={pageData}
             />
             <AiChatInput
               onSend={sendMessage}
@@ -322,7 +325,11 @@ export default function AiScreen(): ReactNode {
             />
           </YStack>
 
-          <AiChatTooltip target={tooltipTarget} onClose={handleTooltipClose} />
+          <AiChatTooltip
+            target={tooltipTarget}
+            onClose={handleTooltipClose}
+            copyLabel={pageData.tooltip_copy ?? ''}
+          />
         </YStack>
       </Animated.View>
     </YStack>

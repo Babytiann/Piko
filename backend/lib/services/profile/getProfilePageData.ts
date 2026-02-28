@@ -53,6 +53,13 @@ const PROFILE_LABELS: ProfilePageLabels = {
   },
   logout_button: '退出登录',
   logout_ingress: '退出中…',
+  alert_auth_expired_title: '登录已失效',
+  alert_auth_expired_desc: 'Telegram 登录已失效，请重新绑定账号。',
+  alert_auth_expired_ok: '确定',
+  alert_logout_title: '确认退出',
+  alert_logout_desc: '确定要退出登录吗？',
+  alert_logout_cancel: '取消',
+  alert_logout_ok: '确定',
 };
 
 function buildUnboundPageData(appUser: ProfileAppUser | null): ProfilePageData {

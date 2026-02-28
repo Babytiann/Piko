@@ -16,21 +16,24 @@ import { YStack, XStack, Text, useTheme } from 'tamagui';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { ConversationItem } from '../../types';
+import type { AiPageData, ConversationItem } from '../../types';
 import { DRAWER_OPEN_MS, DRAWER_CLOSE_MS } from '../../consts';
 
 const DRAWER_WIDTH = Dimensions.get('window').width * 0.7;
 const EASE = Easing.inOut(Easing.cubic);
 
-function formatRelativeTime(dateStr: string): string {
+function formatRelativeTime(dateStr: string, pd?: AiPageData): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return '刚刚';
-  if (mins < 60) return `${mins} 分钟前`;
+  if (mins < 1) return pd?.time_just_now ?? '刚刚';
+  if (mins < 60)
+    return (pd?.time_minutes_ago ?? '{n} 分钟前').replace('{n}', String(mins));
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} 小时前`;
+  if (hours < 24)
+    return (pd?.time_hours_ago ?? '{n} 小时前').replace('{n}', String(hours));
   const days = Math.floor(hours / 24);
-  if (days < 7) return `${days} 天前`;
+  if (days < 7)
+    return (pd?.time_days_ago ?? '{n} 天前').replace('{n}', String(days));
   return new Date(dateStr).toLocaleDateString('zh-CN', {
     month: 'short',
     day: 'numeric',
@@ -49,6 +52,7 @@ interface AiConversationDrawerProps {
   onLoadMore: () => void;
   drawerTitle: string;
   newChatLabel: string;
+  pageData?: AiPageData;
 }
 
 export default function AiConversationDrawer({
@@ -63,6 +67,7 @@ export default function AiConversationDrawer({
   onLoadMore,
   drawerTitle,
   newChatLabel,
+  pageData,
 }: AiConversationDrawerProps): ReactNode {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -122,7 +127,10 @@ export default function AiConversationDrawer({
             </Text>
             <XStack mt="$1" gap="$2" style={{ alignItems: 'center' }}>
               <Text fontSize="$2" color="$gray9">
-                {item.message_count} 条消息
+                {(pageData?.drawer_message_count ?? '{n} 条消息').replace(
+                  '{n}',
+                  String(item.message_count),
+                )}
               </Text>
               {'updated_at' in item && item.updated_at ? (
                 <>
@@ -130,7 +138,7 @@ export default function AiConversationDrawer({
                     ·
                   </Text>
                   <Text fontSize="$2" color="$gray8">
-                    {formatRelativeTime(item.updated_at as string)}
+                    {formatRelativeTime(item.updated_at as string, pageData)}
                   </Text>
                 </>
               ) : null}
@@ -139,14 +147,21 @@ export default function AiConversationDrawer({
           <Pressable
             onPress={(e) => {
               e.stopPropagation();
-              Alert.alert('确认删除', '删除后将无法恢复，是否继续？', [
-                { text: '取消', style: 'cancel' },
-                {
-                  text: '删除',
-                  style: 'destructive',
-                  onPress: () => onDelete(item.id),
-                },
-              ]);
+              Alert.alert(
+                pageData?.drawer_delete_title ?? '确认删除',
+                pageData?.drawer_delete_desc ?? '删除后将无法恢复，是否继续？',
+                [
+                  {
+                    text: pageData?.drawer_delete_cancel ?? '取消',
+                    style: 'cancel',
+                  },
+                  {
+                    text: pageData?.drawer_delete_confirm ?? '删除',
+                    style: 'destructive',
+                    onPress: () => onDelete(item.id),
+                  },
+                ],
+              );
             }}
             hitSlop={10}
           >
@@ -195,7 +210,7 @@ export default function AiConversationDrawer({
             style={{ alignItems: 'center', justifyContent: 'center' }}
           >
             <Text color="$gray9" fontSize="$3">
-              加载中...
+              {pageData?.drawer_loading ?? ''}
             </Text>
           </YStack>
         ) : conversations.length === 0 ? (
@@ -204,7 +219,7 @@ export default function AiConversationDrawer({
             style={{ alignItems: 'center', justifyContent: 'center' }}
           >
             <Text color="$gray9" fontSize="$3">
-              暂无历史对话
+              {pageData?.drawer_empty ?? ''}
             </Text>
           </YStack>
         ) : (

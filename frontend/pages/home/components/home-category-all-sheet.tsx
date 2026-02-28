@@ -10,7 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { MUTED, CATEGORY_ICON_CONFIG } from '@/common/consts/theme';
-import type { CategoryCardItem } from '@/common/typings/home';
+import type { CategoryCardItem, HomeLabels } from '@/common/typings/home';
 
 const SCREEN_H = Dimensions.get('window').height;
 type SortMode = 'amount' | 'name';
@@ -18,6 +18,7 @@ type SortMode = 'amount' | 'name';
 interface Props {
   visible: boolean;
   categories: CategoryCardItem[];
+  labels: HomeLabels;
   onClose: () => void;
   onSelectCategory: (item: CategoryCardItem) => void;
 }
@@ -25,11 +26,14 @@ interface Props {
 export default function HomeCategoryAllSheet({
   visible,
   categories,
+  labels,
   onClose,
   onSelectCategory,
 }: Props): ReactNode {
   const [sortMode, setSortMode] = useState<SortMode>('amount');
   const translateY = useSharedValue(SCREEN_H);
+  const cl = labels.category_cards;
+  const cs = labels.common.currency_symbol;
 
   useEffect(() => {
     translateY.value = withTiming(visible ? 0 : SCREEN_H, { duration: 300 });
@@ -83,7 +87,7 @@ export default function HomeCategoryAllSheet({
                 }}
               >
                 <Text fontSize={18} fontWeight="700" color="$color">
-                  全部分类
+                  {cl.all_sheet_title}
                 </Text>
                 <Pressable onPress={onClose} hitSlop={8}>
                   <Ionicons name="close" size={22} color={MUTED} />
@@ -106,7 +110,7 @@ export default function HomeCategoryAllSheet({
                     fontWeight="600"
                     color={sortMode === 'amount' ? 'white' : '$muted'}
                   >
-                    按金额
+                    {cl.by_amount}
                   </Text>
                 </Pressable>
                 <Pressable
@@ -124,7 +128,7 @@ export default function HomeCategoryAllSheet({
                     fontWeight="600"
                     color={sortMode === 'name' ? 'white' : '$muted'}
                   >
-                    按名称
+                    {cl.by_name}
                   </Text>
                 </Pressable>
               </XStack>
@@ -136,6 +140,7 @@ export default function HomeCategoryAllSheet({
                 renderItem={({ item }) => {
                   const config =
                     CATEGORY_ICON_CONFIG[item.category] ??
+                    CATEGORY_ICON_CONFIG[cl.fallback_category] ??
                     CATEGORY_ICON_CONFIG['其他'];
                   const pct =
                     totalAmount > 0
@@ -205,7 +210,8 @@ export default function HomeCategoryAllSheet({
                             color="$color"
                             style={{ fontVariant: ['tabular-nums'] }}
                           >
-                            ¥{item.amount.toLocaleString()}
+                            {cs}
+                            {item.amount.toLocaleString()}
                           </Text>
                           <Text fontSize={11} color="$muted">
                             {pct}%

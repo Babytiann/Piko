@@ -25,6 +25,7 @@ import {
 } from '@/common/consts/theme';
 import { deleteExpenseApi } from '@/services/expense';
 import type { RecognizeResult } from '@/pages/scan/types/index';
+import type { HomeLabels } from '@/common/typings/home';
 
 const SCREEN_H = Dimensions.get('window').height;
 
@@ -72,12 +73,16 @@ function ProgressNumber({ progress }: { progress: number }): ReactNode {
 function ResultEditSheet({
   visible,
   result,
+  labels,
   onClose,
 }: {
   visible: boolean;
   result: RecognizeResult;
+  labels: HomeLabels;
   onClose: () => void;
 }): ReactNode {
+  const rl = labels.recognition;
+  const cs = labels.common.currency_symbol;
   const config =
     CATEGORY_ICON_CONFIG[result.category] ?? CATEGORY_ICON_CONFIG['其他'];
   const translateY = useSharedValue(SCREEN_H);
@@ -125,7 +130,7 @@ function ResultEditSheet({
                 }}
               >
                 <Text fontSize={18} fontWeight="700" color="$color">
-                  识别结果
+                  {rl.result_title}
                 </Text>
                 <Pressable onPress={onClose} hitSlop={8}>
                   <Ionicons name="close" size={22} color={MUTED} />
@@ -135,7 +140,7 @@ function ResultEditSheet({
               <YStack gap="$4">
                 <YStack>
                   <Text fontSize={12} color="$muted" mb="$1">
-                    金额
+                    {rl.amount_label}
                   </Text>
                   <Text
                     fontSize={28}
@@ -143,14 +148,15 @@ function ResultEditSheet({
                     color="$color"
                     style={{ fontVariant: ['tabular-nums'] }}
                   >
-                    ¥{result.amount}
+                    {cs}
+                    {result.amount}
                   </Text>
                 </YStack>
 
                 <XStack gap="$4">
                   <YStack flex={1}>
                     <Text fontSize={12} color="$muted" mb="$1">
-                      商户
+                      {rl.merchant_label}
                     </Text>
                     <Text fontSize={15} fontWeight="600" color="$color">
                       {result.merchant}
@@ -158,7 +164,7 @@ function ResultEditSheet({
                   </YStack>
                   <YStack flex={1}>
                     <Text fontSize={12} color="$muted" mb="$1">
-                      分类
+                      {rl.category_label}
                     </Text>
                     <XStack style={{ alignItems: 'center', gap: 6 }}>
                       <Ionicons
@@ -176,7 +182,7 @@ function ResultEditSheet({
                 <XStack gap="$4">
                   <YStack flex={1}>
                     <Text fontSize={12} color="$muted" mb="$1">
-                      日期
+                      {rl.date_label}
                     </Text>
                     <Text fontSize={15} fontWeight="600" color="$color">
                       {result.date}
@@ -184,7 +190,7 @@ function ResultEditSheet({
                   </YStack>
                   <YStack flex={1}>
                     <Text fontSize={12} color="$muted" mb="$1">
-                      置信度
+                      {rl.confidence_label}
                     </Text>
                     <Text fontSize={15} fontWeight="600" color="$color">
                       {Math.round((result.confidence ?? 0) * 100)}%
@@ -195,7 +201,7 @@ function ResultEditSheet({
                 {result.items && result.items.length > 0 ? (
                   <YStack>
                     <Text fontSize={12} color="$muted" mb="$1">
-                      明细
+                      {rl.items_label}
                     </Text>
                     {result.items.map((item, i) => (
                       <Text key={i} fontSize={14} color="$color" mt={2}>
@@ -215,26 +221,34 @@ function ResultEditSheet({
 
 const DELETE_BTN_WIDTH = 56;
 
-export default function HomeRecognitionProgress(): ReactNode {
+interface Props {
+  labels: HomeLabels;
+}
+
+export default function HomeRecognitionProgress({ labels }: Props): ReactNode {
   const recognition = useContext(RecognitionContext);
   const router = useRouter();
   const [showResultSheet, setShowResultSheet] = useState(false);
+
+  const rl = labels.recognition;
+  const cl = labels.common;
+  const cs = cl.currency_symbol;
 
   const translateX = useSharedValue(0);
   const contextX = useSharedValue(0);
 
   const confirmDelete = useCallback(() => {
     const expenseId = recognition.expenseId;
-    Alert.alert('删除消费', '确认删除这笔消费记录？', [
+    Alert.alert(rl.delete_title, rl.delete_confirm, [
       {
-        text: '取消',
+        text: cl.cancel,
         style: 'cancel',
         onPress: () => {
           translateX.value = withTiming(0, { duration: 200 });
         },
       },
       {
-        text: '删除',
+        text: rl.delete_button,
         style: 'destructive',
         onPress: async () => {
           if (expenseId) {
@@ -244,7 +258,7 @@ export default function HomeRecognitionProgress(): ReactNode {
         },
       },
     ]);
-  }, [recognition, translateX]);
+  }, [recognition, translateX, rl, cl]);
 
   const panGesture = Gesture.Pan()
     .activeOffsetX([-10, 10])
@@ -363,7 +377,7 @@ export default function HomeRecognitionProgress(): ReactNode {
                         mb="$2"
                       >
                         <Text fontSize={13} fontWeight="600" color="$color">
-                          AI 识别中
+                          {rl.recognizing}
                         </Text>
                         <ProgressNumber progress={recognition.progress} />
                       </XStack>
@@ -386,7 +400,7 @@ export default function HomeRecognitionProgress(): ReactNode {
                           color={SUCCESS}
                         />
                         <Text fontSize={13} fontWeight="600" color="$success">
-                          识别完成
+                          {rl.complete}
                         </Text>
                       </XStack>
                       <Text
@@ -395,7 +409,8 @@ export default function HomeRecognitionProgress(): ReactNode {
                         color="$color"
                         style={{ fontVariant: ['tabular-nums'] }}
                       >
-                        ¥{recognition.result.amount}
+                        {cs}
+                        {recognition.result.amount}
                       </Text>
                       <Text fontSize={12} color="$muted" mt={2}>
                         {recognition.result.merchant} ·{' '}
@@ -418,7 +433,7 @@ export default function HomeRecognitionProgress(): ReactNode {
                             }}
                           >
                             <Text fontSize={12} fontWeight="600" color="$color">
-                              查看详情
+                              {rl.view_detail}
                             </Text>
                           </Pressable>
                         ) : null}
@@ -432,7 +447,7 @@ export default function HomeRecognitionProgress(): ReactNode {
                           }}
                         >
                           <Text fontSize={12} fontWeight="600" color="$color">
-                            识别结果
+                            {rl.result_title}
                           </Text>
                         </Pressable>
                         <Pressable
@@ -445,7 +460,7 @@ export default function HomeRecognitionProgress(): ReactNode {
                           }}
                         >
                           <Text fontSize={12} fontWeight="600" color="white">
-                            确认
+                            {rl.confirm}
                           </Text>
                         </Pressable>
                       </XStack>
@@ -468,7 +483,7 @@ export default function HomeRecognitionProgress(): ReactNode {
                           fontWeight="600"
                           color="$destructive"
                         >
-                          识别失败
+                          {rl.failed}
                         </Text>
                       </XStack>
                       <Text fontSize={12} color="$muted" mt={2}>
@@ -486,7 +501,7 @@ export default function HomeRecognitionProgress(): ReactNode {
                         }}
                       >
                         <Text fontSize={12} fontWeight="600" color="$color">
-                          关闭
+                          {rl.close}
                         </Text>
                       </Pressable>
                     </Animated.View>
@@ -502,6 +517,7 @@ export default function HomeRecognitionProgress(): ReactNode {
         <ResultEditSheet
           visible={showResultSheet}
           result={recognition.result}
+          labels={labels}
           onClose={() => setShowResultSheet(false)}
         />
       ) : null}

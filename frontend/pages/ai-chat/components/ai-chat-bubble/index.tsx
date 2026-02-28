@@ -4,7 +4,7 @@ import { Platform, View as RNView } from 'react-native';
 import { YStack, XStack, Text } from 'tamagui';
 import * as Haptics from 'expo-haptics';
 
-import type { AiMessage, BubbleLayout } from '../../types';
+import type { AiMessage, AiPageData, BubbleLayout } from '../../types';
 import AiChatMarkdown from '../ai-chat-markdown';
 import WaitingIndicator from './waiting-indicator';
 import AiAvatar from './ai-avatar';
@@ -15,6 +15,7 @@ interface Props {
   isTooltipTarget?: boolean;
   onLongPress?: (message: AiMessage, layout: BubbleLayout) => void;
   onRequestLocationPermission?: (messageId: string) => void;
+  pageData?: AiPageData;
 }
 
 function AiChatBubble({
@@ -22,6 +23,7 @@ function AiChatBubble({
   isTooltipTarget,
   onLongPress,
   onRequestLocationPermission,
+  pageData,
 }: Props): ReactNode {
   const isUser = message.role === 'user';
   const bubbleRef = useRef<RNView>(null);
@@ -53,6 +55,9 @@ function AiChatBubble({
             <AiChatMarkdown
               content={message.content}
               isStreaming={message.isStreaming}
+              navAmapTitle={pageData?.nav_amap_title}
+              navGoogleTitle={pageData?.nav_google_title}
+              navOpenHint={pageData?.nav_open_hint}
             />
             {message.isStreaming && <WaitingIndicator />}
           </YStack>
@@ -75,7 +80,7 @@ function AiChatBubble({
                 pressStyle={{ opacity: 0.7 }}
                 onPress={() => onRequestLocationPermission(message.id)}
               >
-                点击授权位置权限
+                {pageData?.bubble_grant_location ?? '点击授权位置权限'}
               </Text>
             ) : null}
           </XStack>
@@ -120,6 +125,7 @@ export default React.memo(AiChatBubble, (prev, next) => {
     p.locationRequestId === n.locationRequestId &&
     prev.onLongPress === next.onLongPress &&
     prev.isTooltipTarget === next.isTooltipTarget &&
-    prev.onRequestLocationPermission === next.onRequestLocationPermission
+    prev.onRequestLocationPermission === next.onRequestLocationPermission &&
+    prev.pageData === next.pageData
   );
 });

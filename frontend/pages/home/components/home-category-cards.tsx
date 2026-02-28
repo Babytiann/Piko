@@ -11,23 +11,30 @@ import type {
   CategoryCardsData,
   CategoryCardItem,
   ExpenseListItem,
+  HomeLabels,
 } from '@/common/typings/home';
 import HomeCategoryDetailSheet from './home-category-detail-sheet';
 import HomeCategoryAllSheet from './home-category-all-sheet';
 
 interface Props {
   data: CategoryCardsData;
+  labels: HomeLabels;
   allExpenses?: ExpenseListItem[];
 }
 
 function CategoryIcon({
   category,
+  fallbackCategory,
   size = 32,
 }: {
   category: string;
+  fallbackCategory: string;
   size?: number;
 }): ReactNode {
-  const config = CATEGORY_ICON_CONFIG[category] ?? CATEGORY_ICON_CONFIG['其他'];
+  const config =
+    CATEGORY_ICON_CONFIG[category] ??
+    CATEGORY_ICON_CONFIG[fallbackCategory] ??
+    CATEGORY_ICON_CONFIG['其他'];
   return (
     <View
       style={{
@@ -82,12 +89,15 @@ function ProgressBar({
 
 export default function HomeCategoryCards({
   data,
+  labels,
   allExpenses = [],
 }: Props): ReactNode {
   const [selectedCategory, setSelectedCategory] =
     useState<CategoryCardItem | null>(null);
   const [showAllSheet, setShowAllSheet] = useState(false);
 
+  const cl = labels.category_cards;
+  const cs = labels.common.currency_symbol;
   const categories = data.categories ?? [];
   const displayCategories = categories.slice(0, 6);
 
@@ -99,11 +109,11 @@ export default function HomeCategoryCards({
           style={{ alignItems: 'center', justifyContent: 'space-between' }}
         >
           <Text fontSize={16} fontWeight="700" color="$color">
-            消费分类
+            {cl.title}
           </Text>
           <Pressable onPress={() => setShowAllSheet(true)} hitSlop={8}>
             <Text fontSize={13} color="$muted">
-              查看全部
+              {cl.view_all}
             </Text>
           </Pressable>
         </XStack>
@@ -126,7 +136,10 @@ export default function HomeCategoryCards({
                   backgroundColor: pressed ? '#FAFAFA' : 'white',
                 })}
               >
-                <CategoryIcon category={item.category} />
+                <CategoryIcon
+                  category={item.category}
+                  fallbackCategory={cl.fallback_category}
+                />
                 <Text fontSize={12} color="$muted" mt="$2">
                   {item.category}
                 </Text>
@@ -136,7 +149,8 @@ export default function HomeCategoryCards({
                   color="$color"
                   style={{ fontVariant: ['tabular-nums'] }}
                 >
-                  ¥{item.amount.toLocaleString()}
+                  {cs}
+                  {item.amount.toLocaleString()}
                 </Text>
                 <ProgressBar
                   percentage={item.percentage}
@@ -153,6 +167,7 @@ export default function HomeCategoryCards({
           visible
           category={selectedCategory}
           allExpenses={allExpenses}
+          labels={labels}
           onClose={() => setSelectedCategory(null)}
         />
       ) : null}
@@ -160,6 +175,7 @@ export default function HomeCategoryCards({
       <HomeCategoryAllSheet
         visible={showAllSheet}
         categories={categories}
+        labels={labels}
         onClose={() => setShowAllSheet(false)}
         onSelectCategory={setSelectedCategory}
       />

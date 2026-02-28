@@ -10,7 +10,11 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { MUTED, CATEGORY_ICON_CONFIG } from '@/common/consts/theme';
-import type { CategoryCardItem, ExpenseListItem } from '@/common/typings/home';
+import type {
+  CategoryCardItem,
+  ExpenseListItem,
+  HomeLabels,
+} from '@/common/typings/home';
 
 const SCREEN_H = Dimensions.get('window').height;
 
@@ -18,6 +22,7 @@ interface Props {
   visible: boolean;
   category: CategoryCardItem;
   allExpenses: ExpenseListItem[];
+  labels: HomeLabels;
   onClose: () => void;
 }
 
@@ -25,9 +30,12 @@ export default function HomeCategoryDetailSheet({
   visible,
   category,
   allExpenses,
+  labels,
   onClose,
 }: Props): ReactNode {
   const translateY = useSharedValue(SCREEN_H);
+  const cl = labels.category_cards;
+  const cs = labels.common.currency_symbol;
 
   useEffect(() => {
     translateY.value = withTiming(visible ? 0 : SCREEN_H, { duration: 300 });
@@ -39,7 +47,9 @@ export default function HomeCategoryDetailSheet({
   );
 
   const config =
-    CATEGORY_ICON_CONFIG[category.category] ?? CATEGORY_ICON_CONFIG['其他'];
+    CATEGORY_ICON_CONFIG[category.category] ??
+    CATEGORY_ICON_CONFIG[cl.fallback_category] ??
+    CATEGORY_ICON_CONFIG['其他'];
 
   const sheetStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
@@ -99,7 +109,7 @@ export default function HomeCategoryDetailSheet({
               <XStack px="$5" mb="$4" gap="$4">
                 <YStack>
                   <Text fontSize={11} color="$muted">
-                    本周合计
+                    {cl.week_total}
                   </Text>
                   <Text
                     fontSize={20}
@@ -107,12 +117,13 @@ export default function HomeCategoryDetailSheet({
                     color="$color"
                     style={{ fontVariant: ['tabular-nums'] }}
                   >
-                    ¥{category.amount.toLocaleString()}
+                    {cs}
+                    {category.amount.toLocaleString()}
                   </Text>
                 </YStack>
                 <YStack>
                   <Text fontSize={11} color="$muted">
-                    占比
+                    {cl.ratio_label}
                   </Text>
                   <Text fontSize={20} fontWeight="700" color="$color">
                     {category.percentage}%
@@ -150,7 +161,8 @@ export default function HomeCategoryDetailSheet({
                       color="$color"
                       style={{ fontVariant: ['tabular-nums'] }}
                     >
-                      -¥{item.amount}
+                      -{cs}
+                      {item.amount}
                     </Text>
                   </XStack>
                 )}
@@ -160,7 +172,7 @@ export default function HomeCategoryDetailSheet({
                     style={{ alignItems: 'center', justifyContent: 'center' }}
                   >
                     <Text fontSize={13} color="$muted">
-                      暂无消费记录
+                      {cl.no_records}
                     </Text>
                   </YStack>
                 }
