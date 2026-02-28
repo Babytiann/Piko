@@ -32,6 +32,11 @@ app.use(
 
 app.use(logger() as unknown as MiddlewareHandler);
 
+app.use('/piko/*', async (c, next) => {
+  console.log('[piko] request', c.req.method, c.req.path);
+  await next();
+});
+
 app.get('/', (c) => c.json({ status: 'ok', service: 'piko-backend' }));
 
 app.on(['GET', 'POST'], '/api/auth/*', (c) => auth.handler(c.req.raw));

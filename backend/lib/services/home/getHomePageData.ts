@@ -176,6 +176,7 @@ export async function getHomePageData(
   userId: string,
   selectedDate?: string,
 ): Promise<HomeSlashResponse> {
+  console.log('[piko] getHomePageData start', { userId, selectedDate });
   const now = new Date();
   const anchor = selectedDate ? new Date(selectedDate) : now;
   const { start, end } = getWeekBounds(anchor);
@@ -195,6 +196,9 @@ export async function getHomePageData(
   const monthStartStr = formatDateKey(monthBounds.start);
   const monthEndStr = formatDateKey(monthBounds.end);
 
+  console.log(
+    '[piko] getHomePageData Promise.all start (budget, expenses, weather)',
+  );
   const [budgetResult, expenseRes, lastWeekRes, monthRes, weatherResult] =
     await Promise.all([
       getUserBudget(userId),
@@ -218,6 +222,7 @@ export async function getHomePageData(
       }),
       fetchCurrentWeather(DEFAULT_CITY).catch(() => null),
     ]);
+  console.log('[piko] getHomePageData Promise.all done');
 
   const expenses = expenseRes.expenses;
   const byDate: Record<string, number> = {};

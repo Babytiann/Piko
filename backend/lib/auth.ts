@@ -35,7 +35,6 @@ export const auth = betterAuth({
       clientSecret: process.env.APPLE_CLIENT_SECRET ?? '',
       appBundleIdentifier: process.env.APPLE_APP_BUNDLE_IDENTIFIER ?? undefined,
     },
-    trustedOrigins: ['https://appleid.apple.com'],
   },
 
   trustedOrigins: [

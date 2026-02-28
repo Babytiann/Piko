@@ -12,6 +12,9 @@ if (__DEV__) {
 
 const nativeFetch = globalThis.fetch;
 
+/** 请求超时时间（毫秒），避免 Vercel 冷启动或后端卡住时无限转圈 */
+const REQUEST_TIMEOUT_MS = 30_000;
+
 export class HttpError extends Error {
   constructor(
     message: string,
@@ -70,7 +73,12 @@ async function doRequest<P>(
     console.log('[API] →', method, fullUrl);
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  init.signal = controller.signal;
+
   const response = await nativeFetch(fullUrl, init);
+  clearTimeout(timeoutId);
   let data: unknown;
   try {
     data = await response.json();
@@ -141,6 +149,13 @@ export async function fetch<P, R>(
     if (__DEV__) {
       console.warn('[API] Network error', e);
     }
-    return { success: false, error: 'Network error' };
+    const isAbort = e instanceof Error && e.name === 'AbortError';
+    if (__DEV__ && isAbort) {
+      console.warn('[API] 请求超时', rest.path);
+    }
+    return {
+      success: false,
+      error: isAbort ? '请求超时，请稍后重试' : 'Network error',
+    };
   }
 }
