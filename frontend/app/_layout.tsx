@@ -4,10 +4,10 @@ import 'react-native-reanimated';
 import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-
-import '../global.css';
 import { TamaguiProvider } from 'tamagui';
 import { PortalProvider } from '@tamagui/portal';
+
+import '../global.css';
 import { config } from '../tamagui.config';
 import { AuthProvider, useAuthValue } from '@/common/hooks';
 import { RecognitionProvider } from '@/contexts/recognition-context';

@@ -9,10 +9,7 @@
     "jsxImportSource": "hono/jsx",
     "outDir": "./dist",
     "moduleResolution": "bundler",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["/*"]
-    }
+    "baseUrl": "."
   },
   "exclude": ["node_modules"]
 }

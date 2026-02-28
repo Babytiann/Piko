@@ -4,6 +4,12 @@ import { authClient } from '@/services/auth-client';
 
 const API_BASE = `${API_HOST}/piko`;
 
+// 启动时打一次 log，方便确认当前请求的根地址（排查 EXPO_PUBLIC_API_HOST / Vercel 域名）
+if (__DEV__) {
+  console.log('[API] API_HOST:', API_HOST);
+  console.log('[API] API_BASE:', API_BASE);
+}
+
 const nativeFetch = globalThis.fetch;
 
 export class HttpError extends Error {
@@ -59,12 +65,27 @@ async function doRequest<P>(
     init.body = JSON.stringify(body);
   }
 
-  const response = await nativeFetch(url.toString(), init);
+  const fullUrl = url.toString();
+  if (__DEV__) {
+    console.log('[API] →', method, fullUrl);
+  }
+
+  const response = await nativeFetch(fullUrl, init);
   let data: unknown;
   try {
     data = await response.json();
   } catch {
     data = undefined;
+  }
+
+  if (__DEV__) {
+    const status = response.status;
+    const ok = response.ok;
+    if (!ok) {
+      console.warn('[API] ←', status, fullUrl, data ?? '(no body)');
+    } else {
+      console.log('[API] ←', status, fullUrl);
+    }
   }
 
   return { response, data };
@@ -116,7 +137,10 @@ export async function fetch<P, R>(
     }
 
     return { ...(data as ApiResponse<R>), status: response.status };
-  } catch {
+  } catch (e) {
+    if (__DEV__) {
+      console.warn('[API] Network error', e);
+    }
     return { success: false, error: 'Network error' };
   }
 }
