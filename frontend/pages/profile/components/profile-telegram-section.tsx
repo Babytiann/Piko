@@ -24,18 +24,11 @@ export default function ProfileTelegramSection({
   const isBound = data.is_logged_in && !!data.user;
 
   return (
-    <YStack gap="$0">
-      <Text
-        fontSize="$2"
-        fontWeight="600"
-        color="$gray12"
-        px="$4"
-        py="$2"
-        textTransform="uppercase"
-      >
-        {labels.title}
-      </Text>
-      <PikoCard onPress={onPress} padding="$4">
+    <PikoCard onPress={onPress} padding="$4">
+      <YStack gap="$3">
+        <Text fontSize="$2" fontWeight="600" color="$gray12">
+          {labels.title}
+        </Text>
         <XStack
           gap="$3"
           py="$3"
@@ -70,7 +63,7 @@ export default function ProfileTelegramSection({
           </YStack>
           <Ionicons name="chevron-forward" size={20} color={theme.muted.val} />
         </XStack>
-      </PikoCard>
-    </YStack>
+      </YStack>
+    </PikoCard>
   );
 }

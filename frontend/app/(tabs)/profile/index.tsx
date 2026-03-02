@@ -115,6 +115,21 @@ export default function ProfileScreen(): ReactNode {
     }
   };
 
+  const SETTINGS_ROUTES = [
+    '/notification-settings',
+    '/privacy-security',
+  ] as const;
+  const HELP_ROUTES = ['/help-center', '/contact-us'] as const;
+
+  const handleSettingsItemPress = (
+    index: number,
+    section: 'settings' | 'help',
+  ): void => {
+    const path =
+      section === 'settings' ? SETTINGS_ROUTES[index] : HELP_ROUTES[index];
+    if (path != null) router.push(path);
+  };
+
   if (isPageLoading && !data) {
     return (
       <YStack flex={1} bg="$background">
@@ -162,6 +177,7 @@ export default function ProfileScreen(): ReactNode {
             <ProfileAppleSection
               appUser={appUser}
               labels={labels.user_section}
+              onPress={() => router.push('/account-settings')}
             />
           </Animated.View>
 
@@ -191,34 +207,33 @@ export default function ProfileScreen(): ReactNode {
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(300).springify()}>
-            <ProfileSettingsSection labels={labels} />
+            <ProfileSettingsSection
+              labels={labels}
+              onPressItem={handleSettingsItemPress}
+            />
           </Animated.View>
 
           {hasAppSession ? (
             <Animated.View entering={FadeInDown.delay(400).springify()}>
-              <PikoCard
-                onPress={isLoggingOut ? undefined : handleLogoutPress}
-                noPadding
+              <XStack
+                py="$3"
+                bg="$gray4"
                 style={{
-                  height: 50,
-                  justifyContent: 'center',
                   alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 20,
+                  borderCurve: 'continuous',
                   opacity: isLoggingOut ? 0.7 : 1,
                 }}
+                pressStyle={{ opacity: 0.8 }}
+                onPress={isLoggingOut ? undefined : handleLogoutPress}
               >
-                <XStack gap="$2" style={{ alignItems: 'center' }}>
-                  <Text color="$destructive" fontWeight="600" fontSize="$4">
-                    {isLoggingOut
-                      ? labels.logout_ingress
-                      : labels.logout_button}
-                  </Text>
-                  {isLoggingOut ? null : (
-                    <Text color="$destructive" fontSize="$4">
-                      →
-                    </Text>
-                  )}
-                </XStack>
-              </PikoCard>
+                <Text color="$destructive" fontWeight="600" fontSize="$4">
+                  {isLoggingOut
+                    ? labels.logout_ingress
+                    : `${labels.logout_button} →`}
+                </Text>
+              </XStack>
             </Animated.View>
           ) : null}
         </YStack>

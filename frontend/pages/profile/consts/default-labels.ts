@@ -21,7 +21,6 @@ export const DEFAULT_PROFILE_LABELS: ProfilePageLabels = {
     items: [
       { title: '通知设置', description: '管理推送和消息通知' },
       { title: '隐私与安全', description: '账号安全和数据隐私' },
-      { title: '账号设置', description: '管理个人信息和偏好' },
     ],
   },
   help: {

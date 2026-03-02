@@ -33,6 +33,8 @@ export const users = pgTable('user', {
   nickname: text('nickname'),
   /** 自定义头像（R2 URL） */
   avatarUrl: text('avatar_url'),
+  /** 天气城市（为空则用自动定位或默认值） */
+  weatherCity: text('weather_city'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

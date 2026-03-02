@@ -12,6 +12,7 @@ import type {
   WeekCalendarData,
 } from '../../../types/home.js';
 import { getUserBudget } from '../budget/index.js';
+import { getUserWeatherCity } from '../user/index.js';
 import { listExpenses } from '../expense/index.js';
 import { fetchCurrentWeather } from '../weather/current.js';
 
@@ -117,6 +118,19 @@ const HOME_LABELS: HomeLabels = {
 };
 const DEFAULT_CITY = '上海';
 
+const WEATHER_CACHE_TTL_MS = 30 * 60 * 1000;
+const weatherCache = new Map<string, { data: WeatherCardData; ts: number }>();
+
+function getCachedWeather(city: string): WeatherCardData | null {
+  const entry = weatherCache.get(city);
+  if (!entry || Date.now() - entry.ts > WEATHER_CACHE_TTL_MS) return null;
+  return entry.data;
+}
+
+function setCachedWeather(city: string, data: WeatherCardData): void {
+  weatherCache.set(city, { data, ts: Date.now() });
+}
+
 function getWeekBounds(anchor: Date): { start: Date; end: Date } {
   const d = new Date(anchor);
   const dow = d.getDay();
@@ -139,7 +153,10 @@ function getMonthBounds(anchor: Date): { start: Date; end: Date } {
 }
 
 function formatDateKey(date: Date): string {
-  return date.toISOString().slice(0, 10);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 function formatTime(dateStr: string): string {
@@ -153,9 +170,12 @@ function formatTime(dateStr: string): string {
 }
 
 function getWeekLabel(date: Date): string {
-  const month = date.getMonth() + 1;
-  const first = new Date(date.getFullYear(), date.getMonth(), 1);
-  const weekOfMonth = Math.ceil((date.getDate() + first.getDay()) / 7);
+  const { start } = getWeekBounds(date);
+  const thursday = new Date(start);
+  thursday.setDate(start.getDate() + 3);
+  const month = thursday.getMonth() + 1;
+  const first = new Date(thursday.getFullYear(), thursday.getMonth(), 1);
+  const weekOfMonth = Math.ceil((thursday.getDate() + first.getDay()) / 7);
   return `${month}月第${weekOfMonth}周`;
 }
 
@@ -175,10 +195,22 @@ function getGreeting(now: Date): string {
 export async function getHomePageData(
   userId: string,
   selectedDate?: string,
+  weatherCityFromRequest?: string,
 ): Promise<HomeSlashResponse> {
-  console.log('[piko] getHomePageData start', { userId, selectedDate });
+  console.log('[piko] getHomePageData start', {
+    userId,
+    selectedDate,
+    weatherCityFromRequest,
+  });
   const now = new Date();
   const anchor = selectedDate ? new Date(selectedDate) : now;
+  const userWeatherCity = await getUserWeatherCity(userId);
+  const weatherCity =
+    (
+      userWeatherCity?.trim() ||
+      weatherCityFromRequest?.trim() ||
+      DEFAULT_CITY
+    ).trim() || DEFAULT_CITY;
   const { start, end } = getWeekBounds(anchor);
   const startStr = formatDateKey(start);
   const endStr = formatDateKey(end);
@@ -199,7 +231,7 @@ export async function getHomePageData(
   console.log(
     '[piko] getHomePageData Promise.all start (budget, expenses, weather)',
   );
-  const [budgetResult, expenseRes, lastWeekRes, monthRes, weatherResult] =
+  const [budgetResult, expenseRes, lastWeekRes, monthRes, rawWeather] =
     await Promise.all([
       getUserBudget(userId),
       listExpenses(userId, {
@@ -220,7 +252,7 @@ export async function getHomePageData(
         pageSize: 500,
         page: 1,
       }),
-      fetchCurrentWeather(DEFAULT_CITY).catch(() => null),
+      fetchCurrentWeather(weatherCity).catch(() => null),
     ]);
   console.log('[piko] getHomePageData Promise.all done');
 
@@ -318,18 +350,22 @@ export async function getHomePageData(
     };
   }
 
-  // --- weather_card ---
-  const weatherCardData: WeatherCardData | null = weatherResult
-    ? {
-        city: weatherResult.city,
-        temperature: weatherResult.temperature,
-        tempMin: weatherResult.tempMin,
-        tempMax: weatherResult.tempMax,
-        description: weatherResult.description,
-        humidity: weatherResult.humidity,
-        windSpeed: weatherResult.windSpeed,
-      }
-    : null;
+  // --- weather_card (with cache fallback when API fails) ---
+  let weatherCardData: WeatherCardData | null = null;
+  if (rawWeather) {
+    weatherCardData = {
+      city: rawWeather.city,
+      temperature: rawWeather.temperature,
+      tempMin: rawWeather.tempMin,
+      tempMax: rawWeather.tempMax,
+      description: rawWeather.description,
+      humidity: rawWeather.humidity,
+      windSpeed: rawWeather.windSpeed,
+    };
+    setCachedWeather(weatherCity, weatherCardData);
+  } else {
+    weatherCardData = getCachedWeather(weatherCity);
+  }
 
   // --- category_cards ---
   const totalCategoryAmount = Object.values(byCategory).reduce(

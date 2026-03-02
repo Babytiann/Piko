@@ -26,7 +26,7 @@ export class HttpError extends Error {
 }
 
 export interface FetchRequest<P = Record<string, unknown>> {
-  method: 'GET' | 'POST';
+  method: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   path: string;
   params?: P;
   body?: Record<string, unknown>;
@@ -64,7 +64,7 @@ async function doRequest<P>(
     headers,
   };
 
-  if (method === 'POST' && body !== undefined) {
+  if ((method === 'POST' || method === 'PATCH') && body !== undefined) {
     init.body = JSON.stringify(body);
   }
 

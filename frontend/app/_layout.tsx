@@ -96,6 +96,41 @@ export default function RootLayout() {
                       gestureDirection: 'horizontal',
                     }}
                   />
+                  <Stack.Screen
+                    name="notification-settings/index"
+                    options={{
+                      headerShown: false,
+                      animation: 'slide_from_right',
+                    }}
+                  />
+                  <Stack.Screen
+                    name="privacy-security/index"
+                    options={{
+                      headerShown: false,
+                      animation: 'slide_from_right',
+                    }}
+                  />
+                  <Stack.Screen
+                    name="account-settings/index"
+                    options={{
+                      headerShown: false,
+                      animation: 'slide_from_right',
+                    }}
+                  />
+                  <Stack.Screen
+                    name="help-center/index"
+                    options={{
+                      headerShown: false,
+                      animation: 'slide_from_right',
+                    }}
+                  />
+                  <Stack.Screen
+                    name="contact-us/index"
+                    options={{
+                      headerShown: false,
+                      animation: 'slide_from_right',
+                    }}
+                  />
                 </Stack>
               </RecognitionProvider>
             </AuthProvider>

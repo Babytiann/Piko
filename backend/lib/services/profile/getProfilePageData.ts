@@ -41,7 +41,6 @@ const PROFILE_LABELS: ProfilePageLabels = {
     items: [
       { title: '通知设置', description: '管理推送和消息通知' },
       { title: '隐私与安全', description: '账号安全和数据隐私' },
-      { title: '账号设置', description: '管理个人信息和偏好' },
     ],
   },
   help: {
@@ -81,12 +80,20 @@ export async function getProfilePageData(
   _fallbackSession?: string,
 ): Promise<ProfilePageData> {
   const userId = appUser?.id ?? null;
-  if (!userId) return buildUnboundPageData(null);
+  if (!userId || !appUser) return buildUnboundPageData(null);
 
   const dbUser = await getUserWithBinding(userId);
   const binding = dbUser?.telegramBinding ?? null;
 
-  if (!binding) return buildUnboundPageData(appUser);
+  const appUserWithNickname: ProfileAppUser = {
+    id: appUser.id,
+    name: appUser.name ?? null,
+    email: appUser.email ?? null,
+    nickname: dbUser?.nickname ?? null,
+    weather_city: dbUser?.weatherCity ?? null,
+  };
+
+  if (!binding) return buildUnboundPageData(appUserWithNickname);
 
   const displayName =
     [binding.firstName, binding.username].filter(Boolean).join(' ') ||
@@ -97,7 +104,7 @@ export async function getProfilePageData(
 
   return {
     header: { title: PROFILE_LABELS.page_title },
-    app_user: appUser,
+    app_user: appUserWithNickname,
     labels: PROFILE_LABELS,
     telegram_section: {
       title: 'Telegram 账号',

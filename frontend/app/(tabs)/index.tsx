@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useState, useCallback, useContext } from 'react';
+import { useState, useCallback, useContext, useEffect } from 'react';
 
 import { ScrollView } from 'react-native';
 import { YStack, Text, Spacer } from 'tamagui';
@@ -21,8 +21,10 @@ import type {
 } from '@/common/typings/home';
 import { RecognitionContext } from '@/contexts/recognition-context';
 
+import useLocation from '@/pages/ai-chat/hooks/useLocation';
 import { useFetchData } from '@/pages/home/hooks/useFetchData';
 import HomeQuickStats from '@/pages/home/components/home-quick-stats';
+import { fetchReverseGeocode } from '@/services/home';
 import HomeWeekCalendar from '@/pages/home/components/home-week-calendar';
 import HomeBudgetCard from '@/pages/home/components/home-budget-card';
 import HomeWeatherCard from '@/pages/home/components/home-weather-card';
@@ -113,6 +115,22 @@ function renderSlot(
 
 export default function HomeScreen(): ReactNode {
   const { top, bottom } = useSafeAreaInsets();
+  const { getLocation } = useLocation();
+  const [autoWeatherCity, setAutoWeatherCity] = useState<string | undefined>();
+
+  useEffect(() => {
+    getLocation()
+      .then((loc) => {
+        if (!loc) return;
+        return fetchReverseGeocode(loc.latitude, loc.longitude);
+      })
+      .then((res) => {
+        if (res?.success && res.data?.city) {
+          setAutoWeatherCity(res.data.city);
+        }
+      });
+  }, [getLocation]);
+
   const {
     isLoading,
     errorType,
@@ -122,7 +140,7 @@ export default function HomeScreen(): ReactNode {
     handleRetry,
     handleRefreshWithDate,
     handleSilentRefresh,
-  } = useFetchData();
+  } = useFetchData(undefined, autoWeatherCity);
   const recognition = useContext(RecognitionContext);
 
   const headerNode = nodes?.header;

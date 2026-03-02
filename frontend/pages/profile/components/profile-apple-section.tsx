@@ -16,11 +16,13 @@ import type {
 interface ProfileAppleSectionProps {
   appUser: ProfileAppUser | null;
   labels: ProfilePageLabels['user_section'];
+  onPress?: () => void;
 }
 
 export default function ProfileAppleSection({
   appUser,
   labels,
+  onPress,
 }: ProfileAppleSectionProps): ReactNode {
   const theme = useTheme();
   const [isSigningIn, setIsSigningIn] = useState(false);
@@ -57,7 +59,7 @@ export default function ProfileAppleSection({
   };
 
   return (
-    <PikoCard>
+    <PikoCard onPress={appUser ? onPress : undefined}>
       <YStack gap="$3">
         {appUser ? (
           <XStack gap="$3" style={{ alignItems: 'center' }}>
@@ -65,7 +67,7 @@ export default function ProfileAppleSection({
               url={undefined}
               text={(appUser.name ?? appUser.email ?? '?').charAt(0)}
               color={theme.muted.val}
-              size={56}
+              size={64}
             />
             <YStack flex={1} gap="$1">
               <Text fontSize="$5" fontWeight="600" color="$color">
@@ -83,6 +85,11 @@ export default function ProfileAppleSection({
                 <Ionicons name="logo-apple" size={14} color={theme.muted.val} />
               </XStack>
             </YStack>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={theme.muted.val}
+            />
           </XStack>
         ) : (
           <>

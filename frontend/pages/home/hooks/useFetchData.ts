@@ -40,7 +40,10 @@ function hasCachedData(key: string): boolean {
   return cached != null && (cached.bodyLayout?.length ?? 0) > 0;
 }
 
-export function useFetchData(selectedDate?: string): UseFetchDataReturn {
+export function useFetchData(
+  selectedDate?: string,
+  weatherCity?: string,
+): UseFetchDataReturn {
   const pathname = usePathname();
   const cacheKey = normalizeCacheKey(pathname ?? '/');
   const initializedRef = useRef(false);
@@ -77,7 +80,7 @@ export function useFetchData(selectedDate?: string): UseFetchDataReturn {
 
     async function load(): Promise<void> {
       try {
-        const response = await fetchHomePage(dateParam);
+        const response = await fetchHomePage(dateParam, weatherCity);
         if (cancelled) return;
 
         const mappedError = getPageErrorType(response);
@@ -91,8 +94,16 @@ export function useFetchData(selectedDate?: string): UseFetchDataReturn {
         } else {
           const data = response.data as HomeSlashResponse | null | undefined;
           const nextLayout = data?.layout?.body ?? [];
-          const nextNodes = data?.nodes ?? undefined;
+          let nextNodes = data?.nodes ?? undefined;
           const nextLabels = data?.labels ?? undefined;
+          if (
+            nextNodes &&
+            !nextNodes.weather_card &&
+            nodes?.weather_card?.type === 'component' &&
+            nodes.weather_card.data
+          ) {
+            nextNodes = { ...nextNodes, weather_card: nodes.weather_card };
+          }
           const fresh: HomeCachePayload = {
             bodyLayout: nextLayout,
             nodes: nextNodes,
@@ -133,7 +144,7 @@ export function useFetchData(selectedDate?: string): UseFetchDataReturn {
     return () => {
       cancelled = true;
     };
-  }, [cacheKey, fetchKey, dateParam]);
+  }, [cacheKey, fetchKey, dateParam, weatherCity]);
 
   const handleRetry = useCallback((): void => {
     clear(cacheKey);

@@ -39,12 +39,19 @@ export default function HomeWeekCalendar({
     return out;
   }, [data.days]);
 
+  const formatDateToLocalKey = (date: Date): string => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
   const navigateWeek = (direction: -1 | 1): void => {
     const d = new Date(effectiveDate + 'T00:00:00');
     d.setDate(d.getDate() + direction * 7);
-    const iso = d.toISOString().slice(0, 10);
-    onDateSelectProp?.(iso);
-    onWeekChange?.(iso);
+    const dateKey = formatDateToLocalKey(d);
+    onDateSelectProp?.(dateKey);
+    onWeekChange?.(dateKey);
   };
 
   const handleDateSelect = useCallback(

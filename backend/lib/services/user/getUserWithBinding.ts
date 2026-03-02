@@ -6,6 +6,7 @@ export async function getUserWithBinding(userId: string): Promise<{
   id: string;
   nickname: string | null;
   avatarUrl: string | null;
+  weatherCity: string | null;
   telegramBinding: {
     sessionString: string;
     telegramUserId: bigint;
@@ -20,6 +21,7 @@ export async function getUserWithBinding(userId: string): Promise<{
       id: users.id,
       nickname: users.nickname,
       avatarUrl: users.avatarUrl,
+      weatherCity: users.weatherCity,
     })
     .from(users)
     .where(eq(users.id, userId))
