@@ -31,18 +31,31 @@ app.use('*', async (c, next) => {
   }
 });
 
+const allowedOrigins = [
+  'http://localhost:8081',
+  'http://localhost:3000',
+  'https://piko.vercel.app',
+];
+
+const corsOrigin = (origin: string, _c: unknown): string | null => {
+  if (!origin) return origin as string;
+  if (allowedOrigins.includes(origin)) return origin;
+  if (origin.endsWith('.vercel.app')) return origin;
+  if (process.env.CORS_ORIGINS) {
+    const extra = process.env.CORS_ORIGINS.split(',').map((s) => s.trim());
+    if (extra.includes(origin)) return origin;
+  }
+  return null;
+};
+
 app.use(
   cors({
-    origin: [
-      'http://localhost:8081', // Expo Metro dev
-      'http://localhost:3000', // Web preview
-      'https://piko.vercel.app', // Production（按实际调整）
-    ],
+    origin: corsOrigin,
     allowMethods: ['GET', 'POST', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'X-Mock-User-Id', 'Authorization', 'Cookie'],
     credentials: true,
     maxAge: 86400,
-  }) as unknown as MiddlewareHandler,
+  }),
 );
 
 app.use(logger() as unknown as MiddlewareHandler);
