@@ -16,11 +16,14 @@ const LOCATION_URL = `${API_HOST}/ai/location/v1`;
  * Fetch all user-facing page data for the AI chat page.
  * Network errors return { success: false } instead of throwing.
  */
-export function fetchAiPageData(): Promise<ApiResponse<AiPageData>> {
+export function fetchAiPageData(
+  signal?: AbortSignal,
+): Promise<ApiResponse<AiPageData>> {
   return fetch<Record<string, never>, AiPageData>({
     method: 'POST',
     path: 'ai/page_data/v1',
     body: {},
+    signal,
   });
 }
 

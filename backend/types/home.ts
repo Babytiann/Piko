@@ -185,6 +185,31 @@ export interface HomeLabels {
     error_unavailable: string;
     error_auth: string;
   };
+  login_prompt: {
+    title: string;
+    subtitle: string;
+    button_text: string;
+  };
+  weather_city_picker: {
+    title: string;
+    auto_locate_label: string;
+    auto_locate_denied_hint: string;
+    confirm_label: string;
+    saving_label: string;
+    locating_label: string;
+    locate_click_hint: string;
+    province_label: string;
+    city_label: string;
+    empty_options_hint: string;
+    located_success_hint: string;
+    locate_failed_hint: string;
+    geocode_failed_hint: string;
+  };
+}
+
+export interface WeatherCityOption {
+  name: string;
+  cities: string[];
 }
 
 export interface HomeSlashLayout {
@@ -195,4 +220,7 @@ export interface HomeSlashResponse {
   layout: HomeSlashLayout;
   nodes: HomeSlashNodes;
   labels: HomeLabels;
+  extra?: {
+    weather_city_options: WeatherCityOption[];
+  };
 }

@@ -3,7 +3,6 @@ import { Alert, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, Spacer } from 'tamagui';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
 import PageLoading from '@/common/components/page-loading';
@@ -158,83 +157,73 @@ export default function ProfileScreen(): ReactNode {
         contentContainerStyle={contentPadding}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={FadeInDown.delay(50).springify()}>
-          <XStack px="$5" pt="$4" pb="$2" style={{ alignItems: 'center' }}>
-            <Text
-              fontSize={26}
-              fontWeight="800"
-              color="$color"
-              letterSpacing={-0.5}
-            >
-              {labels.page_title}
-            </Text>
-            <Spacer flex={1} />
-          </XStack>
-        </Animated.View>
+        <XStack px="$5" pt="$4" pb="$2" style={{ alignItems: 'center' }}>
+          <Text
+            fontSize={26}
+            fontWeight="800"
+            color="$color"
+            letterSpacing={-0.5}
+          >
+            {labels.page_title}
+          </Text>
+          <Spacer flex={1} />
+        </XStack>
 
         <YStack px="$4" gap="$3" pt="$1">
-          <Animated.View entering={FadeInDown.delay(100).springify()}>
-            <ProfileAppleSection
-              appUser={appUser}
-              labels={labels.user_section}
-              onPress={() => router.push('/account-settings')}
-            />
-          </Animated.View>
+          <ProfileAppleSection
+            appUser={appUser}
+            labels={labels.user_section}
+            onPress={() => router.push('/account-settings')}
+          />
 
           {showProfileError ? (
             <PageStatusView errorType={errorType} onRetry={handleRetry} />
           ) : null}
 
-          <Animated.View entering={FadeInDown.delay(200).springify()}>
-            {telegramSectionData ? (
-              <ProfileTelegramSection
-                labels={labels.linked_account}
-                data={telegramSectionData}
-                onPress={handleTelegramPress}
-              />
-            ) : !hasAppSession ? (
-              <PikoCard>
-                <YStack gap="$3">
-                  <Text fontSize="$4" fontWeight="600" color="$color">
-                    {labels.linked_account.title}
-                  </Text>
-                  <Text fontSize="$2" color="$gray12">
-                    {labels.linked_account.login_first_hint}
-                  </Text>
-                </YStack>
-              </PikoCard>
-            ) : null}
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.delay(300).springify()}>
-            <ProfileSettingsSection
-              labels={labels}
-              onPressItem={handleSettingsItemPress}
+          {telegramSectionData ? (
+            <ProfileTelegramSection
+              labels={labels.linked_account}
+              data={telegramSectionData}
+              onPress={handleTelegramPress}
             />
-          </Animated.View>
+          ) : !hasAppSession ? (
+            <PikoCard>
+              <YStack gap="$3">
+                <Text fontSize="$4" fontWeight="600" color="$color">
+                  {labels.linked_account.title}
+                </Text>
+                <Text fontSize="$2" color="$gray12">
+                  {labels.linked_account.login_first_hint}
+                </Text>
+              </YStack>
+            </PikoCard>
+          ) : null}
+
+          <ProfileSettingsSection
+            labels={labels}
+            onPressItem={handleSettingsItemPress}
+          />
 
           {hasAppSession ? (
-            <Animated.View entering={FadeInDown.delay(400).springify()}>
-              <XStack
-                py="$3"
-                bg="$gray4"
-                style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: 20,
-                  borderCurve: 'continuous',
-                  opacity: isLoggingOut ? 0.7 : 1,
-                }}
-                pressStyle={{ opacity: 0.8 }}
-                onPress={isLoggingOut ? undefined : handleLogoutPress}
-              >
-                <Text color="$destructive" fontWeight="600" fontSize="$4">
-                  {isLoggingOut
-                    ? labels.logout_ingress
-                    : `${labels.logout_button} →`}
-                </Text>
-              </XStack>
-            </Animated.View>
+            <XStack
+              py="$3"
+              bg="$gray4"
+              style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 20,
+                borderCurve: 'continuous',
+                opacity: isLoggingOut ? 0.7 : 1,
+              }}
+              pressStyle={{ opacity: 0.8 }}
+              onPress={isLoggingOut ? undefined : handleLogoutPress}
+            >
+              <Text color="$destructive" fontWeight="600" fontSize="$4">
+                {isLoggingOut
+                  ? labels.logout_ingress
+                  : `${labels.logout_button} →`}
+              </Text>
+            </XStack>
           ) : null}
         </YStack>
       </ScrollView>

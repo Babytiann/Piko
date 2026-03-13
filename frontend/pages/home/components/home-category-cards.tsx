@@ -8,11 +8,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 
 import { PikoCard } from '@/common/components/piko-card';
-import {
-  CATEGORY_ICON_CONFIG,
-  getCategoryIconConfig,
-  getThemeColors,
-} from '@/common/consts/theme';
+import { getCategoryIconConfig, getThemeColors } from '@/common/consts/theme';
 import type { ColorScheme } from '@/common/consts/theme';
 import type {
   CategoryCardsData,
@@ -79,9 +75,9 @@ function ProgressBar({
   return (
     <View
       style={{
-        height: 3,
+        height: 2,
         backgroundColor: trackColor,
-        borderRadius: 2,
+        borderRadius: 1,
         overflow: 'hidden',
         marginTop: 8,
       }}
@@ -92,7 +88,7 @@ function ProgressBar({
           height: '100%',
           width: `${Math.min(percentage, 100)}%`,
           backgroundColor: config.iconColor,
-          borderRadius: 2,
+          borderRadius: 1,
         }}
       />
     </View>
@@ -153,7 +149,7 @@ export default function HomeCategoryCards({
           </Pressable>
         </XStack>
 
-        <XStack style={{ flexWrap: 'wrap', gap: 10 }}>
+        <XStack style={{ flexWrap: 'wrap', gap: 12 }}>
           {displayCategories.map((item, index) => (
             <Animated.View
               key={item.category}
@@ -163,14 +159,12 @@ export default function HomeCategoryCards({
               <Pressable
                 onPress={() => setSelectedCategory(item)}
                 style={({ pressed }) => ({
-                  padding: 12,
+                  padding: 14,
                   borderRadius: 14,
                   borderCurve: 'continuous',
-                  borderWidth: 1,
-                  borderColor: colors.border,
                   backgroundColor: pressed
-                    ? (theme.gray3?.val ?? colors.card)
-                    : colors.card,
+                    ? (theme.gray3?.val ?? colors.border)
+                    : colors.background,
                 })}
               >
                 <CategoryIcon

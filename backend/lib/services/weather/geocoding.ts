@@ -3,9 +3,10 @@ import type { GeoLocation } from './types.js';
 const API_KEY = process.env.OPENWEATHER_API_KEY ?? '';
 const BASE = 'https://api.openweathermap.org';
 
-// OpenWeather reverse geocode response item
+// OpenWeather reverse geocode response item (local_names 含多语言地名)
 interface ReverseGeoItem {
   name: string;
+  local_names?: { zh?: string; zh_cn?: string; en?: string };
   country: string;
 }
 
@@ -55,5 +56,7 @@ export async function reverseGeocode(
   if (!data[0]) {
     throw new Error('无法解析该位置');
   }
-  return { city: data[0].name, country: data[0].country };
+  const item = data[0];
+  const city = item.local_names?.zh ?? item.local_names?.zh_cn ?? item.name;
+  return { city, country: item.country };
 }

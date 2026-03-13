@@ -57,7 +57,9 @@ export default function AiScreen(): ReactNode {
     loadConversation,
   } = useAiChat();
   const { data: appSession } = authClient.useSession();
-  const { data, isPageLoading, errorType, handleRetry } = useFetchAiPageData();
+  const { data, isPageLoading, errorType, handleRetry } = useFetchAiPageData(
+    appSession?.user?.id ?? null,
+  );
 
   const pageData = data ?? {};
   const {

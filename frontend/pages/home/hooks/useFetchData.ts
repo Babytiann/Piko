@@ -11,6 +11,7 @@ import type {
   HomeLabels,
   HomeSlashNodes,
   HomeSlashResponse,
+  WeatherCityOption,
 } from '@/common/typings/home';
 import { fetchHomePage } from '@/services/home';
 
@@ -18,6 +19,7 @@ interface HomeCachePayload {
   bodyLayout: string[];
   nodes: HomeSlashNodes | undefined;
   labels: HomeLabels | undefined;
+  weatherCityOptions: WeatherCityOption[] | undefined;
 }
 
 interface UseFetchDataReturn {
@@ -26,6 +28,7 @@ interface UseFetchDataReturn {
   bodyLayout: string[];
   nodes: HomeSlashNodes | undefined;
   labels: HomeLabels | undefined;
+  weatherCityOptions: WeatherCityOption[] | undefined;
   handleRetry: () => void;
   handleRefreshWithDate: (date?: string) => void;
   handleSilentRefresh: () => void;
@@ -40,13 +43,19 @@ function hasCachedData(key: string): boolean {
   return cached != null && (cached.bodyLayout?.length ?? 0) > 0;
 }
 
+const MIN_REFRESH_INTERVAL_MS = 5000;
+
 export function useFetchData(
   selectedDate?: string,
   weatherCity?: string,
+  appSessionUserId?: string | null,
 ): UseFetchDataReturn {
   const pathname = usePathname();
   const cacheKey = normalizeCacheKey(pathname ?? '/');
   const initializedRef = useRef(false);
+  const prevUserIdRef = useRef<string | null | undefined>(undefined);
+  const prevWeatherCityRef = useRef<string | undefined>(undefined);
+  const lastFetchTimeRef = useRef<number>(0);
 
   const [isLoading, setIsLoading] = useState(() => !hasCachedData(cacheKey));
   const [errorType, setErrorType] = useState<PageErrorType | undefined>(
@@ -64,13 +73,44 @@ export function useFetchData(
     const cached = get<HomeCachePayload>(cacheKey);
     return cached?.labels ?? undefined;
   });
+  const [weatherCityOptions, setWeatherCityOptions] = useState<
+    WeatherCityOption[] | undefined
+  >(() => {
+    const cached = get<HomeCachePayload>(cacheKey);
+    return cached?.weatherCityOptions ?? undefined;
+  });
   const [fetchKey, setFetchKey] = useState(0);
   const [dateParam, setDateParam] = useState<string | undefined>(selectedDate);
 
   useEffect(() => {
+    const controller = new AbortController();
+
+    if (
+      appSessionUserId != null &&
+      prevUserIdRef.current !== appSessionUserId
+    ) {
+      clear(cacheKey);
+      setBodyLayout([]);
+      setNodes(undefined);
+      setLabels(undefined);
+      setWeatherCityOptions(undefined);
+    }
+    prevUserIdRef.current = appSessionUserId ?? null;
+
     let cancelled = false;
     const cached = get<HomeCachePayload>(cacheKey);
     const hadCache = cached != null && (cached.bodyLayout?.length ?? 0) > 0;
+    const weatherCityChanged = prevWeatherCityRef.current !== weatherCity;
+    if (weatherCityChanged) prevWeatherCityRef.current = weatherCity;
+    const hasValidOptions = (cached?.weatherCityOptions?.length ?? 0) > 0;
+
+    const now = Date.now();
+    const shouldThrottle =
+      hadCache &&
+      !dateParam &&
+      !weatherCityChanged &&
+      hasValidOptions &&
+      now - lastFetchTimeRef.current < MIN_REFRESH_INTERVAL_MS;
 
     if (!hadCache && !initializedRef.current) {
       setIsLoading(true);
@@ -80,8 +120,14 @@ export function useFetchData(
 
     async function load(): Promise<void> {
       try {
-        const response = await fetchHomePage(dateParam, weatherCity);
+        const response = await fetchHomePage(
+          dateParam,
+          weatherCity,
+          controller.signal,
+        );
         if (cancelled) return;
+
+        lastFetchTimeRef.current = Date.now();
 
         const mappedError = getPageErrorType(response);
         if (mappedError) {
@@ -90,12 +136,21 @@ export function useFetchData(
             setBodyLayout([]);
             setNodes(undefined);
             setLabels(undefined);
+            setWeatherCityOptions(undefined);
           }
         } else {
           const data = response.data as HomeSlashResponse | null | undefined;
           const nextLayout = data?.layout?.body ?? [];
           let nextNodes = data?.nodes ?? undefined;
           const nextLabels = data?.labels ?? undefined;
+          const nextWeatherCityOptions =
+            data?.extra?.weather_city_options ?? undefined;
+          if (__DEV__) {
+            console.log(
+              '[Home] fetch ok, weather_city_options:',
+              nextWeatherCityOptions?.length ?? 0,
+            );
+          }
           if (
             nextNodes &&
             !nextNodes.weather_card &&
@@ -108,6 +163,7 @@ export function useFetchData(
             bodyLayout: nextLayout,
             nodes: nextNodes,
             labels: nextLabels,
+            weatherCityOptions: nextWeatherCityOptions,
           };
 
           if (hadCache && !dateParam) {
@@ -115,12 +171,14 @@ export function useFetchData(
               setBodyLayout(nextLayout);
               setNodes(nextNodes);
               setLabels(nextLabels);
+              setWeatherCityOptions(nextWeatherCityOptions);
               set(cacheKey, fresh);
             }
           } else {
             setBodyLayout(nextLayout);
             setNodes(nextNodes);
             setLabels(nextLabels);
+            setWeatherCityOptions(nextWeatherCityOptions);
             if (!dateParam) {
               set(cacheKey, fresh);
             }
@@ -134,17 +192,24 @@ export function useFetchData(
           setBodyLayout([]);
           setNodes(undefined);
           setLabels(undefined);
+          setWeatherCityOptions(undefined);
         }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
     }
 
-    void load();
+    if (!shouldThrottle) {
+      void load();
+    } else {
+      setIsLoading(false);
+    }
+
     return () => {
       cancelled = true;
+      controller.abort();
     };
-  }, [cacheKey, fetchKey, dateParam, weatherCity]);
+  }, [cacheKey, fetchKey, dateParam, weatherCity, appSessionUserId]);
 
   const handleRetry = useCallback((): void => {
     clear(cacheKey);
@@ -168,6 +233,7 @@ export function useFetchData(
     bodyLayout,
     nodes,
     labels,
+    weatherCityOptions,
     handleRetry,
     handleRefreshWithDate,
     handleSilentRefresh,

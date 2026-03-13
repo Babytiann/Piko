@@ -31,6 +31,7 @@ export interface FetchRequest<P = Record<string, unknown>> {
   params?: P;
   body?: Record<string, unknown>;
   raw?: boolean;
+  signal?: AbortSignal;
 }
 
 export type FetchResponse<T> = ApiResponse<T> & { status?: number };
@@ -43,7 +44,7 @@ function getAuthHeaders(): Record<string, string> {
 async function doRequest<P>(
   args: Omit<FetchRequest<P>, 'raw'>,
 ): Promise<{ response: Response; data: unknown }> {
-  const { method, path, params, body } = args;
+  const { method, path, params, body, signal: externalSignal } = args;
   const url = new URL(`${API_BASE}/${path}`);
 
   if (method === 'GET' && params) {
@@ -75,28 +76,42 @@ async function doRequest<P>(
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const onExternalAbort = (): void => controller.abort();
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      clearTimeout(timeoutId);
+      throw new DOMException('Aborted', 'AbortError');
+    }
+    externalSignal.addEventListener('abort', onExternalAbort);
+  }
   init.signal = controller.signal;
 
-  const response = await nativeFetch(fullUrl, init);
-  clearTimeout(timeoutId);
-  let data: unknown;
   try {
-    data = await response.json();
-  } catch {
-    data = undefined;
-  }
+    const response = await nativeFetch(fullUrl, init);
+    let data: unknown;
+    try {
+      data = await response.json();
+    } catch {
+      data = undefined;
+    }
 
-  if (__DEV__) {
-    const status = response.status;
-    const ok = response.ok;
-    if (!ok) {
-      console.warn('[API] ←', status, fullUrl, data ?? '(no body)');
-    } else {
-      console.log('[API] ←', status, fullUrl);
+    if (__DEV__) {
+      const status = response.status;
+      const ok = response.ok;
+      if (!ok) {
+        console.warn('[API] ←', status, fullUrl, data ?? '(no body)');
+      } else {
+        console.log('[API] ←', status, fullUrl);
+      }
+    }
+
+    return { response, data };
+  } finally {
+    clearTimeout(timeoutId);
+    if (externalSignal) {
+      externalSignal.removeEventListener('abort', onExternalAbort);
     }
   }
-
-  return { response, data };
 }
 
 export async function fetch<P, R>(
@@ -127,6 +142,9 @@ export async function fetch<P, R>(
 
     if (!response.ok) {
       const err = data as Record<string, unknown> | undefined;
+      if (__DEV__ && response.status === 401) {
+        console.warn('[API] ← 401 Unauthorized', rest.path, err ?? '');
+      }
       return {
         success: false,
         error:
@@ -146,12 +164,13 @@ export async function fetch<P, R>(
 
     return { ...(data as ApiResponse<R>), status: response.status };
   } catch (e) {
-    if (__DEV__) {
-      console.warn('[API] Network error', e);
-    }
     const isAbort = e instanceof Error && e.name === 'AbortError';
-    if (__DEV__ && isAbort) {
-      console.warn('[API] 请求超时', rest.path);
+    if (__DEV__) {
+      if (isAbort) {
+        console.warn('[API] 请求超时 (AbortError)', rest.path);
+      } else {
+        console.warn('[API] Network error', rest.path, e);
+      }
     }
     return {
       success: false,

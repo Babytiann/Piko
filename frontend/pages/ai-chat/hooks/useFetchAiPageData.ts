@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePathname } from 'expo-router';
 
 import {
@@ -25,9 +25,15 @@ function normalizeCacheKey(pathname: string): string {
   return pathname.replace(/\/$/, '') || '/';
 }
 
-export default function useFetchAiPageData(): UseFetchAiPageDataReturn {
+const MIN_REFRESH_INTERVAL_MS = 5000;
+
+export default function useFetchAiPageData(
+  appSessionUserId?: string | null,
+): UseFetchAiPageDataReturn {
   const pathname = usePathname();
   const cacheKey = normalizeCacheKey(pathname ?? '/ai');
+  const prevUserIdRef = useRef<string | null | undefined>(undefined);
+  const lastFetchTimeRef = useRef<number>(0);
   const [data, setData] = useState<AiPageData | null>(null);
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [errorType, setErrorType] = useState<PageErrorType | undefined>(
@@ -36,9 +42,24 @@ export default function useFetchAiPageData(): UseFetchAiPageDataReturn {
   const [fetchKey, setFetchKey] = useState(0);
 
   useEffect(() => {
+    const controller = new AbortController();
+
+    if (
+      appSessionUserId != null &&
+      prevUserIdRef.current !== appSessionUserId
+    ) {
+      clear(cacheKey);
+      setData(null);
+    }
+    prevUserIdRef.current = appSessionUserId ?? null;
+
     let cancelled = false;
     const cached = get<AiCachePayload>(cacheKey);
     const hadCache = cached != null && cached.data != null;
+
+    const now = Date.now();
+    const shouldThrottle =
+      hadCache && now - lastFetchTimeRef.current < MIN_REFRESH_INTERVAL_MS;
 
     if (hadCache) {
       setData(cached.data);
@@ -51,8 +72,10 @@ export default function useFetchAiPageData(): UseFetchAiPageDataReturn {
 
     async function load(): Promise<void> {
       try {
-        const response = await fetchAiPageData();
+        const response = await fetchAiPageData(controller.signal);
         if (cancelled) return;
+
+        lastFetchTimeRef.current = Date.now();
 
         const mappedError = getPageErrorType(response);
         if (mappedError) {
@@ -85,11 +108,17 @@ export default function useFetchAiPageData(): UseFetchAiPageDataReturn {
       }
     }
 
-    void load();
+    if (!shouldThrottle) {
+      void load();
+    } else {
+      setIsPageLoading(false);
+    }
+
     return () => {
       cancelled = true;
+      controller.abort();
     };
-  }, [cacheKey, fetchKey]);
+  }, [cacheKey, fetchKey, appSessionUserId]);
 
   const handleRetry = useCallback((): void => {
     clear(cacheKey);

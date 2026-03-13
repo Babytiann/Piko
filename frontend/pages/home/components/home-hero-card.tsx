@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import { View, useColorScheme, useWindowDimensions } from 'react-native';
 import type { ViewStyle } from 'react-native';
 import { XStack, YStack, Text } from 'tamagui';
+import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   FadeInDown,
   useSharedValue,
@@ -25,7 +26,7 @@ import type {
 } from '@/common/typings/home';
 
 const PAGE_COUNT = 2;
-const CARD_HEIGHT = 76;
+const CARD_HEIGHT = 90;
 const SWIPE_VELOCITY = 300;
 
 const TIMING_CFG = {
@@ -37,9 +38,10 @@ interface Props {
   quickStats: QuickStatsData;
   weather: WeatherCardData;
   labels: HomeLabels;
+  onWeatherPress?: () => void;
 }
 
-function Dot({
+function IndicatorLine({
   active,
   scheme,
 }: {
@@ -48,10 +50,11 @@ function Dot({
 }): ReactNode {
   const colors = getThemeColors(scheme);
   const style: ViewStyle = {
-    width: active ? 14 : 5,
-    height: 5,
-    borderRadius: 2.5,
+    width: active ? 20 : 8,
+    height: 2,
+    borderRadius: 1,
     backgroundColor: active ? colors.primary : colors.border,
+    opacity: active ? 1 : 0.5,
   };
   return <View style={style} />;
 }
@@ -60,6 +63,7 @@ export default function HomeHeroCard({
   quickStats,
   weather,
   labels,
+  onWeatherPress,
 }: Props): ReactNode {
   const scheme = (useColorScheme() ?? 'light') as ColorScheme;
   const cs = labels.common.currency_symbol;
@@ -73,6 +77,10 @@ export default function HomeHeroCard({
   const syncPage = useCallback((v: number) => {
     setCurrentPage(v);
   }, []);
+
+  const openWeatherSheet = useCallback((): void => {
+    onWeatherPress?.();
+  }, [onWeatherPress]);
 
   const pan = Gesture.Pan()
     .activeOffsetX([-10, 10])
@@ -98,6 +106,12 @@ export default function HomeHeroCard({
       offsetX.value = withTiming(next, TIMING_CFG);
       runOnJS(syncPage)(next);
     });
+
+  const tap = Gesture.Tap().onEnd(() => {
+    if (onWeatherPress) runOnJS(openWeatherSheet)();
+  });
+
+  const composed = Gesture.Race(pan, tap);
 
   const page0Style = useAnimatedStyle(() => ({
     opacity: interpolate(
@@ -148,7 +162,7 @@ export default function HomeHeroCard({
   return (
     <Animated.View entering={FadeInDown.delay(50).duration(300)}>
       <PikoCard noPadding>
-        <GestureDetector gesture={pan}>
+        <GestureDetector gesture={composed}>
           <Animated.View style={{ height: CARD_HEIGHT, overflow: 'hidden' }}>
             <Animated.View style={page0Style}>
               <XStack
@@ -162,6 +176,11 @@ export default function HomeHeroCard({
               >
                 <YStack flex={1} gap={2}>
                   <XStack gap="$1.5" style={{ alignItems: 'center' }}>
+                    <Ionicons
+                      name="cloud-outline"
+                      size={16}
+                      color={getThemeColors(scheme).muted}
+                    />
                     <Text fontSize={13} fontWeight="600" color="$color">
                       {weather.city}
                     </Text>
@@ -172,7 +191,7 @@ export default function HomeHeroCard({
                   <XStack gap="$1" style={{ alignItems: 'baseline' }}>
                     <Text
                       fontSize={28}
-                      fontWeight="800"
+                      fontWeight="900"
                       color="$color"
                       style={{ fontVariant: ['tabular-nums'] }}
                     >
@@ -249,9 +268,13 @@ export default function HomeHeroCard({
           </Animated.View>
         </GestureDetector>
 
-        <XStack gap={4} pb="$2" style={{ justifyContent: 'center' }}>
+        <XStack
+          gap={6}
+          pb="$2"
+          style={{ justifyContent: 'center', alignItems: 'center' }}
+        >
           {Array.from({ length: PAGE_COUNT }, (_, i) => (
-            <Dot key={i} active={currentPage === i} scheme={scheme} />
+            <IndicatorLine key={i} active={currentPage === i} scheme={scheme} />
           ))}
         </XStack>
       </PikoCard>

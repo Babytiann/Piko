@@ -23,6 +23,8 @@ interface Props {
   data: BudgetCardNodeData;
   labels: HomeLabels;
   onBudgetUpdated?: () => void;
+  isLoggedIn?: boolean;
+  onLoginRequired?: () => void;
 }
 
 function buildSparklinePath(
@@ -58,8 +60,9 @@ function MiniSparkline({
 
   const thisPath = buildSparklinePath(thisWeek, W, H);
   const lastPath = buildSparklinePath(lastWeek, W, H);
-  const lastStroke = scheme === 'dark' ? '#52525B' : '#D4D4D8';
-  const thisStroke = scheme === 'dark' ? '#F59E0B' : '#FBBF24';
+  const colors = getThemeColors(scheme);
+  const lastStroke = colors.border;
+  const thisStroke = colors.primary;
 
   return (
     <Svg width={W} height={H}>
@@ -88,19 +91,8 @@ function TrendBadge({
 }): ReactNode {
   const isDown = trendPercent < 0;
   const colors = getThemeColors(scheme);
-  const bgDown = scheme === 'dark' ? 'rgba(50,215,75,0.12)' : '#F0FDF4';
-  const bgUp = scheme === 'dark' ? 'rgba(255,69,58,0.12)' : '#FEF2F2';
   return (
-    <XStack
-      style={{
-        alignItems: 'center',
-        gap: 2,
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 12,
-        backgroundColor: isDown ? bgDown : bgUp,
-      }}
-    >
+    <XStack style={{ alignItems: 'center', gap: 2 }}>
       <Ionicons
         name={isDown ? 'trending-down' : 'trending-up'}
         size={12}
@@ -181,7 +173,7 @@ function BudgetCardContent({
           mb="$2"
           pb="$2"
           borderBottomWidth={1}
-          borderBottomColor="$gray4"
+          borderBottomColor="$gray3"
           style={{ alignItems: 'center', justifyContent: 'space-between' }}
         >
           <YStack>
@@ -198,7 +190,7 @@ function BudgetCardContent({
               </Pressable>
             </XStack>
             <Text
-              fontSize={16}
+              fontSize={20}
               fontWeight="700"
               color="$color"
               style={{ fontVariant: ['tabular-nums'] }}
@@ -254,7 +246,8 @@ function BudgetCardContent({
             progress={progress}
             size={112}
             strokeWidth={15}
-            color={isOverBudget ? colors.destructive : undefined}
+            color={isOverBudget ? colors.destructive : colors.primary}
+            bgColor={colors.border}
             centerIcon={
               <YStack
                 style={{ alignItems: 'center', justifyContent: 'center' }}
@@ -309,7 +302,7 @@ function BudgetCardContent({
           mt="$3"
           pt="$2"
           borderTopWidth={1}
-          borderTopColor="$gray4"
+          borderTopColor="$gray3"
           style={{ alignItems: 'center', justifyContent: 'space-between' }}
         >
           <Text fontSize={12} color="$muted">
@@ -334,6 +327,8 @@ export default function HomeBudgetCard({
   data,
   labels,
   onBudgetUpdated,
+  isLoggedIn = true,
+  onLoginRequired,
 }: Props): ReactNode {
   const router = useRouter();
   const scheme = (useColorScheme() ?? 'light') as ColorScheme;
@@ -343,14 +338,29 @@ export default function HomeBudgetCard({
   const cs = cl.currency_symbol;
 
   if ('needSetBudget' in data) {
+    const handleSetCtaPress = (): void => {
+      if (!isLoggedIn && onLoginRequired) {
+        onLoginRequired();
+      } else {
+        router.push('/budget-setup');
+      }
+    };
     return (
       <BudgetCardSetCta
-        onPress={() => router.push('/budget-setup')}
+        onPress={handleSetCtaPress}
         labels={bl}
         scheme={scheme}
       />
     );
   }
+
+  const handleEditPress = (): void => {
+    if (!isLoggedIn && onLoginRequired) {
+      onLoginRequired();
+    } else {
+      setShowEditSheet(true);
+    }
+  };
 
   return (
     <>
@@ -358,7 +368,7 @@ export default function HomeBudgetCard({
         data={data}
         labels={bl}
         cs={cs}
-        onEditPress={() => setShowEditSheet(true)}
+        onEditPress={handleEditPress}
         scheme={scheme}
       />
       <HomeBudgetEditSheet

@@ -21,6 +21,7 @@ import type {
 } from '@/common/typings/home';
 import { RecognitionContext } from '@/contexts/recognition-context';
 
+import { authClient } from '@/services/auth-client';
 import useLocation from '@/pages/ai-chat/hooks/useLocation';
 import { useFetchData } from '@/pages/home/hooks/useFetchData';
 import HomeQuickStats from '@/pages/home/components/home-quick-stats';
@@ -32,6 +33,8 @@ import HomeHeroCard from '@/pages/home/components/home-hero-card';
 import HomeCategoryCards from '@/pages/home/components/home-category-cards';
 import HomeExpenseList from '@/pages/home/components/home-expense-list';
 import HomeRecognitionProgress from '@/pages/home/components/home-recognition-progress';
+import HomeLoginPromptSheet from '@/pages/home/components/home-login-prompt-sheet';
+import HomeWeatherCitySheet from '@/pages/home/components/home-weather-city-sheet';
 
 import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
 
@@ -43,6 +46,9 @@ function renderSlot(
   onBudgetUpdated: () => void,
   onDateSelect: (date: string) => void,
   selectedDate: string,
+  isLoggedIn: boolean,
+  onLoginRequired: () => void,
+  onWeatherCityPress: () => void,
 ): ReactNode {
   const node = nodes[slotId as keyof HomeSlashNodes];
   const data = node?.type === 'component' ? node.data : undefined;
@@ -61,6 +67,7 @@ function renderSlot(
             quickStats={data as QuickStatsData}
             weather={wData}
             labels={labels}
+            onWeatherPress={onWeatherCityPress}
           />
         );
       }
@@ -82,6 +89,8 @@ function renderSlot(
           data={data as BudgetCardNodeData}
           labels={labels}
           onBudgetUpdated={onBudgetUpdated}
+          isLoggedIn={isLoggedIn}
+          onLoginRequired={onLoginRequired}
         />
       );
     case 'weather_card':
@@ -131,16 +140,18 @@ export default function HomeScreen(): ReactNode {
       });
   }, [getLocation]);
 
+  const { data: appSession } = authClient.useSession();
   const {
     isLoading,
     errorType,
     bodyLayout,
     nodes,
     labels,
+    weatherCityOptions,
     handleRetry,
     handleRefreshWithDate,
     handleSilentRefresh,
-  } = useFetchData(undefined, autoWeatherCity);
+  } = useFetchData(undefined, autoWeatherCity, appSession?.user?.id ?? null);
   const recognition = useContext(RecognitionContext);
 
   const headerNode = nodes?.header;
@@ -158,8 +169,15 @@ export default function HomeScreen(): ReactNode {
     expenseData?.today_date ?? new Date().toISOString().slice(0, 10);
 
   const [selectedDate, setSelectedDate] = useState<string>(todayDate);
+  const [showLoginSheet, setShowLoginSheet] = useState(false);
+  const [showWeatherCitySheet, setShowWeatherCitySheet] = useState(false);
 
   const currentSelectedDate = selectedDate;
+  const isLoggedIn = !!appSession?.user?.id;
+  const weatherCity =
+    nodes?.weather_card?.type === 'component' && nodes.weather_card.data
+      ? (nodes.weather_card.data as WeatherCardData).city
+      : undefined;
 
   const onWeekChange = useCallback(
     (date: string): void => {
@@ -223,6 +241,9 @@ export default function HomeScreen(): ReactNode {
           onBudgetUpdated,
           onDateSelect,
           currentSelectedDate,
+          isLoggedIn,
+          () => setShowLoginSheet(true),
+          () => setShowWeatherCitySheet(true),
         )}
       </YStack>,
     );
@@ -230,6 +251,42 @@ export default function HomeScreen(): ReactNode {
 
   return (
     <YStack flex={1} bg="$background">
+      <HomeLoginPromptSheet
+        visible={showLoginSheet}
+        onClose={() => setShowLoginSheet(false)}
+        labels={
+          labels.login_prompt ?? {
+            title: '登录后使用更多功能',
+            subtitle: '登录后可同步数据、设置预算与查看消费统计',
+            button_text: '去登录',
+          }
+        }
+      />
+      <HomeWeatherCitySheet
+        visible={showWeatherCitySheet}
+        currentCity={weatherCity}
+        onClose={() => setShowWeatherCitySheet(false)}
+        onSaved={handleSilentRefresh}
+        weatherCityOptions={weatherCityOptions ?? []}
+        labels={
+          labels.weather_city_picker ?? {
+            title: '选择城市',
+            auto_locate_label: '使用当前位置',
+            auto_locate_denied_hint:
+              '未开启定位权限，可在设置中开启或手动选择城市',
+            confirm_label: '确定',
+            saving_label: '保存中...',
+            locating_label: '定位中...',
+            locate_click_hint: '点击使用当前位置',
+            province_label: '省份',
+            city_label: '城市',
+            empty_options_hint: '暂无城市列表，请稍后重试',
+            located_success_hint: '已定位到 {city}，请点击下方确定保存',
+            locate_failed_hint: '定位失败，请检查权限或网络',
+            geocode_failed_hint: '无法识别当前位置，请手动选择城市',
+          }
+        }
+      />
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={contentPadding}
@@ -238,7 +295,7 @@ export default function HomeScreen(): ReactNode {
         <Spacer size="$2" />
         <Animated.View entering={FadeInDown.delay(50).springify()}>
           <YStack px="$1" mb="$2">
-            <Text fontSize={26} fontWeight="800" color="$color">
+            <Text fontSize={30} fontWeight="900" color="$color">
               {headerData?.greeting ?? '你好'}
             </Text>
             <Text fontSize={13} color="$muted" mt={2}>
@@ -246,7 +303,7 @@ export default function HomeScreen(): ReactNode {
             </Text>
           </YStack>
         </Animated.View>
-        <YStack gap="$3">{slots}</YStack>
+        <YStack gap="$3.5">{slots}</YStack>
       </ScrollView>
     </YStack>
   );

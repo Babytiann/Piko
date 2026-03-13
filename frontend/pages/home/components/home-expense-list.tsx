@@ -36,7 +36,6 @@ function ExpenseRow({
 }): ReactNode {
   const router = useRouter();
   const scheme = (useColorScheme() ?? 'light') as ColorScheme;
-  const theme = useTheme();
   const iconConfig = getCategoryIconConfig(scheme);
   const config = iconConfig[item.category] ?? iconConfig['其他'];
 
@@ -47,12 +46,18 @@ function ExpenseRow({
           router.push({ pathname: '/expense-detail', params: { id: item.id } })
         }
       >
-        <XStack py="$3" px="$1" style={{ alignItems: 'center', gap: 12 }}>
+        <XStack
+          py="$3"
+          px="$1"
+          borderBottomWidth={1}
+          borderBottomColor="$gray3"
+          style={{ alignItems: 'center', gap: 12 }}
+        >
           <View
             style={{
               width: 40,
               height: 40,
-              borderRadius: 12,
+              borderRadius: 10,
               borderCurve: 'continuous',
               backgroundColor: config.bgColor,
               alignItems: 'center',
@@ -93,22 +98,15 @@ function ExpenseRow({
             </XStack>
           </YStack>
 
-          <XStack style={{ alignItems: 'center', gap: 6 }}>
-            <Text
-              fontSize={14}
-              fontWeight="700"
-              color="$color"
-              style={{ fontVariant: ['tabular-nums'] }}
-            >
-              -{cs}
-              {item.amount}
-            </Text>
-            <Ionicons
-              name="chevron-forward"
-              size={14}
-              color={theme.muted.val}
-            />
-          </XStack>
+          <Text
+            fontSize={14}
+            fontWeight="700"
+            color="$color"
+            style={{ fontVariant: ['tabular-nums'] }}
+          >
+            -{cs}
+            {item.amount}
+          </Text>
         </XStack>
       </Pressable>
     </Animated.View>

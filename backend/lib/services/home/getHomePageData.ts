@@ -11,6 +11,7 @@ import type {
   WeatherCardData,
   WeekCalendarData,
 } from '../../../types/home.js';
+import { WEATHER_CITY_OPTIONS } from './constants/weatherCityOptions.js';
 import { getUserBudget } from '../budget/index.js';
 import { getUserWeatherCity } from '../user/index.js';
 import { listExpenses } from '../expense/index.js';
@@ -115,6 +116,26 @@ const HOME_LABELS: HomeLabels = {
     error_unavailable: '服务不可用',
     error_auth: '登录已失效',
   },
+  login_prompt: {
+    title: '登录后使用更多功能',
+    subtitle: '登录后可同步数据、设置预算与查看消费统计',
+    button_text: '去登录',
+  },
+  weather_city_picker: {
+    title: '选择城市',
+    auto_locate_label: '使用当前位置',
+    auto_locate_denied_hint: '未开启定位权限，可在设置中开启或手动选择城市',
+    confirm_label: '确定',
+    saving_label: '保存中...',
+    locating_label: '定位中...',
+    locate_click_hint: '点击使用当前位置',
+    province_label: '省份',
+    city_label: '城市',
+    empty_options_hint: '暂无城市列表，请稍后重试',
+    located_success_hint: '已定位到 {city}，请点击下方确定保存',
+    locate_failed_hint: '定位失败，请检查权限或网络',
+    geocode_failed_hint: '无法识别当前位置，请手动选择城市',
+  },
 };
 const DEFAULT_CITY = '上海';
 
@@ -193,7 +214,7 @@ function getGreeting(now: Date): string {
 }
 
 export async function getHomePageData(
-  userId: string,
+  userId: string | undefined,
   selectedDate?: string,
   weatherCityFromRequest?: string,
 ): Promise<HomeSlashResponse> {
@@ -204,10 +225,9 @@ export async function getHomePageData(
   });
   const now = new Date();
   const anchor = selectedDate ? new Date(selectedDate) : now;
-  const userWeatherCity = await getUserWeatherCity(userId);
   const weatherCity =
     (
-      userWeatherCity?.trim() ||
+      (userId ? (await getUserWeatherCity(userId))?.trim() : undefined) ||
       weatherCityFromRequest?.trim() ||
       DEFAULT_CITY
     ).trim() || DEFAULT_CITY;
@@ -227,6 +247,88 @@ export async function getHomePageData(
   const monthBounds = getMonthBounds(now);
   const monthStartStr = formatDateKey(monthBounds.start);
   const monthEndStr = formatDateKey(monthBounds.end);
+
+  if (!userId) {
+    const rawWeather = await fetchCurrentWeather(weatherCity).catch(() => null);
+    let weatherCardData: WeatherCardData | null = null;
+    if (rawWeather) {
+      weatherCardData = {
+        city: rawWeather.city,
+        temperature: rawWeather.temperature,
+        tempMin: rawWeather.tempMin,
+        tempMax: rawWeather.tempMax,
+        description: rawWeather.description,
+        humidity: rawWeather.humidity,
+        windSpeed: rawWeather.windSpeed,
+      };
+      setCachedWeather(weatherCity, weatherCardData);
+    } else {
+      weatherCardData = getCachedWeather(weatherCity);
+    }
+    const weekLabel = getWeekLabel(anchor);
+    const days: WeekCalendarData['days'] = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      days.push({
+        date: formatDateKey(d),
+        weekday: WEEKDAY_LABELS[i],
+        amount: 0,
+      });
+    }
+    const headerData: HomeHeaderData = {
+      greeting: getGreeting(now),
+      subtitle: '记录每一笔',
+    };
+    const nodes: HomeSlashResponse['nodes'] = {
+      header: { type: 'component', data: headerData },
+      quick_stats: {
+        type: 'component',
+        data: {
+          today_amount: 0,
+          week_amount: 0,
+          month_amount: 0,
+        },
+      },
+      week_calendar: {
+        type: 'component',
+        data: {
+          weekLabel,
+          selectedDate: formatDateKey(anchor),
+          days,
+        },
+      },
+      budget_card: { type: 'component', data: { needSetBudget: true } },
+      weather_card: weatherCardData
+        ? { type: 'component', data: weatherCardData }
+        : undefined,
+      category_cards: { type: 'component', data: { categories: [] } },
+      expense_list: {
+        type: 'component',
+        data: {
+          expenses: [],
+          total_count: 0,
+          total_amount: 0,
+          today_date: todayStr,
+        },
+      },
+    };
+    return {
+      layout: {
+        body: [
+          'quick_stats',
+          'week_calendar',
+          'budget_card',
+          'weather_card',
+          'category_cards',
+          'expense_list',
+        ],
+      },
+      nodes,
+      labels: HOME_LABELS,
+      extra: { weather_city_options: WEATHER_CITY_OPTIONS },
+    };
+  }
 
   console.log(
     '[piko] getHomePageData Promise.all start (budget, expenses, weather)',
@@ -440,5 +542,6 @@ export async function getHomePageData(
     },
     nodes,
     labels: HOME_LABELS,
+    extra: { weather_city_options: WEATHER_CITY_OPTIONS },
   };
 }

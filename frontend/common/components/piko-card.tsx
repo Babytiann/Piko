@@ -21,6 +21,8 @@ interface PikoCardProps {
   style?: ViewStyle;
 }
 
+const CARD_RADIUS = 16;
+
 function cardContent(
   children: ReactNode,
   padding: PikoCardPadding | undefined,
@@ -31,12 +33,14 @@ function cardContent(
   const colors = getThemeColors(scheme);
   const baseStyle: ViewStyle = {
     backgroundColor: colors.card,
-    borderRadius: 20,
+    borderRadius: CARD_RADIUS,
     borderCurve: 'continuous',
     padding: noPadding ? 0 : ((padding && PADDING_MAP[padding]) ?? 16),
-    borderWidth: 1,
-    borderColor: colors.subtleBorder,
-    boxShadow: colors.subtleShadow,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: scheme === 'light' ? 0.04 : 0,
+    shadowRadius: 2,
+    elevation: scheme === 'light' ? 1 : 0,
   };
   return <View style={[baseStyle, style]}>{children}</View>;
 }
@@ -55,8 +59,8 @@ export function PikoCard({
       <Pressable
         onPress={onPress}
         style={({ pressed }) => ({
-          opacity: pressed ? 0.95 : 1,
-          transform: [{ scale: pressed ? 0.985 : 1 }],
+          opacity: pressed ? 0.7 : 1,
+          transform: [{ scale: pressed ? 0.98 : 1 }],
         })}
       >
         {content}

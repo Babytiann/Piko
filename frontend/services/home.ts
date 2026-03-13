@@ -6,6 +6,7 @@ import { fetch } from '@/services';
 export function fetchHomePage(
   selectedDate?: string,
   weatherCity?: string,
+  signal?: AbortSignal,
 ): Promise<ApiResponse<HomeSlashResponse>> {
   const body: Record<string, string> = {};
   if (selectedDate) body.selected_date = selectedDate;
@@ -14,6 +15,7 @@ export function fetchHomePage(
     method: 'POST',
     path: 'homepage/summary/v1',
     body: Object.keys(body).length > 0 ? body : {},
+    signal,
   });
 }
 
