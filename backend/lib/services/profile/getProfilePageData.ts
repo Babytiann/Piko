@@ -90,6 +90,7 @@ export async function getProfilePageData(
     name: appUser.name ?? null,
     email: appUser.email ?? null,
     nickname: dbUser?.nickname ?? null,
+    avatar_url: dbUser?.avatarUrl ?? null,
     weather_city: dbUser?.weatherCity ?? null,
   };
 

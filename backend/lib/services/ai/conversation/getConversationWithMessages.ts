@@ -7,24 +7,26 @@ export async function getConversationWithMessages(
   userId: string,
   conversationId: string,
 ): Promise<ConversationDetail | null> {
-  const [conversation] = await db
-    .select()
-    .from(aiConversations)
-    .where(
-      and(
-        eq(aiConversations.id, conversationId),
-        eq(aiConversations.userId, userId),
-      ),
-    )
-    .limit(1);
+  const [conversationRows, messages] = await Promise.all([
+    db
+      .select()
+      .from(aiConversations)
+      .where(
+        and(
+          eq(aiConversations.id, conversationId),
+          eq(aiConversations.userId, userId),
+        ),
+      )
+      .limit(1),
+    db
+      .select()
+      .from(aiMessages)
+      .where(eq(aiMessages.conversationId, conversationId))
+      .orderBy(asc(aiMessages.createdAt)),
+  ]);
 
+  const conversation = conversationRows[0];
   if (!conversation) return null;
-
-  const messages = await db
-    .select()
-    .from(aiMessages)
-    .where(eq(aiMessages.conversationId, conversationId))
-    .orderBy(asc(aiMessages.createdAt));
 
   return {
     id: conversation.id,

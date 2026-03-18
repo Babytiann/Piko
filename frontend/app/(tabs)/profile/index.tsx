@@ -2,7 +2,9 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Alert, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { YStack, XStack, Text, Spacer } from 'tamagui';
+import Constants from 'expo-constants';
+import { Ionicons } from '@expo/vector-icons';
+import { YStack, XStack, Text, Spacer, useTheme } from 'tamagui';
 
 import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
 import PageLoading from '@/common/components/page-loading';
@@ -16,11 +18,22 @@ import { DEFAULT_PROFILE_LABELS } from '@/pages/profile/consts/default-labels';
 import { useProfileData } from '@/pages/profile/hooks/useProfileData';
 import ProfileAppleSection from '@/pages/profile/components/profile-apple-section';
 import ProfileTelegramSection from '@/pages/profile/components/profile-telegram-section';
-import ProfileSettingsSection from '@/pages/profile/components/profile-settings-section';
+import ProfileListRow from '@/pages/profile/components/profile-list-row';
+
+type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
+
+interface MenuItem {
+  icon: IoniconsName;
+  title: string;
+  description: string;
+  route?: string;
+  action?: () => void;
+}
 
 export default function ProfileScreen(): ReactNode {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const theme = useTheme();
   const { data: appSession } = authClient.useSession();
   const { session, logout } = useAuth();
   const { isPageLoading, errorType, data, handleRetry } = useProfileData(
@@ -114,21 +127,6 @@ export default function ProfileScreen(): ReactNode {
     }
   };
 
-  const SETTINGS_ROUTES = [
-    '/notification-settings',
-    '/privacy-security',
-  ] as const;
-  const HELP_ROUTES = ['/help-center', '/contact-us'] as const;
-
-  const handleSettingsItemPress = (
-    index: number,
-    section: 'settings' | 'help',
-  ): void => {
-    const path =
-      section === 'settings' ? SETTINGS_ROUTES[index] : HELP_ROUTES[index];
-    if (path != null) router.push(path);
-  };
-
   if (isPageLoading && !data) {
     return (
       <YStack flex={1} bg="$background">
@@ -145,9 +143,47 @@ export default function ProfileScreen(): ReactNode {
     );
   }
 
+  const version = Constants.expoConfig?.version ?? '1.0.0';
+
+  const settingsItems: MenuItem[] = [
+    {
+      icon: 'person-outline',
+      title: '账号设置',
+      description: '昵称、登录方式、天气城市',
+      route: '/account-settings',
+    },
+    {
+      icon: 'notifications-outline',
+      title: '通知设置',
+      description: '管理推送和消息通知',
+      route: '/notification-settings',
+    },
+    {
+      icon: 'shield-checkmark-outline',
+      title: '隐私与安全',
+      description: '数据管理与账号安全',
+      route: '/privacy-security',
+    },
+  ];
+
+  const helpItems: MenuItem[] = [
+    {
+      icon: 'help-circle-outline',
+      title: '帮助中心',
+      description: '常见问题和使用指南',
+      route: '/help-center',
+    },
+    {
+      icon: 'mail-outline',
+      title: '联系我们',
+      description: '反馈问题或建议',
+      route: '/contact-us',
+    },
+  ];
+
   const contentPadding = {
     paddingTop: insets.top,
-    paddingBottom: insets.bottom + TAB_BAR_CONTENT_HEIGHT,
+    paddingBottom: insets.bottom + TAB_BAR_CONTENT_HEIGHT + 16,
   };
 
   return (
@@ -199,10 +235,72 @@ export default function ProfileScreen(): ReactNode {
             </PikoCard>
           ) : null}
 
-          <ProfileSettingsSection
-            labels={labels}
-            onPressItem={handleSettingsItemPress}
-          />
+          {/* Settings */}
+          <PikoCard padding="$4">
+            <YStack gap="$0">
+              <Text fontSize="$2" fontWeight="600" color="$gray12" pb="$2">
+                设置
+              </Text>
+              {settingsItems.map((item, i) => (
+                <ProfileListRow
+                  key={item.title}
+                  icon={item.icon}
+                  title={item.title}
+                  description={item.description}
+                  isLast={i === settingsItems.length - 1}
+                  onPress={
+                    item.route
+                      ? () => router.push(item.route as never)
+                      : item.action
+                  }
+                />
+              ))}
+            </YStack>
+          </PikoCard>
+
+          {/* Help */}
+          <PikoCard padding="$4">
+            <YStack gap="$0">
+              <Text fontSize="$2" fontWeight="600" color="$gray12" pb="$2">
+                帮助与支持
+              </Text>
+              {helpItems.map((item, i) => (
+                <ProfileListRow
+                  key={item.title}
+                  icon={item.icon}
+                  title={item.title}
+                  description={item.description}
+                  isLast={i === helpItems.length - 1}
+                  onPress={
+                    item.route
+                      ? () => router.push(item.route as never)
+                      : item.action
+                  }
+                />
+              ))}
+            </YStack>
+          </PikoCard>
+
+          {/* About */}
+          <PikoCard padding="$4">
+            <XStack
+              style={{ alignItems: 'center', justifyContent: 'space-between' }}
+            >
+              <XStack gap="$3" style={{ alignItems: 'center' }}>
+                <Ionicons
+                  name="information-circle-outline"
+                  size={22}
+                  color={theme.muted.val}
+                />
+                <Text fontSize="$4" fontWeight="600" color="$color">
+                  关于 Piko
+                </Text>
+              </XStack>
+              <Text fontSize="$3" color="$gray11">
+                v{version}
+              </Text>
+            </XStack>
+          </PikoCard>
 
           {hasAppSession ? (
             <XStack
@@ -219,9 +317,7 @@ export default function ProfileScreen(): ReactNode {
               onPress={isLoggingOut ? undefined : handleLogoutPress}
             >
               <Text color="$destructive" fontWeight="600" fontSize="$4">
-                {isLoggingOut
-                  ? labels.logout_ingress
-                  : `${labels.logout_button} →`}
+                {isLoggingOut ? labels.logout_ingress : labels.logout_button}
               </Text>
             </XStack>
           ) : null}

@@ -121,21 +121,33 @@ export default function AiScreen(): ReactNode {
     animateClose();
   };
 
+  const mapDetailToMessages = (detail: {
+    messages: { role: 'user' | 'model'; content: string; created_at: string }[];
+  }): AiMessage[] => {
+    let nextSeq = 0;
+    return detail.messages.map((m) => {
+      nextSeq += 1;
+      return {
+        id: `hist_${nextSeq}`,
+        role: m.role === 'model' ? 'assistant' : 'user',
+        content: m.content,
+        timestamp: new Date(m.created_at).getTime(),
+      };
+    });
+  };
+
   const handleSelectConversation = async (id: string): Promise<void> => {
     animateClose();
+
+    const cached = convList.getCachedDetail(id);
+    if (cached) {
+      loadConversation(mapDetailToMessages(cached), id);
+      return;
+    }
+
     try {
       const detail = await fetchConversationDetail(id);
-      let nextSeq = 0;
-      const msgs: AiMessage[] = detail.messages.map((m) => {
-        nextSeq += 1;
-        return {
-          id: `hist_${nextSeq}`,
-          role: m.role === 'model' ? 'assistant' : 'user',
-          content: m.content,
-          timestamp: new Date(m.created_at).getTime(),
-        };
-      });
-      loadConversation(msgs, id);
+      loadConversation(mapDetailToMessages(detail), id);
     } catch (err) {
       console.error('[AI] load conversation error:', err);
     }

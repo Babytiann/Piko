@@ -1,13 +1,23 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {
   fetchConversationList,
+  fetchConversationDetail,
   deleteConversation as deleteConversationApi,
 } from '@/services/ai';
 import type { ConversationItem } from '../types';
 
 const PAGE_SIZE = 20;
+const PREFETCH_COUNT = 5;
+
+type ConversationDetailCache = {
+  id: string;
+  title: string;
+  messages: { role: 'user' | 'model'; content: string; created_at: string }[];
+};
+
+const detailCache = new Map<string, ConversationDetailCache>();
 
 interface UseConversationListReturn {
   conversations: ConversationItem[];
@@ -16,6 +26,8 @@ interface UseConversationListReturn {
   refresh: () => Promise<void>;
   remove: (id: string) => void;
   loadMore: () => void;
+  getCachedDetail: (id: string) => ConversationDetailCache | undefined;
+  invalidateDetailCache: (id: string) => void;
 }
 
 const CONVERSATION_CACHE_KEY = 'ai:conversation:list:v1';
@@ -84,6 +96,18 @@ export default function useConversationList(
     });
   }, [userId]);
 
+  const prefetchDetails = useCallback((list: ConversationItem[]) => {
+    const toPrefetch = list.slice(0, PREFETCH_COUNT);
+    for (const conv of toPrefetch) {
+      if (detailCache.has(conv.id)) continue;
+      void fetchConversationDetail(conv.id)
+        .then((detail) => {
+          detailCache.set(conv.id, detail);
+        })
+        .catch(() => {});
+    }
+  }, []);
+
   const refresh = async (): Promise<void> => {
     setIsLoading(true);
     try {
@@ -92,6 +116,7 @@ export default function useConversationList(
       setConversations(filtered);
       setVisibleCount(PAGE_SIZE);
       await saveConversationCache(filtered);
+      prefetchDetails(filtered);
     } catch (err) {
       console.error('[ConversationList] refresh error:', err);
     } finally {
@@ -131,6 +156,12 @@ export default function useConversationList(
 
   const visibleConversations = conversations.slice(0, visibleCount);
 
+  const getCachedDetail = useCallback((id: string) => detailCache.get(id), []);
+
+  const invalidateDetailCache = useCallback((id: string) => {
+    detailCache.delete(id);
+  }, []);
+
   return {
     conversations,
     visibleConversations,
@@ -138,5 +169,7 @@ export default function useConversationList(
     refresh,
     remove,
     loadMore,
+    getCachedDetail,
+    invalidateDetailCache,
   };
 }

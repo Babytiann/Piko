@@ -13,16 +13,13 @@ export const chatRoutes = new Hono();
 
 // ── POST /list/v1 ────────────────────────────────────────────────────────────
 chatRoutes.post('/list/v1', async (c) => {
+  let userId: string | undefined;
   try {
-    const userId = await getUserId(c.req.raw);
-
-    // 从请求体获取前端传递的 session（可选）
-    let bodySession: string | undefined;
+    userId = await getUserId(c.req.raw);
 
     const body = (await c.req.json()) as { session?: string };
-    bodySession = body.session || undefined;
+    const bodySession = body.session || undefined;
 
-    // 优先使用数据库中的 session，fallback 到前端传递的 session
     const dbSession = await getTelegramSession(userId);
     const session = dbSession ?? bodySession ?? undefined;
 
@@ -37,10 +34,10 @@ chatRoutes.post('/list/v1', async (c) => {
     console.error('chat/list error:', err);
 
     if (
-      message.includes('AUTH_KEY_UNREGISTERED') ||
-      message.includes('AUTH_BYTES_INVALID')
+      (message.includes('AUTH_KEY_UNREGISTERED') ||
+        message.includes('AUTH_BYTES_INVALID')) &&
+      userId
     ) {
-      const userId = await getUserId(c.req.raw);
       void unbindTelegram(userId).catch((e) => {
         console.error('chat/list unbind error:', e);
       });
@@ -60,8 +57,9 @@ chatRoutes.post('/list/v1', async (c) => {
 
 // ── POST /detail/v1 ──────────────────────────────────────────────────────────
 chatRoutes.post('/detail/v1', async (c) => {
+  let userId: string | undefined;
   try {
-    const userId = await getUserId(c.req.raw);
+    userId = await getUserId(c.req.raw);
 
     const body = (await c.req.json()) as {
       session?: string;
@@ -72,7 +70,6 @@ chatRoutes.post('/detail/v1', async (c) => {
       offset_id?: number;
     };
 
-    // 优先使用数据库中的 session，fallback 到前端传递的 session
     const dbSession = await getTelegramSession(userId);
     const session = dbSession ?? body.session ?? undefined;
     const chatId = body.chat_id;
@@ -107,17 +104,13 @@ chatRoutes.post('/detail/v1', async (c) => {
     console.error('chat/detail error:', err);
 
     if (
-      message.includes('AUTH_KEY_UNREGISTERED') ||
-      message.includes('AUTH_BYTES_INVALID')
+      (message.includes('AUTH_KEY_UNREGISTERED') ||
+        message.includes('AUTH_BYTES_INVALID')) &&
+      userId
     ) {
-      try {
-        const uid = await getUserId(c.req.raw);
-        void unbindTelegram(uid).catch((e) => {
-          console.error('chat/detail unbind error:', e);
-        });
-      } catch {
-        // ignore
-      }
+      void unbindTelegram(userId).catch((e) => {
+        console.error('chat/detail unbind error:', e);
+      });
       return c.json(
         {
           success: false,

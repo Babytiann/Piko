@@ -11,6 +11,7 @@ import {
   deleteUserAccount,
   clearUserData,
 } from '../../lib/services/user/index.js';
+import { uploadImage } from '../../lib/r2.js';
 
 export const profileRoutes = new Hono();
 
@@ -80,6 +81,42 @@ profileRoutes.patch('/update', async (c) => {
       {
         success: false,
         error: err instanceof Error ? err.message : 'Failed to update profile',
+      },
+      500,
+    );
+  }
+});
+
+profileRoutes.post('/avatar/upload', async (c) => {
+  try {
+    const userId = await getUserId(c.req.raw);
+    const body = (await c.req.json()) as {
+      image: string;
+      mime_type?: string;
+    };
+
+    if (!body.image) {
+      return c.json({ success: false, error: 'image is required' }, 400);
+    }
+
+    const mimeType = body.mime_type || 'image/jpeg';
+    const base64Data = body.image.replace(/^data:[^;]+;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+    const ext = mimeType === 'image/png' ? 'png' : 'jpg';
+    const key = `avatars/${userId}.${ext}`;
+    const url = await uploadImage(buffer, key, mimeType);
+
+    await updateUserProfile(userId, { avatarUrl: url });
+    return c.json({ success: true, data: { avatar_url: url } });
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    console.error('profile/avatar/upload error:', err);
+    return c.json(
+      {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to upload avatar',
       },
       500,
     );

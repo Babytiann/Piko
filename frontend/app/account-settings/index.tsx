@@ -12,8 +12,6 @@ import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons';
 import { YStack, XStack, Text, useTheme } from 'tamagui';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-
 import { PikoCard } from '@/common/components/piko-card';
 import { useAuth } from '@/common/hooks';
 import { authClient } from '@/services/auth-client';
@@ -200,141 +198,131 @@ export default function AccountSettingsScreen(): ReactNode {
           </XStack>
 
           <YStack px="$4" gap="$4" pt="$2">
-            <Animated.View entering={FadeInDown.delay(50).springify()}>
-              <PikoCard padding="$4">
-                <YStack gap="$3">
-                  <Text fontSize="$2" fontWeight="600" color="$gray12">
-                    个人信息
+            <PikoCard padding="$4">
+              <YStack gap="$3">
+                <Text fontSize="$2" fontWeight="600" color="$gray12">
+                  个人信息
+                </Text>
+                <YStack gap="$2">
+                  <Text fontSize="$2" color="$gray12">
+                    昵称
                   </Text>
-                  <YStack gap="$2">
-                    <Text fontSize="$2" color="$gray12">
-                      昵称
+                  <TextInput
+                    value={nickname}
+                    onChangeText={(t) => {
+                      setNickname(t);
+                      setSaveError(null);
+                    }}
+                    placeholder="输入昵称"
+                    placeholderTextColor={MUTED}
+                    style={{
+                      borderWidth: 1,
+                      borderColor: BORDER,
+                      borderRadius: 12,
+                      paddingHorizontal: 12,
+                      paddingVertical: 10,
+                      fontSize: 16,
+                      color: theme.color.val,
+                    }}
+                  />
+                  {saveError ? (
+                    <Text fontSize="$2" color="$destructive">
+                      {saveError}
                     </Text>
-                    <TextInput
-                      value={nickname}
-                      onChangeText={(t) => {
-                        setNickname(t);
-                        setSaveError(null);
-                      }}
-                      placeholder="输入昵称"
-                      placeholderTextColor={MUTED}
-                      style={{
-                        borderWidth: 1,
-                        borderColor: BORDER,
-                        borderRadius: 12,
-                        paddingHorizontal: 12,
-                        paddingVertical: 10,
-                        fontSize: 16,
-                        color: theme.color.val,
-                      }}
-                    />
-                    {saveError ? (
-                      <Text fontSize="$2" color="$destructive">
-                        {saveError}
-                      </Text>
-                    ) : null}
-                    <XStack
-                      py="$2"
-                      style={{ alignItems: 'center', justifyContent: 'center' }}
-                      pressStyle={{ opacity: 0.8 }}
-                      onPress={() => void handleSaveNickname()}
-                    >
-                      <Text
-                        fontSize="$4"
-                        fontWeight="600"
-                        color={saving ? '$gray12' : '$color'}
-                      >
-                        {saving ? '保存中…' : '保存'}
-                      </Text>
-                    </XStack>
-                  </YStack>
+                  ) : null}
                   <XStack
                     py="$2"
+                    style={{ alignItems: 'center', justifyContent: 'center' }}
+                    pressStyle={{ opacity: 0.8 }}
+                    onPress={() => void handleSaveNickname()}
+                  >
+                    <Text
+                      fontSize="$4"
+                      fontWeight="600"
+                      color={saving ? '$gray12' : '$color'}
+                    >
+                      {saving ? '保存中…' : '保存'}
+                    </Text>
+                  </XStack>
+                </YStack>
+                <XStack
+                  py="$2"
+                  style={{
+                    borderTopWidth: 0.5,
+                    borderTopColor: '$gray4',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <Text fontSize="$2" color="$gray12">
+                    邮箱
+                  </Text>
+                  <Text fontSize="$4" color="$color">
+                    {appUser.email ?? '—'}
+                  </Text>
+                </XStack>
+              </YStack>
+            </PikoCard>
+
+            <PikoCard padding="$4">
+              <YStack gap="$2">
+                <Text fontSize="$2" fontWeight="600" color="$gray12">
+                  登录方式
+                </Text>
+                <XStack gap="$2" style={{ alignItems: 'center' }}>
+                  <Ionicons
+                    name="logo-apple"
+                    size={20}
+                    color={theme.muted.val}
+                  />
+                  <Text fontSize="$4" color="$color">
+                    Apple 登录
+                  </Text>
+                </XStack>
+              </YStack>
+            </PikoCard>
+
+            <PikoCard padding="$4">
+              <YStack gap="$2">
+                <Text fontSize="$2" fontWeight="600" color="$gray12">
+                  Telegram
+                </Text>
+                <Text fontSize="$4" color="$color">
+                  {profileData?.telegram_bound ? '已绑定' : '未绑定'}
+                </Text>
+              </YStack>
+            </PikoCard>
+
+            <Pressable onPress={openWeatherSheet}>
+              <PikoCard padding="$4">
+                <YStack gap="$2">
+                  <Text fontSize="$2" fontWeight="600" color="$gray12">
+                    天气城市
+                  </Text>
+                  <XStack
                     style={{
-                      borderTopWidth: 0.5,
-                      borderTopColor: '$gray4',
                       alignItems: 'center',
                       justifyContent: 'space-between',
                     }}
                   >
-                    <Text fontSize="$2" color="$gray12">
-                      邮箱
-                    </Text>
                     <Text fontSize="$4" color="$color">
-                      {appUser.email ?? '—'}
+                      {weatherCity?.trim() || '自动定位'}
                     </Text>
-                  </XStack>
-                </YStack>
-              </PikoCard>
-            </Animated.View>
-
-            <Animated.View entering={FadeInDown.delay(100).springify()}>
-              <PikoCard padding="$4">
-                <YStack gap="$2">
-                  <Text fontSize="$2" fontWeight="600" color="$gray12">
-                    登录方式
-                  </Text>
-                  <XStack gap="$2" style={{ alignItems: 'center' }}>
                     <Ionicons
-                      name="logo-apple"
-                      size={20}
-                      color={theme.muted.val}
+                      name="chevron-forward"
+                      size={18}
+                      color={theme.gray10.val}
                     />
-                    <Text fontSize="$4" color="$color">
-                      Apple 登录
-                    </Text>
                   </XStack>
                 </YStack>
               </PikoCard>
-            </Animated.View>
+            </Pressable>
 
-            <Animated.View entering={FadeInDown.delay(150).springify()}>
-              <PikoCard padding="$4">
-                <YStack gap="$2">
-                  <Text fontSize="$2" fontWeight="600" color="$gray12">
-                    Telegram
-                  </Text>
-                  <Text fontSize="$4" color="$color">
-                    {profileData?.telegram_bound ? '已绑定' : '未绑定'}
-                  </Text>
-                </YStack>
-              </PikoCard>
-            </Animated.View>
-
-            <Animated.View entering={FadeInDown.delay(175).springify()}>
-              <Pressable onPress={openWeatherSheet}>
-                <PikoCard padding="$4">
-                  <YStack gap="$2">
-                    <Text fontSize="$2" fontWeight="600" color="$gray12">
-                      天气城市
-                    </Text>
-                    <XStack
-                      style={{
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                      }}
-                    >
-                      <Text fontSize="$4" color="$color">
-                        {weatherCity?.trim() || '自动定位'}
-                      </Text>
-                      <Ionicons
-                        name="chevron-forward"
-                        size={18}
-                        color={theme.gray10.val}
-                      />
-                    </XStack>
-                  </YStack>
-                </PikoCard>
-              </Pressable>
-            </Animated.View>
-
-            <Animated.View entering={FadeInDown.delay(200).springify()}>
-              <PikoCard padding="$4">
-                <Text fontSize="$2" color="$gray12">
-                  应用版本 {version}
-                </Text>
-              </PikoCard>
-            </Animated.View>
+            <PikoCard padding="$4">
+              <Text fontSize="$2" color="$gray12">
+                应用版本 {version}
+              </Text>
+            </PikoCard>
           </YStack>
         </ScrollView>
       </KeyboardAvoidingView>

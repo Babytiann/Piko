@@ -83,20 +83,23 @@ export default function ScanScreen(): ReactNode {
     }
   };
 
+  const showGlobalClose = flow.phase !== 'manual' && flow.phase !== 'result';
+
   return (
     <View flex={1}>
       {renderContent()}
 
-      {/* 关闭按钮 — 绝对定位左上角，所有 phase 通用 */}
-      <Pressable
-        onPress={() => router.back()}
-        style={[styles.closeButton, { top: insets.top + 12 }]}
-        hitSlop={8}
-        accessibilityRole="button"
-        accessibilityLabel="关闭"
-      >
-        <Ionicons name="close" size={20} color="#fff" />
-      </Pressable>
+      {showGlobalClose ? (
+        <Pressable
+          onPress={() => router.back()}
+          style={[styles.closeButton, { top: insets.top + 12 }]}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="关闭"
+        >
+          <Ionicons name="close" size={20} color="#fff" />
+        </Pressable>
+      ) : null}
     </View>
   );
 }

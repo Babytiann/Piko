@@ -218,19 +218,8 @@ export async function getHomePageData(
   selectedDate?: string,
   weatherCityFromRequest?: string,
 ): Promise<HomeSlashResponse> {
-  console.log('[piko] getHomePageData start', {
-    userId,
-    selectedDate,
-    weatherCityFromRequest,
-  });
   const now = new Date();
   const anchor = selectedDate ? new Date(selectedDate) : now;
-  const weatherCity =
-    (
-      (userId ? (await getUserWeatherCity(userId))?.trim() : undefined) ||
-      weatherCityFromRequest?.trim() ||
-      DEFAULT_CITY
-    ).trim() || DEFAULT_CITY;
   const { start, end } = getWeekBounds(anchor);
   const startStr = formatDateKey(start);
   const endStr = formatDateKey(end);
@@ -249,6 +238,7 @@ export async function getHomePageData(
   const monthEndStr = formatDateKey(monthBounds.end);
 
   if (!userId) {
+    const weatherCity = weatherCityFromRequest?.trim() || DEFAULT_CITY;
     const rawWeather = await fetchCurrentWeather(weatherCity).catch(() => null);
     let weatherCardData: WeatherCardData | null = null;
     if (rawWeather) {
@@ -330,10 +320,7 @@ export async function getHomePageData(
     };
   }
 
-  console.log(
-    '[piko] getHomePageData Promise.all start (budget, expenses, weather)',
-  );
-  const [budgetResult, expenseRes, lastWeekRes, monthRes, rawWeather] =
+  const [budgetResult, expenseRes, lastWeekRes, monthRes, userWeatherCityRaw] =
     await Promise.all([
       getUserBudget(userId),
       listExpenses(userId, {
@@ -354,9 +341,17 @@ export async function getHomePageData(
         pageSize: 500,
         page: 1,
       }),
-      fetchCurrentWeather(weatherCity).catch(() => null),
+      getUserWeatherCity(userId),
     ]);
-  console.log('[piko] getHomePageData Promise.all done');
+
+  const weatherCity =
+    (
+      userWeatherCityRaw?.trim() ||
+      weatherCityFromRequest?.trim() ||
+      DEFAULT_CITY
+    ).trim() || DEFAULT_CITY;
+
+  const rawWeather = await fetchCurrentWeather(weatherCity).catch(() => null);
 
   const expenses = expenseRes.expenses;
   const byDate: Record<string, number> = {};

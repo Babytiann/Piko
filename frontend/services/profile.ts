@@ -34,6 +34,17 @@ export function updateProfile(updates: {
   });
 }
 
+export function uploadAvatar(
+  base64Image: string,
+  mimeType?: string,
+): Promise<ApiResponse<{ avatar_url: string }>> {
+  return fetch<{ image: string; mime_type?: string }, { avatar_url: string }>({
+    method: 'POST',
+    path: 'profile/avatar/upload',
+    body: { image: base64Image, mime_type: mimeType },
+  });
+}
+
 export function deleteAccount(): Promise<ApiResponse<unknown>> {
   return fetch<Record<string, never>, unknown>({
     method: 'DELETE',

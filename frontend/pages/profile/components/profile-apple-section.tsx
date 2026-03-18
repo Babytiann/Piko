@@ -1,12 +1,14 @@
 import { useState, type ReactNode } from 'react';
-import { Platform } from 'react-native';
+import { Platform, ActionSheetIOS, Alert } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { Ionicons } from '@expo/vector-icons';
-import { YStack, XStack, Text, useTheme } from 'tamagui';
+import { YStack, XStack, Text, View, useTheme } from 'tamagui';
 
 import Avatar from '@/common/components/avatar';
 import { PikoCard } from '@/common/components/piko-card';
 import { authClient } from '@/services/auth-client';
+import { uploadAvatar } from '@/services/profile';
 
 import type {
   ProfilePageLabels,
@@ -17,15 +19,38 @@ interface ProfileAppleSectionProps {
   appUser: ProfileAppUser | null;
   labels: ProfilePageLabels['user_section'];
   onPress?: () => void;
+  onAvatarUpdate?: (url: string) => void;
+}
+
+const AVATAR_COLORS = [
+  '#FF6B6B',
+  '#4ECDC4',
+  '#45B7D1',
+  '#96CEB4',
+  '#DDA0DD',
+  '#98D8C8',
+  '#F7DC6F',
+  '#6C5CE7',
+];
+
+function getAvatarColor(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
 export default function ProfileAppleSection({
   appUser,
   labels,
   onPress,
+  onAvatarUpdate,
 }: ProfileAppleSectionProps): ReactNode {
   const theme = useTheme();
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
 
   const handleAppleSignIn = async (): Promise<void> => {
     if (Platform.OS !== 'ios') return;
@@ -58,32 +83,112 @@ export default function ProfileAppleSection({
     }
   };
 
+  const pickAndUploadAvatar = async (useCamera: boolean): Promise<void> => {
+    try {
+      const options: ImagePicker.ImagePickerOptions = {
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+        base64: true,
+      };
+
+      const result = useCamera
+        ? await ImagePicker.launchCameraAsync(options)
+        : await ImagePicker.launchImageLibraryAsync(options);
+
+      if (result.canceled || !result.assets[0]?.base64) return;
+
+      const asset = result.assets[0];
+      setUploading(true);
+      const mimeType = asset.mimeType ?? 'image/jpeg';
+      const res = await uploadAvatar(asset.base64, mimeType);
+      if (res.success && res.data?.avatar_url) {
+        setLocalAvatarUrl(asset.uri);
+        onAvatarUpdate?.(res.data.avatar_url);
+      }
+    } catch (err) {
+      console.error('[Avatar Upload]', err);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleAvatarPress = (): void => {
+    if (!appUser || uploading) return;
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['取消', '拍照', '从相册选择'],
+          cancelButtonIndex: 0,
+        },
+        (index) => {
+          if (index === 1) void pickAndUploadAvatar(true);
+          if (index === 2) void pickAndUploadAvatar(false);
+        },
+      );
+    } else {
+      Alert.alert('更换头像', '', [
+        { text: '取消', style: 'cancel' },
+        { text: '拍照', onPress: () => void pickAndUploadAvatar(true) },
+        { text: '从相册选择', onPress: () => void pickAndUploadAvatar(false) },
+      ]);
+    }
+  };
+
+  const displayName = appUser?.nickname ?? appUser?.name ?? null;
+  const avatarUrl = localAvatarUrl ?? appUser?.avatar_url ?? undefined;
+  const avatarColor = appUser ? getAvatarColor(appUser.id) : theme.muted.val;
+  const avatarText = (displayName ?? appUser?.email ?? '?')
+    .charAt(0)
+    .toUpperCase();
+
   return (
     <PikoCard onPress={appUser ? onPress : undefined}>
       <YStack gap="$3">
         {appUser ? (
-          <XStack gap="$3" style={{ alignItems: 'center' }}>
-            <Avatar
-              url={undefined}
-              text={(appUser.name ?? appUser.email ?? '?').charAt(0)}
-              color={theme.muted.val}
-              size={64}
-            />
+          <XStack gap="$4" style={{ alignItems: 'center' }}>
+            <View>
+              <View pressStyle={{ opacity: 0.8 }} onPress={handleAvatarPress}>
+                <Avatar
+                  url={avatarUrl}
+                  text={avatarText}
+                  color={avatarColor}
+                  size={72}
+                />
+                <View
+                  position="absolute"
+                  bottom={0}
+                  right={0}
+                  width={24}
+                  height={24}
+                  bg="$primary"
+                  style={{
+                    borderRadius: 12,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderWidth: 2,
+                    borderColor: theme.card.val,
+                  }}
+                >
+                  <Ionicons
+                    name="camera"
+                    size={12}
+                    color={theme.primaryForeground.val}
+                  />
+                </View>
+              </View>
+            </View>
             <YStack flex={1} gap="$1">
-              <Text fontSize="$5" fontWeight="600" color="$color">
-                {appUser.name ?? appUser.email ?? '—'}
+              <Text fontSize={20} fontWeight="700" color="$color">
+                {displayName ?? appUser.email ?? '—'}
               </Text>
-              {appUser.email ? (
-                <Text fontSize="$3" color="$gray12">
-                  {appUser.email}
+              {uploading ? (
+                <Text fontSize="$2" color="$gray11">
+                  头像上传中…
                 </Text>
               ) : null}
-              <XStack gap="$2" style={{ alignItems: 'center' }}>
-                <Text fontSize="$2" color="$gray12">
-                  {labels.apple_login_label}
-                </Text>
-                <Ionicons name="logo-apple" size={14} color={theme.muted.val} />
-              </XStack>
             </YStack>
             <Ionicons
               name="chevron-forward"

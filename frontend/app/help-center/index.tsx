@@ -4,8 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { YStack, XStack, Text, useTheme } from 'tamagui';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-
 import { PikoCard } from '@/common/components/piko-card';
 
 if (
@@ -85,64 +83,60 @@ export default function HelpCenterScreen(): ReactNode {
         </XStack>
 
         <YStack px="$4" gap="$2" pt="$2">
-          <Animated.View entering={FadeInDown.delay(50).springify()}>
-            <PikoCard noPadding>
-              {FAQ_ITEMS.map((item, i) => (
+          <PikoCard noPadding>
+            {FAQ_ITEMS.map((item, i) => (
+              <XStack
+                key={i}
+                flexDirection="column"
+                borderBottomWidth={i < FAQ_ITEMS.length - 1 ? 0.5 : 0}
+                borderBottomColor="$gray4"
+              >
                 <XStack
-                  key={i}
-                  flexDirection="column"
-                  borderBottomWidth={i < FAQ_ITEMS.length - 1 ? 0.5 : 0}
-                  borderBottomColor="$gray4"
+                  py="$3"
+                  px="$4"
+                  style={{
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                  pressStyle={{ opacity: 0.8 }}
+                  onPress={() => toggle(i)}
                 >
-                  <XStack
-                    py="$3"
-                    px="$4"
-                    style={{
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                    }}
-                    pressStyle={{ opacity: 0.8 }}
-                    onPress={() => toggle(i)}
+                  <Text
+                    fontSize="$4"
+                    fontWeight="600"
+                    color="$color"
+                    flex={1}
+                    numberOfLines={openIndex === i ? undefined : 2}
                   >
-                    <Text
-                      fontSize="$4"
-                      fontWeight="600"
-                      color="$color"
-                      flex={1}
-                      numberOfLines={openIndex === i ? undefined : 2}
-                    >
-                      {item.question}
-                    </Text>
-                    <Ionicons
-                      name={openIndex === i ? 'chevron-up' : 'chevron-down'}
-                      size={20}
-                      color={theme.muted.val}
-                    />
-                  </XStack>
-                  {openIndex === i ? (
-                    <XStack px="$4" pb="$3">
-                      <Text fontSize="$3" color="$gray12" lineHeight={22}>
-                        {item.answer}
-                      </Text>
-                    </XStack>
-                  ) : null}
+                    {item.question}
+                  </Text>
+                  <Ionicons
+                    name={openIndex === i ? 'chevron-up' : 'chevron-down'}
+                    size={20}
+                    color={theme.muted.val}
+                  />
                 </XStack>
-              ))}
-            </PikoCard>
-          </Animated.View>
+                {openIndex === i ? (
+                  <XStack px="$4" pb="$3">
+                    <Text fontSize="$3" color="$gray12" lineHeight={22}>
+                      {item.answer}
+                    </Text>
+                  </XStack>
+                ) : null}
+              </XStack>
+            ))}
+          </PikoCard>
 
-          <Animated.View entering={FadeInDown.delay(150).springify()}>
-            <XStack
-              py="$4"
-              style={{ alignItems: 'center', justifyContent: 'center' }}
-              pressStyle={{ opacity: 0.8 }}
-              onPress={() => router.push('/contact-us')}
-            >
-              <Text fontSize="$4" fontWeight="600" color="$color">
-                未找到答案？联系我们
-              </Text>
-            </XStack>
-          </Animated.View>
+          <XStack
+            py="$4"
+            style={{ alignItems: 'center', justifyContent: 'center' }}
+            pressStyle={{ opacity: 0.8 }}
+            onPress={() => router.push('/contact-us')}
+          >
+            <Text fontSize="$4" fontWeight="600" color="$color">
+              未找到答案？联系我们
+            </Text>
+          </XStack>
         </YStack>
       </ScrollView>
     </YStack>

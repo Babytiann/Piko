@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { YStack, XStack, Text, useTheme } from 'tamagui';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { PikoCard } from '@/common/components/piko-card';
@@ -145,82 +144,76 @@ export default function PrivacySecurityScreen(): ReactNode {
         </XStack>
 
         <YStack px="$4" gap="$4" pt="$2">
-          <Animated.View entering={FadeInDown.delay(50).springify()}>
-            <PikoCard padding="$4">
-              <YStack gap="$2">
-                <Text fontSize="$2" fontWeight="600" color="$gray12">
-                  数据安全
-                </Text>
-                <Text fontSize="$3" color="$gray12">
-                  你的数据在传输与存储时均受保护。我们不会将你的个人数据用于未经授权的用途。
-                </Text>
-              </YStack>
-            </PikoCard>
-          </Animated.View>
+          <PikoCard padding="$4">
+            <YStack gap="$2">
+              <Text fontSize="$2" fontWeight="600" color="$gray12">
+                数据安全
+              </Text>
+              <Text fontSize="$3" color="$gray12">
+                你的数据在传输与存储时均受保护。我们不会将你的个人数据用于未经授权的用途。
+              </Text>
+            </YStack>
+          </PikoCard>
 
-          <Animated.View entering={FadeInDown.delay(100).springify()}>
-            <PikoCard padding="$4">
-              <YStack gap="$3">
-                <Text fontSize="$2" fontWeight="600" color="$gray12">
-                  数据管理
+          <PikoCard padding="$4">
+            <YStack gap="$3">
+              <Text fontSize="$2" fontWeight="600" color="$gray12">
+                数据管理
+              </Text>
+              <XStack
+                py="$3"
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  borderBottomWidth: 0.5,
+                  borderBottomColor: '$gray4',
+                }}
+                pressStyle={{ opacity: 0.8 }}
+                onPress={clearingLocal ? undefined : handleClearLocalCache}
+              >
+                <Text fontSize="$4" color="$color">
+                  清除本地缓存
                 </Text>
-                <XStack
-                  py="$3"
-                  style={{
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    borderBottomWidth: 0.5,
-                    borderBottomColor: '$gray4',
-                  }}
-                  pressStyle={{ opacity: 0.8 }}
-                  onPress={clearingLocal ? undefined : handleClearLocalCache}
-                >
-                  <Text fontSize="$4" color="$color">
-                    清除本地缓存
-                  </Text>
-                  <Text fontSize="$2" color="$gray12">
-                    {clearingLocal ? '处理中…' : '清除对话等本地缓存'}
-                  </Text>
-                </XStack>
-                <XStack
-                  py="$3"
-                  style={{
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    borderBottomWidth: 0.5,
-                    borderBottomColor: '$gray4',
-                  }}
-                  pressStyle={{ opacity: 0.8 }}
-                  onPress={clearingCloud ? undefined : handleClearCloudData}
-                >
-                  <Text fontSize="$4" color="$color">
-                    清除云端数据
-                  </Text>
-                  <Text fontSize="$2" color="$gray12">
-                    {clearingCloud
-                      ? '处理中…'
-                      : '删除消费、对话、预算，保留账号'}
-                  </Text>
-                </XStack>
-                <XStack
-                  py="$3"
-                  style={{
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
-                  pressStyle={deleting ? undefined : { opacity: 0.8 }}
-                  onPress={deleting ? undefined : handleDeleteAccount}
-                >
-                  <Text fontSize="$4" color="$destructive">
-                    删除账号
-                  </Text>
-                  <Text fontSize="$2" color="$gray12">
-                    {deleting ? '处理中…' : '永久删除账号及全部数据'}
-                  </Text>
-                </XStack>
-              </YStack>
-            </PikoCard>
-          </Animated.View>
+                <Text fontSize="$2" color="$gray12">
+                  {clearingLocal ? '处理中…' : '清除对话等本地缓存'}
+                </Text>
+              </XStack>
+              <XStack
+                py="$3"
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  borderBottomWidth: 0.5,
+                  borderBottomColor: '$gray4',
+                }}
+                pressStyle={{ opacity: 0.8 }}
+                onPress={clearingCloud ? undefined : handleClearCloudData}
+              >
+                <Text fontSize="$4" color="$color">
+                  清除云端数据
+                </Text>
+                <Text fontSize="$2" color="$gray12">
+                  {clearingCloud ? '处理中…' : '删除消费、对话、预算，保留账号'}
+                </Text>
+              </XStack>
+              <XStack
+                py="$3"
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+                pressStyle={deleting ? undefined : { opacity: 0.8 }}
+                onPress={deleting ? undefined : handleDeleteAccount}
+              >
+                <Text fontSize="$4" color="$destructive">
+                  删除账号
+                </Text>
+                <Text fontSize="$2" color="$gray12">
+                  {deleting ? '处理中…' : '永久删除账号及全部数据'}
+                </Text>
+              </XStack>
+            </YStack>
+          </PikoCard>
         </YStack>
       </ScrollView>
     </YStack>

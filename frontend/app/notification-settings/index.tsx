@@ -5,8 +5,6 @@ import { useRouter } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import { Ionicons } from '@expo/vector-icons';
 import { YStack, XStack, Text, useTheme } from 'tamagui';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-
 import { PikoCard } from '@/common/components/piko-card';
 
 const PERMISSION_LABELS: Record<string, string> = {
@@ -57,38 +55,36 @@ export default function NotificationSettingsScreen(): ReactNode {
         </XStack>
 
         <YStack px="$4" gap="$4" pt="$2">
-          <Animated.View entering={FadeInDown.delay(50).springify()}>
-            <PikoCard padding="$4">
-              <YStack gap="$3">
-                <XStack
-                  style={{
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <Text fontSize="$4" fontWeight="600" color="$color">
-                    推送通知
-                  </Text>
-                  <Text fontSize="$3" color="$gray12">
-                    {status ? (PERMISSION_LABELS[status] ?? status) : '加载中…'}
-                  </Text>
-                </XStack>
-                <Text fontSize="$2" color="$gray12">
-                  开启后，你可以收到消费提醒、每日报告等重要通知。如需更改，请前往系统设置。
+          <PikoCard padding="$4">
+            <YStack gap="$3">
+              <XStack
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Text fontSize="$4" fontWeight="600" color="$color">
+                  推送通知
                 </Text>
-                <XStack
-                  py="$2"
-                  style={{ alignItems: 'center', justifyContent: 'center' }}
-                  pressStyle={{ opacity: 0.8 }}
-                  onPress={() => Linking.openSettings()}
-                >
-                  <Text fontSize="$4" fontWeight="600" color="$color">
-                    前往系统设置
-                  </Text>
-                </XStack>
-              </YStack>
-            </PikoCard>
-          </Animated.View>
+                <Text fontSize="$3" color="$gray12">
+                  {status ? (PERMISSION_LABELS[status] ?? status) : '加载中…'}
+                </Text>
+              </XStack>
+              <Text fontSize="$2" color="$gray12">
+                开启后，你可以收到消费提醒、每日报告等重要通知。如需更改，请前往系统设置。
+              </Text>
+              <XStack
+                py="$2"
+                style={{ alignItems: 'center', justifyContent: 'center' }}
+                pressStyle={{ opacity: 0.8 }}
+                onPress={() => Linking.openSettings()}
+              >
+                <Text fontSize="$4" fontWeight="600" color="$color">
+                  前往系统设置
+                </Text>
+              </XStack>
+            </YStack>
+          </PikoCard>
         </YStack>
       </ScrollView>
     </YStack>

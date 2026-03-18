@@ -36,6 +36,8 @@ export interface ProfileAppUser {
   email: string | null;
   /** 用户自定义昵称（来自 DB），未设置时为 null。 */
   nickname?: string | null;
+  /** 自定义头像 URL（R2），未设置时为 null。 */
+  avatar_url?: string | null;
   /** 天气城市（为空则用自动定位），未设置时为 null。 */
   weather_city?: string | null;
 }

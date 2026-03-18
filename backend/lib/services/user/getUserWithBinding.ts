@@ -16,34 +16,36 @@ export async function getUserWithBinding(userId: string): Promise<{
     createdAt: Date;
   } | null;
 } | null> {
-  const [user] = await db
-    .select({
-      id: users.id,
-      nickname: users.nickname,
-      avatarUrl: users.avatarUrl,
-      weatherCity: users.weatherCity,
-    })
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
+  const [userRows, bindingRows] = await Promise.all([
+    db
+      .select({
+        id: users.id,
+        nickname: users.nickname,
+        avatarUrl: users.avatarUrl,
+        weatherCity: users.weatherCity,
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1),
+    db
+      .select({
+        sessionString: telegramBindings.sessionString,
+        telegramUserId: telegramBindings.telegramUserId,
+        firstName: telegramBindings.firstName,
+        username: telegramBindings.username,
+        phone: telegramBindings.phone,
+        createdAt: telegramBindings.createdAt,
+      })
+      .from(telegramBindings)
+      .where(eq(telegramBindings.userId, userId))
+      .limit(1),
+  ]);
 
+  const user = userRows[0];
   if (!user) return null;
-
-  const [binding] = await db
-    .select({
-      sessionString: telegramBindings.sessionString,
-      telegramUserId: telegramBindings.telegramUserId,
-      firstName: telegramBindings.firstName,
-      username: telegramBindings.username,
-      phone: telegramBindings.phone,
-      createdAt: telegramBindings.createdAt,
-    })
-    .from(telegramBindings)
-    .where(eq(telegramBindings.userId, userId))
-    .limit(1);
 
   return {
     ...user,
-    telegramBinding: binding ?? null,
+    telegramBinding: bindingRows[0] ?? null,
   };
 }
