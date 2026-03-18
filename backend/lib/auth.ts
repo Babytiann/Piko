@@ -35,10 +35,17 @@ export const auth = betterAuth({
       clientSecret: process.env.APPLE_CLIENT_SECRET ?? '',
       appBundleIdentifier: process.env.APPLE_APP_BUNDLE_IDENTIFIER ?? undefined,
     },
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID ?? '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
+      accessType: 'offline',
+      prompt: 'select_account consent',
+    },
   },
 
   trustedOrigins: [
     'https://appleid.apple.com',
+    'https://accounts.google.com',
     'piko://',
     'exp://localhost:8081',
     'exp://',

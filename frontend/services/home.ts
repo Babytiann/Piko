@@ -23,8 +23,8 @@ export function fetchHomePage(
 export function fetchReverseGeocode(
   lat: number,
   lon: number,
-): Promise<ApiResponse<{ city: string }>> {
-  return fetch<{ lat: string; lon: string }, { city: string }>({
+): Promise<ApiResponse<{ city: string; state?: string }>> {
+  return fetch<{ lat: string; lon: string }, { city: string; state?: string }>({
     method: 'GET',
     path: 'homepage/weather/reverse-geocode',
     params: { lat: String(lat), lon: String(lon) },

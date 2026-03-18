@@ -47,6 +47,7 @@ export interface ProfilePageLabels {
   page_title: string;
   user_section: {
     apple_login_label: string;
+    google_login_label?: string;
     sign_in_prompt: string;
     ios_only_hint: string;
     loading_label: string;

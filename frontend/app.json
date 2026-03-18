@@ -65,7 +65,13 @@
           "locationWhenInUsePermission": "Piko 需要你的位置来推荐合适的地图应用"
         }
       ],
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.282386252636-fqba4u9efo8gjrul6f6m3r0krg8lp3g2"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
@@ -74,7 +80,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "f7e9ed6f-4b50-48a2-b104-0f00319c640f"
+        "projectId": "0fa4028c-ef7b-4f2b-a0a1-0f53b8b60563"
       }
     }
   }

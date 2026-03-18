@@ -17,6 +17,12 @@
       "ios": {
         "simulator": false
       }
+    },
+    "development": {
+      "environment": "development",
+      "ios": {
+        "simulator": false
+      }
     }
   }
 }

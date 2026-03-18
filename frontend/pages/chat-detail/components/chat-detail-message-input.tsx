@@ -1,9 +1,19 @@
 import type { ReactNode } from 'react';
 import { useState } from 'react';
-import { TextInput, ActivityIndicator, StyleSheet } from 'react-native';
+import {
+  TextInput,
+  ActivityIndicator,
+  StyleSheet,
+  Platform,
+} from 'react-native';
 import { XStack, YStack, Text, View } from 'tamagui';
+import { Ionicons } from '@expo/vector-icons';
 
 import type { MessageItem } from '@/common/typings/chat';
+
+const IMESSAGE_BLUE = '#007AFF';
+const INPUT_RADIUS = 22;
+const SEND_SIZE = 36;
 
 interface ChatDetailMessageInputProps {
   placeholder: string;
@@ -39,7 +49,7 @@ export default function ChatDetailMessageInput({
 
   return (
     <View
-      borderTopWidth={1}
+      borderTopWidth={StyleSheet.hairlineWidth}
       borderColor="$gray5"
       bg="$background"
       pb={bottomInset}
@@ -50,20 +60,20 @@ export default function ChatDetailMessageInput({
           py="$2"
           bg="$gray3"
           gap="$2"
-          borderBottomWidth={1}
+          borderBottomWidth={StyleSheet.hairlineWidth}
           borderColor="$gray5"
           style={{ alignItems: 'center' }}
         >
           <View
             width={3}
-            bg="$primary"
+            bg={IMESSAGE_BLUE}
             style={{ alignSelf: 'stretch', borderRadius: 4 }}
           />
           <YStack flex={1} gap={2}>
             <Text
               fontSize="$1"
               fontWeight="600"
-              color="$primaryForeground"
+              color="$color"
               numberOfLines={1}
             >
               {replyTo.sender_name || '消息'}
@@ -84,25 +94,26 @@ export default function ChatDetailMessageInput({
         </XStack>
       ) : null}
 
-      <XStack px="$3" py="$2" gap="$2" style={{ alignItems: 'flex-end' }}>
+      <XStack px="$3" py="$2.5" gap="$2.5" style={{ alignItems: 'flex-end' }}>
         <TextInput
           style={styles.textInput}
           placeholder={placeholder}
+          placeholderTextColor="#8E8E93"
           value={text}
           onChangeText={setText}
           multiline
           returnKeyType="default"
         />
         <View
-          width={36}
-          height={36}
-          bg={trimmed ? '$primary' : '$gray4'}
+          width={SEND_SIZE}
+          height={SEND_SIZE}
+          bg={trimmed ? IMESSAGE_BLUE : '$gray4'}
           opacity={trimmed ? 1 : 0.5}
           pressStyle={trimmed ? { scale: 0.92 } : undefined}
           onPress={!sending && trimmed ? () => void handleSend() : undefined}
           animation="quick"
           style={{
-            borderRadius: 18,
+            borderRadius: SEND_SIZE / 2,
             justifyContent: 'center',
             alignItems: 'center',
           }}
@@ -110,13 +121,11 @@ export default function ChatDetailMessageInput({
           {sending ? (
             <ActivityIndicator color="white" size="small" />
           ) : (
-            <Text
-              color={trimmed ? 'white' : '$gray10'}
-              fontSize={18}
-              fontWeight="600"
-            >
-              ↑
-            </Text>
+            <Ionicons
+              name="arrow-up"
+              size={20}
+              color={trimmed ? 'white' : '#8E8E93'}
+            />
           )}
         </View>
       </XStack>
@@ -129,10 +138,11 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 36,
     maxHeight: 100,
-    borderRadius: 18,
-    backgroundColor: 'rgba(128,128,128,0.1)',
+    borderRadius: INPUT_RADIUS,
+    backgroundColor: 'rgba(142, 142, 147, 0.12)',
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    fontSize: 15,
+    paddingVertical: Platform.OS === 'ios' ? 10 : 8,
+    fontSize: 16,
+    lineHeight: 20,
   },
 });

@@ -7,6 +7,10 @@ import * as Haptics from 'expo-haptics';
 
 import useKeyboardBottomInset from '../hooks/useKeyboardBottomInset';
 
+const IMESSAGE_BLUE = '#007AFF';
+const INPUT_RADIUS = 22;
+const SEND_SIZE = 40;
+
 interface Props {
   onSend: (text: string) => void;
   isStreaming?: boolean;
@@ -50,8 +54,8 @@ export default function AiChatInput({
   return (
     <XStack
       px="$3"
-      py="$2"
-      gap="$2"
+      py="$2.5"
+      gap="$2.5"
       bg="$card"
       pb={bottomInset}
       borderTopWidth={StyleSheet.hairlineWidth}
@@ -62,7 +66,11 @@ export default function AiChatInput({
         flex={1}
         bg="$gray3"
         px="$3"
-        style={{ borderRadius: 20, minHeight: 40, justifyContent: 'center' }}
+        style={{
+          borderRadius: INPUT_RADIUS,
+          minHeight: 40,
+          justifyContent: 'center',
+        }}
       >
         <TextInput
           value={text}
@@ -79,14 +87,14 @@ export default function AiChatInput({
 
       {isStreaming ? (
         <View
-          width={40}
-          height={40}
+          width={SEND_SIZE}
+          height={SEND_SIZE}
           bg="$red9"
           pressStyle={{ scale: 0.92 }}
           onPress={handleStop}
           animation="quick"
           style={{
-            borderRadius: 20,
+            borderRadius: SEND_SIZE / 2,
             alignItems: 'center',
             justifyContent: 'center',
           }}
@@ -95,15 +103,15 @@ export default function AiChatInput({
         </View>
       ) : (
         <View
-          width={40}
-          height={40}
-          bg={canSend ? '#60A5FA' : '$gray5'}
+          width={SEND_SIZE}
+          height={SEND_SIZE}
+          bg={canSend ? IMESSAGE_BLUE : '$gray5'}
           opacity={canSend ? 1 : 0.5}
           pressStyle={canSend ? { scale: 0.92 } : undefined}
           onPress={canSend ? handleSend : undefined}
           animation="quick"
           style={{
-            borderRadius: 20,
+            borderRadius: SEND_SIZE / 2,
             alignItems: 'center',
             justifyContent: 'center',
           }}

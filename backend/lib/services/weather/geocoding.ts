@@ -8,6 +8,7 @@ interface ReverseGeoItem {
   name: string;
   local_names?: { zh?: string; zh_cn?: string; en?: string };
   country: string;
+  state?: string;
 }
 
 /** 将城市名转为经纬度坐标 */
@@ -36,15 +37,20 @@ export async function geocodeCity(city: string): Promise<GeoLocation> {
   return data[0];
 }
 
-/** 反向地理编码：经纬度 → 城市名 */
+/** 是否为区/县名（优先返回城市级名称） */
+function isDistrictOrCounty(name: string): boolean {
+  return name.endsWith('区') || name.endsWith('县');
+}
+
+/** 反向地理编码：经纬度 → 城市名，优先返回城市级名称并带回 state 辅助前端匹配 */
 export async function reverseGeocode(
   lat: number,
   lon: number,
-): Promise<{ city: string; country: string }> {
+): Promise<{ city: string; country: string; state?: string }> {
   const url = new URL(`${BASE}/geo/1.0/reverse`);
   url.searchParams.set('lat', String(lat));
   url.searchParams.set('lon', String(lon));
-  url.searchParams.set('limit', '1');
+  url.searchParams.set('limit', '5');
   url.searchParams.set('appid', API_KEY);
 
   const res = await fetch(url.toString());
@@ -56,7 +62,16 @@ export async function reverseGeocode(
   if (!data[0]) {
     throw new Error('无法解析该位置');
   }
-  const item = data[0];
+
+  const preferred = data.find((item) => {
+    const name = item.local_names?.zh ?? item.local_names?.zh_cn ?? item.name;
+    return !isDistrictOrCounty(name);
+  });
+  const item = preferred ?? data[0];
   const city = item.local_names?.zh ?? item.local_names?.zh_cn ?? item.name;
-  return { city, country: item.country };
+  return {
+    city,
+    country: item.country,
+    state: item.state,
+  };
 }

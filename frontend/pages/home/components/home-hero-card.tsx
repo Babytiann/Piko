@@ -107,8 +107,10 @@ export default function HomeHeroCard({
       runOnJS(syncPage)(next);
     });
 
-  const tap = Gesture.Tap().onEnd(() => {
-    if (onWeatherPress) runOnJS(openWeatherSheet)();
+  const tap = Gesture.Tap().onEnd((e) => {
+    if (activeIndex.value === 0 && e.x < cardWidth / 2 && onWeatherPress) {
+      runOnJS(openWeatherSheet)();
+    }
   });
 
   const composed = Gesture.Race(pan, tap);

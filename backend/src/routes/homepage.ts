@@ -45,8 +45,8 @@ homepageRoutes.get('/weather/reverse-geocode', async (c) => {
         400,
       );
     }
-    const { city } = await reverseGeocode(lat, lon);
-    return c.json({ success: true, data: { city } });
+    const { city, state } = await reverseGeocode(lat, lon);
+    return c.json({ success: true, data: { city, state } });
   } catch (err: unknown) {
     const message =
       err instanceof Error ? err.message : 'Reverse geocode failed';

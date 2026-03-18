@@ -78,6 +78,9 @@ const DISTRICT_TO_CITY: Record<string, string> = {
   余杭区: '杭州',
   萧山区: '杭州',
   临安区: '杭州',
+  钱塘区: '杭州',
+  临平区: '杭州',
+  富阳区: '杭州',
   浦东新区: '上海',
   徐汇区: '上海',
   黄浦区: '上海',
@@ -103,6 +106,10 @@ const DISTRICT_TO_CITY: Record<string, string> = {
   Suzhou: '苏州',
   "Xi'an": '西安',
   Xian: '西安',
+  浙江省: '杭州',
+  江苏省: '南京',
+  广东省: '广州',
+  四川省: '成都',
 };
 
 function findIndicesByCity(
@@ -182,12 +189,65 @@ export default function HomeWeatherCitySheet({
       const pi = Math.min(provinceIndex, options.length - 1);
       setSelectedProvinceIndex(pi);
       setSelectedCityIndex(cityIndex);
-      const prov = options[pi];
-      const cityName = prov.cities[cityIndex];
-      const displayName = getCityDisplayName(prov.name, cityName ?? '');
-      setLocatedCityName(displayName);
     }
   }, [visible, currentCity, options.length]);
+
+  useEffect(() => {
+    if (!visible || options.length === 0) return;
+    if (wasDenied()) return;
+    let cancelled = false;
+    setLocating(true);
+    setLocateError(null);
+    void (async () => {
+      try {
+        const loc = await getLocation();
+        if (cancelled) return;
+        if (!loc) {
+          setLocateError(
+            labels.locate_failed_hint ?? '定位失败，请检查权限或网络',
+          );
+          setLocating(false);
+          return;
+        }
+        const res = await fetchReverseGeocode(loc.latitude, loc.longitude);
+        if (cancelled) return;
+        if (!res?.success || !res.data?.city) {
+          setLocateError(
+            labels.geocode_failed_hint ?? '无法识别当前位置，请手动选择城市',
+          );
+          setLocating(false);
+          return;
+        }
+        const opts = weatherCityOptions.length > 0 ? weatherCityOptions : [];
+        if (opts.length === 0) {
+          setLocating(false);
+          return;
+        }
+        const { provinceIndex, cityIndex } = findIndicesByCity(
+          res.data.city,
+          opts,
+        );
+        setSelectedProvinceIndex(provinceIndex);
+        setSelectedCityIndex(cityIndex);
+        const prov = opts[provinceIndex];
+        const cityName = prov.cities[cityIndex];
+        const displayName = getCityDisplayName(prov.name, cityName ?? '');
+        setLocatedCityName(displayName);
+        setLocateError(null);
+      } catch {
+        if (!cancelled) {
+          setLocateError(
+            labels.locate_failed_hint ?? '定位失败，请检查权限或网络',
+          );
+        }
+      } finally {
+        if (!cancelled) setLocating(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [visible, options.length]);
 
   useEffect(() => {
     if (options.length === 0 || selectedProvinceIndex >= options.length) return;
@@ -346,60 +406,67 @@ export default function HomeWeatherCitySheet({
                 style={{ maxHeight: sheetMaxHeight - 120 }}
                 contentContainerStyle={{ paddingBottom: 16 }}
               >
-                <YStack
+                <XStack
                   mb="$4"
-                  py="$3"
-                  px="$4"
+                  py="$2.5"
+                  px="$3"
                   bg="$gray3"
-                  style={{ borderRadius: 14, borderCurve: 'continuous' }}
+                  style={{
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    borderRadius: 12,
+                    borderCurve: 'continuous',
+                  }}
                 >
-                  <XStack style={{ alignItems: 'center', gap: 8 }}>
-                    <Ionicons name="locate" size={20} color={colors.primary} />
-                    <Text fontSize={14} fontWeight="600" color="$color">
-                      {labels.auto_locate_label}
-                    </Text>
+                  <XStack style={{ alignItems: 'center', gap: 8, flex: 1 }}>
+                    <Ionicons
+                      name="locate"
+                      size={18}
+                      color={locating ? colors.muted : colors.primary}
+                    />
+                    {wasDenied() ? (
+                      <Text
+                        fontSize={13}
+                        color="$primary"
+                        flex={1}
+                        pressStyle={{ opacity: 0.8 }}
+                        onPress={handleOpenSettings}
+                      >
+                        {labels.auto_locate_denied_hint}
+                      </Text>
+                    ) : locating ? (
+                      <Text fontSize={13} color="$muted">
+                        {labels.locating_label}
+                      </Text>
+                    ) : locateError ? (
+                      <Text fontSize={13} color="$destructive" flex={1}>
+                        {locateError}
+                      </Text>
+                    ) : locatedCityName ? (
+                      <Text fontSize={13} fontWeight="600" color="$color">
+                        {locatedCityName}
+                      </Text>
+                    ) : (
+                      <Text fontSize={13} color="$muted">
+                        {labels.auto_locate_label}
+                      </Text>
+                    )}
                   </XStack>
-                  {wasDenied() ? (
-                    <Text
-                      fontSize={12}
-                      color="$primary"
-                      mt="$2"
-                      pressStyle={{ opacity: 0.8 }}
-                      onPress={handleOpenSettings}
-                    >
-                      {labels.auto_locate_denied_hint}
-                    </Text>
-                  ) : (
+                  {!wasDenied() && (
                     <Pressable
                       onPress={() => void handleAutoLocate()}
                       disabled={locating}
-                      style={{ marginTop: 8 }}
+                      hitSlop={8}
+                      style={{ padding: 4 }}
                     >
-                      <Text
-                        fontSize={12}
-                        color="$primary"
-                        style={{ opacity: locating ? 0.6 : 1 }}
-                      >
-                        {locating
-                          ? labels.locating_label
-                          : labels.locate_click_hint}
-                      </Text>
+                      <Ionicons
+                        name="refresh"
+                        size={18}
+                        color={locating ? colors.muted : colors.primary}
+                      />
                     </Pressable>
                   )}
-                  {locatedCityName ? (
-                    <Text fontSize={12} color="$success" mt="$2">
-                      {(
-                        labels.located_success_hint ??
-                        '已定位到 {city}，请点击下方确定保存'
-                      ).replace('{city}', locatedCityName)}
-                    </Text>
-                  ) : null}
-                  {locateError ? (
-                    <Text fontSize={12} color="$destructive" mt="$2">
-                      {locateError}
-                    </Text>
-                  ) : null}
-                </YStack>
+                </XStack>
 
                 {options.length === 0 ? (
                   <YStack

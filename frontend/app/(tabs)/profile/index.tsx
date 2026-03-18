@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ComponentType, type ReactNode } from 'react';
 import { Alert, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -17,7 +17,11 @@ import { authClient } from '@/services/auth-client';
 import { DEFAULT_PROFILE_LABELS } from '@/pages/profile/consts/default-labels';
 import { useProfileData } from '@/pages/profile/hooks/useProfileData';
 import ProfileAppleSection from '@/pages/profile/components/profile-apple-section';
+import type { ProfileGoogleSectionProps } from '@/pages/profile/components/profile-google-section';
 import ProfileTelegramSection from '@/pages/profile/components/profile-telegram-section';
+import ProfileSettingsSection from '@/pages/profile/components/profile-settings-section';
+
+const isExpoGo = Constants.appOwnership === 'expo';
 import ProfileListRow from '@/pages/profile/components/profile-list-row';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
@@ -41,6 +45,16 @@ export default function ProfileScreen(): ReactNode {
     appSession?.user?.id,
   );
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [GoogleSectionComponent, setGoogleSectionComponent] =
+    useState<ComponentType<ProfileGoogleSectionProps> | null>(null);
+
+  useEffect(() => {
+    if (!isExpoGo) {
+      import('@/pages/profile/components/profile-google-section').then((m) =>
+        setGoogleSectionComponent(() => m.default),
+      );
+    }
+  }, []);
 
   useEffect(() => {
     if (errorType !== PageErrorType.AUTH || !appSession?.user) return;
@@ -211,6 +225,19 @@ export default function ProfileScreen(): ReactNode {
             labels={labels.user_section}
             onPress={() => router.push('/account-settings')}
           />
+
+          {!hasAppSession && GoogleSectionComponent ? (
+            <GoogleSectionComponent
+              appUser={appUser}
+              labels={labels.user_section}
+            />
+          ) : null}
+          {!hasAppSession && isExpoGo ? (
+            <Text fontSize="$2" color="$gray10" px="$2">
+              Google 登录需使用开发构建调试：运行 npx expo run:ios 或
+              run:android
+            </Text>
+          ) : null}
 
           {showProfileError ? (
             <PageStatusView errorType={errorType} onRetry={handleRetry} />

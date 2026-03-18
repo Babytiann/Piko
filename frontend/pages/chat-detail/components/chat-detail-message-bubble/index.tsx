@@ -7,6 +7,10 @@ import Avatar from '@/common/components/avatar';
 import ReplyPreview from './reply-preview';
 import MediaImage from './media-image';
 
+const IMESSAGE_BLUE = '#007AFF';
+const BUBBLE_RADIUS = 20;
+const BUBBLE_TAIL = 4;
+
 interface Props {
   message: MessageItem;
   showAvatar?: boolean;
@@ -24,18 +28,18 @@ export default function ChatDetailMessageBubble({
 
   const bubbleContent = (
     <YStack
-      bg={isMe ? '$primary' : '$gray4'}
+      bg={isMe ? IMESSAGE_BLUE : '$gray4'}
       px="$3"
-      py="$2"
+      py="$2.5"
       style={{
         maxWidth: '80%',
-        borderRadius: 16,
-        borderBottomRightRadius: isMe ? 4 : 16,
-        borderBottomLeftRadius: isMe ? 16 : 4,
+        borderRadius: BUBBLE_RADIUS,
+        borderBottomRightRadius: isMe ? BUBBLE_TAIL : BUBBLE_RADIUS,
+        borderBottomLeftRadius: isMe ? BUBBLE_RADIUS : BUBBLE_TAIL,
       }}
     >
       {!isMe && message.sender_name ? (
-        <Text fontSize="$1" fontWeight="600" color="$primaryForeground" mb="$1">
+        <Text fontSize="$1" fontWeight="600" color="$color" mb="$1">
           {message.sender_name}
         </Text>
       ) : null}
@@ -54,7 +58,7 @@ export default function ChatDetailMessageBubble({
         <Text
           fontSize="$3"
           color={isMe ? 'white' : '$color'}
-          lineHeight={20}
+          lineHeight={22}
           selectable
         >
           {message.text}
@@ -62,7 +66,7 @@ export default function ChatDetailMessageBubble({
       ) : message.has_media && !hasImage ? (
         <Text
           fontSize="$2"
-          color={isMe ? '$primaryForeground' : '$gray10'}
+          color={isMe ? 'rgba(255,255,255,0.9)' : '$gray10'}
           fontStyle="italic"
         >
           [{message.media_type ?? '媒体'}]
@@ -71,7 +75,7 @@ export default function ChatDetailMessageBubble({
 
       <Text
         fontSize={10}
-        color={isMe ? '$primaryForeground' : '$gray10'}
+        color={isMe ? 'rgba(255,255,255,0.75)' : '$gray9'}
         mt="$1"
         style={{ textAlign: 'right' }}
       >
@@ -82,7 +86,7 @@ export default function ChatDetailMessageBubble({
 
   if (!isMe && showAvatar) {
     return (
-      <XStack px="$3" py="$1" gap="$2" style={{ alignItems: 'flex-end' }}>
+      <XStack px="$3" py="$1.5" gap="$2" style={{ alignItems: 'flex-end' }}>
         <Avatar
           url={message.sender_avatar_url}
           text={message.sender_name?.charAt(0)?.toUpperCase() ?? '?'}
@@ -97,7 +101,7 @@ export default function ChatDetailMessageBubble({
   return (
     <YStack
       px="$3"
-      py="$1"
+      py="$1.5"
       style={{ alignItems: isMe ? 'flex-end' : 'flex-start' }}
     >
       {bubbleContent}
