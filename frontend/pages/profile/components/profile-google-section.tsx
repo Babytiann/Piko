@@ -35,12 +35,14 @@ export interface ProfileGoogleSectionProps {
     google_login_label?: string;
   };
   onLoginSuccess?: () => void;
+  onLoginFailed?: () => void;
 }
 
 export default function ProfileGoogleSection({
   appUser,
   labels,
   onLoginSuccess,
+  onLoginFailed,
 }: ProfileGoogleSectionProps): ReactNode {
   const [isSigningIn, setIsSigningIn] = useState(false);
 
@@ -69,6 +71,7 @@ export default function ProfileGoogleSection({
       const response: SignInResponse = await GoogleSignin.signIn();
       if (response.type !== 'success' || !response.data?.idToken) {
         setIsSigningIn(false);
+        onLoginFailed?.();
         return;
       }
       const idToken = response.data.idToken;
@@ -84,6 +87,7 @@ export default function ProfileGoogleSection({
       if (error) {
         console.error('[Google Sign In]', error);
         setIsSigningIn(false);
+        onLoginFailed?.();
       } else {
         // 主动刷新 session，使 useSession() 立即感知到登录态，减少 loading 时间
         await authClient.getSession();
@@ -92,6 +96,7 @@ export default function ProfileGoogleSection({
     } catch (err) {
       console.error('[Google Sign In]', err);
       setIsSigningIn(false);
+      onLoginFailed?.();
     }
   };
 

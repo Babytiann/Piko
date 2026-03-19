@@ -266,6 +266,7 @@ export default function ProfileScreen(): ReactNode {
                   appUser={appUser}
                   labels={labels.user_section}
                   onLoginSuccess={() => setIsLoginPending(true)}
+                  onLoginFailed={() => setIsLoginPending(false)}
                 />
               ) : null}
               {!hasAppSession && isExpoGo ? (
