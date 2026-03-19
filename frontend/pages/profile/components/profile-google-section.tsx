@@ -4,10 +4,10 @@ import {
   GoogleSignin,
   type SignInResponse,
 } from '@react-native-google-signin/google-signin';
-import { Ionicons } from '@expo/vector-icons';
-import { YStack, XStack, Text, useTheme } from 'tamagui';
+import { YStack, XStack, Text } from 'tamagui';
 
 import { PikoCard } from '@/common/components/piko-card';
+import GoogleColorIcon from '@/common/components/google-color-icon';
 import { authClient } from '@/services/auth-client';
 
 import type {
@@ -15,35 +15,52 @@ import type {
   ProfileAppUser,
 } from '@/common/typings/profile';
 
+/** Web 客户端 ID：用于 idToken 的 audience，需与 Better Auth 后端 Google clientId 一致 */
 const WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '';
+/**
+ * iOS 客户端 ID：Google Cloud「iOS」类型 OAuth 客户端（与 Web 客户端 ID 不同）。
+ * 无 Firebase 的 GoogleService-Info.plist 时，iOS 必须提供此项，否则 RNGoogleSignin 报错。
+ */
+const IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? '';
+
+function googleSignInReady(): boolean {
+  if (!WEB_CLIENT_ID) return false;
+  if (Platform.OS === 'ios' && !IOS_CLIENT_ID) return false;
+  return true;
+}
 
 export interface ProfileGoogleSectionProps {
   appUser: ProfileAppUser | null;
   labels: ProfilePageLabels['user_section'] & {
     google_login_label?: string;
   };
+  onLoginSuccess?: () => void;
 }
 
 export default function ProfileGoogleSection({
   appUser,
   labels,
+  onLoginSuccess,
 }: ProfileGoogleSectionProps): ReactNode {
-  const theme = useTheme();
   const [isSigningIn, setIsSigningIn] = useState(false);
 
   useEffect(() => {
-    if (WEB_CLIENT_ID) {
-      GoogleSignin.configure({
-        webClientId: WEB_CLIENT_ID,
-        offlineAccess: true,
-      });
-    }
+    if (!WEB_CLIENT_ID) return;
+    GoogleSignin.configure({
+      webClientId: WEB_CLIENT_ID,
+      ...(Platform.OS === 'ios' && IOS_CLIENT_ID
+        ? { iosClientId: IOS_CLIENT_ID }
+        : {}),
+      offlineAccess: true,
+    });
   }, []);
 
   const handleGoogleSignIn = async (): Promise<void> => {
-    if (!WEB_CLIENT_ID) {
+    if (!googleSignInReady()) {
       console.warn(
-        '[Google Sign In] EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID is not set',
+        Platform.OS === 'ios'
+          ? '[Google Sign In] 请在 .env 配置 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID 与 EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID（Google Cloud → iOS 类型客户端）'
+          : '[Google Sign In] 请配置 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID',
       );
       return;
     }
@@ -51,7 +68,7 @@ export default function ProfileGoogleSection({
     try {
       const response: SignInResponse = await GoogleSignin.signIn();
       if (response.type !== 'success' || !response.data?.idToken) {
-        if (response.type === 'cancelled') return;
+        setIsSigningIn(false);
         return;
       }
       const idToken = response.data.idToken;
@@ -66,10 +83,14 @@ export default function ProfileGoogleSection({
       });
       if (error) {
         console.error('[Google Sign In]', error);
+        setIsSigningIn(false);
+      } else {
+        // 主动刷新 session，使 useSession() 立即感知到登录态，减少 loading 时间
+        await authClient.getSession();
+        onLoginSuccess?.();
       }
     } catch (err) {
       console.error('[Google Sign In]', err);
-    } finally {
       setIsSigningIn(false);
     }
   };
@@ -81,9 +102,6 @@ export default function ProfileGoogleSection({
   return (
     <PikoCard>
       <YStack gap="$3">
-        <Text fontSize="$2" color="$gray12">
-          {labels.sign_in_prompt}
-        </Text>
         <XStack
           bg="$gray4"
           py="$2.5"
@@ -95,17 +113,21 @@ export default function ProfileGoogleSection({
             opacity: isSigningIn ? 0.7 : 1,
           }}
           pressStyle={{ opacity: 0.85 }}
-          onPress={WEB_CLIENT_ID ? () => void handleGoogleSignIn() : undefined}
-          disabled={isSigningIn || !WEB_CLIENT_ID}
+          onPress={
+            googleSignInReady() ? () => void handleGoogleSignIn() : undefined
+          }
+          disabled={isSigningIn || !googleSignInReady()}
         >
-          <Ionicons name="logo-google" size={20} color={theme.gray12.val} />
+          <GoogleColorIcon size={20} />
           <Text fontSize="$4" fontWeight="600" color="$color" ml="$2">
             {isSigningIn ? '登录中…' : googleLabel}
           </Text>
         </XStack>
-        {!WEB_CLIENT_ID ? (
+        {!googleSignInReady() ? (
           <Text fontSize="$1" color="$gray10">
-            请配置 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID 以启用 Google 登录
+            {Platform.OS === 'ios'
+              ? 'iOS 需配置 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID（Web 客户端）与 EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID（Google Cloud 中「iOS」OAuth 客户端 ID，Bundle ID 须与 app 一致）'
+              : '请配置 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID'}
           </Text>
         ) : null}
       </YStack>

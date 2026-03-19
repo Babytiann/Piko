@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useState, useCallback, useContext, useEffect } from 'react';
+import { useState, useCallback, useContext, useEffect, useRef } from 'react';
 
 import { ScrollView } from 'react-native';
 import { YStack, Text, Spacer } from 'tamagui';
@@ -23,6 +23,7 @@ import { RecognitionContext } from '@/contexts/recognition-context';
 
 import { authClient } from '@/services/auth-client';
 import useLocation from '@/pages/ai-chat/hooks/useLocation';
+import { appEvents } from '@/common/lib/app-events';
 import { useFetchData } from '@/pages/home/hooks/useFetchData';
 import HomeQuickStats from '@/pages/home/components/home-quick-stats';
 import { fetchReverseGeocode } from '@/services/home';
@@ -194,6 +195,16 @@ export default function HomeScreen(): ReactNode {
   const onBudgetUpdated = useCallback((): void => {
     handleSilentRefresh();
   }, [handleSilentRefresh]);
+
+  // 监听预算更新事件（来自 budget-setup 页或 budget-edit-sheet），立即触发首页刷新
+  const handleSilentRefreshRef = useRef(handleSilentRefresh);
+  handleSilentRefreshRef.current = handleSilentRefresh;
+
+  useEffect(() => {
+    return appEvents.on('budget-updated', () => {
+      handleSilentRefreshRef.current();
+    });
+  }, []);
 
   if (isLoading) return <PageLoading />;
   if (errorType) {

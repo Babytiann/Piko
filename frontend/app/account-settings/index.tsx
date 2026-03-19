@@ -9,9 +9,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons';
 import { YStack, XStack, Text, useTheme } from 'tamagui';
+import GoogleColorIcon from '@/common/components/google-color-icon';
 import { PikoCard } from '@/common/components/piko-card';
 import { useAuth } from '@/common/hooks';
 import { authClient } from '@/services/auth-client';
@@ -153,8 +153,6 @@ export default function AccountSettingsScreen(): ReactNode {
     paddingBottom: insets.bottom + 24,
   };
 
-  const version = Constants.expoConfig?.version ?? '1.0.0';
-
   if (!appUser) {
     return (
       <YStack flex={1} bg="$background" pt={insets.top} px="$4">
@@ -270,14 +268,25 @@ export default function AccountSettingsScreen(): ReactNode {
                   登录方式
                 </Text>
                 <XStack gap="$2" style={{ alignItems: 'center' }}>
-                  <Ionicons
-                    name="logo-apple"
-                    size={20}
-                    color={theme.muted.val}
-                  />
-                  <Text fontSize="$4" color="$color">
-                    Apple 登录
-                  </Text>
+                  {appUser.provider_id === 'google' ? (
+                    <>
+                      <GoogleColorIcon size={20} />
+                      <Text fontSize="$4" color="$color">
+                        Google 登录
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <Ionicons
+                        name="logo-apple"
+                        size={20}
+                        color={theme.muted.val}
+                      />
+                      <Text fontSize="$4" color="$color">
+                        Apple 登录
+                      </Text>
+                    </>
+                  )}
                 </XStack>
               </YStack>
             </PikoCard>
@@ -317,12 +326,6 @@ export default function AccountSettingsScreen(): ReactNode {
                 </YStack>
               </PikoCard>
             </Pressable>
-
-            <PikoCard padding="$4">
-              <Text fontSize="$2" color="$gray12">
-                应用版本 {version}
-              </Text>
-            </PikoCard>
           </YStack>
         </ScrollView>
       </KeyboardAvoidingView>

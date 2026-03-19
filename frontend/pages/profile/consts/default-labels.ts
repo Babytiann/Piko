@@ -6,7 +6,7 @@ export const DEFAULT_PROFILE_LABELS: ProfilePageLabels = {
   user_section: {
     apple_login_label: '通过 Apple 登录',
     google_login_label: '使用 Google 登录',
-    sign_in_prompt: '使用 Apple 或 Google 账号登录后可使用 AI 聊天等功能。',
+    sign_in_prompt: '请选择登录方式，登录后可使用 AI 聊天、预算管理等功能。',
     ios_only_hint: '请在 iOS 设备上使用 Apple 登录。',
     loading_label: '加载中…',
   },

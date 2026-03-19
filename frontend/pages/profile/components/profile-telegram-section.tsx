@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { XStack, YStack, Text, useTheme } from 'tamagui';
 
 import { PikoCard } from '@/common/components/piko-card';
@@ -34,11 +34,7 @@ export default function ProfileTelegramSection({
           py="$3"
           style={{ minHeight: 56, alignItems: 'center' }}
         >
-          <Ionicons
-            name="paper-plane-outline"
-            size={22}
-            color={theme.muted.val}
-          />
+          <FontAwesome5 name="telegram-plane" size={22} color="#26A5E4" />
           <YStack flex={1} gap="$0.5">
             <XStack gap="$2" style={{ alignItems: 'center' }}>
               <Text fontSize="$4" fontWeight="600" color="$color">

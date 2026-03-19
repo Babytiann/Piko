@@ -31,7 +31,8 @@ export default function useFetchAiPageData(
   appSessionUserId?: string | null,
 ): UseFetchAiPageDataReturn {
   const pathname = usePathname();
-  const cacheKey = normalizeCacheKey(pathname ?? '/ai');
+  const baseKey = normalizeCacheKey(pathname ?? '/ai');
+  const cacheKey = `${baseKey}:${appSessionUserId ?? ''}`;
   const prevUserIdRef = useRef<string | null | undefined>(undefined);
   const lastFetchTimeRef = useRef<number>(0);
   const [data, setData] = useState<AiPageData | null>(null);

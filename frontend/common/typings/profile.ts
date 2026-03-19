@@ -40,6 +40,8 @@ export interface ProfileAppUser {
   avatar_url?: string | null;
   /** 天气城市（为空则用自动定位），未设置时为 null。 */
   weather_city?: string | null;
+  /** 登录方式，如 'apple' / 'google'。 */
+  provider_id?: string | null;
 }
 
 /** All profile page labels (backend-driven). */

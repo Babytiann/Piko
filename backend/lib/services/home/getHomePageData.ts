@@ -320,6 +320,13 @@ export async function getHomePageData(
     };
   }
 
+  // 并行获取所有数据库数据 + 天气（天气用 request 中的城市提前并行，用户城市设置后补）
+  const earlyWeatherCity =
+    (weatherCityFromRequest?.trim() || DEFAULT_CITY).trim() || DEFAULT_CITY;
+  const earlyWeatherPromise = fetchCurrentWeather(earlyWeatherCity).catch(
+    () => null,
+  );
+
   const [budgetResult, expenseRes, lastWeekRes, monthRes, userWeatherCityRaw] =
     await Promise.all([
       getUserBudget(userId),
@@ -351,7 +358,11 @@ export async function getHomePageData(
       DEFAULT_CITY
     ).trim() || DEFAULT_CITY;
 
-  const rawWeather = await fetchCurrentWeather(weatherCity).catch(() => null);
+  // 若用户设置的城市与提前并行查询的城市不同，再次查询；否则复用已有结果
+  const rawWeather =
+    weatherCity === earlyWeatherCity
+      ? await earlyWeatherPromise
+      : await fetchCurrentWeather(weatherCity).catch(() => null);
 
   const expenses = expenseRes.expenses;
   const byDate: Record<string, number> = {};

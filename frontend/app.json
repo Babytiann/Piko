@@ -13,14 +13,7 @@
       "bundleIdentifier": "com.test.piko",
       "usesAppleSignIn": true,
       "infoPlist": {
-        "LSApplicationQueriesSchemes": [
-          "amapuri",
-          "iosamap",
-          "comgooglemaps",
-          "amapuri",
-          "iosamap",
-          "comgooglemaps"
-        ],
+        "LSApplicationQueriesSchemes": ["amapuri", "iosamap", "comgooglemaps"],
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -66,10 +59,23 @@
         }
       ],
       "expo-apple-authentication",
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Piko 需要使用相机来扫描小票"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png"
+        }
+      ],
       [
         "@react-native-google-signin/google-signin",
         {
-          "iosUrlScheme": "com.googleusercontent.apps.282386252636-fqba4u9efo8gjrul6f6m3r0krg8lp3g2"
+          "iosUrlScheme": "com.googleusercontent.apps.282386252636-c06k50abpkabk62ks8te5vl02l6uaerl"
         }
       ]
     ],

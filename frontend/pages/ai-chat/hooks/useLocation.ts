@@ -32,7 +32,7 @@ interface UseLocationReturn {
 export default function useLocation(): UseLocationReturn {
   const deniedRef = useRef(false);
 
-  const getLocation = async (): Promise<LocationResult | null> => {
+  const getLocation = useCallback(async (): Promise<LocationResult | null> => {
     if (deniedRef.current) {
       return null;
     }
@@ -57,13 +57,13 @@ export default function useLocation(): UseLocationReturn {
       console.error('[useLocation] 获取位置失败:', err);
       return null;
     }
-  };
+  }, []);
 
-  const wasDenied = (): boolean => deniedRef.current;
+  const wasDenied = useCallback((): boolean => deniedRef.current, []);
 
-  const resetDenied = (): void => {
+  const resetDenied = useCallback((): void => {
     deniedRef.current = false;
-  };
+  }, []);
 
   const requestPermissionAgain =
     useCallback(async (): Promise<LocationResult | null> => {

@@ -112,6 +112,10 @@ const DISTRICT_TO_CITY: Record<string, string> = {
   四川省: '成都',
 };
 
+function normalizeCity(name: string): string {
+  return name.trim().replace(/[市区县]$/, '');
+}
+
 function findIndicesByCity(
   cityName: string,
   options: WeatherCityOption[],
@@ -120,15 +124,46 @@ function findIndicesByCity(
   if (DISTRICT_TO_CITY[normalized]) {
     normalized = DISTRICT_TO_CITY[normalized];
   }
+  // 去掉 "市"/"区"/"县" 后缀再匹配
+  const normalizedStripped = normalizeCity(normalized);
+
+  // 第一轮：精确匹配（原始名或去后缀后的名）
   for (let pi = 0; pi < options.length; pi++) {
     const prov = options[pi];
+    const provStripped = normalizeCity(prov.name);
     for (let ci = 0; ci < prov.cities.length; ci++) {
       const city = prov.cities[ci];
-      if (city === normalized || prov.name.replace('市', '') === normalized) {
+      const cityStripped = normalizeCity(city);
+      if (
+        city === normalized ||
+        city === normalizedStripped ||
+        cityStripped === normalized ||
+        cityStripped === normalizedStripped ||
+        provStripped === normalized ||
+        provStripped === normalizedStripped
+      ) {
         return { provinceIndex: pi, cityIndex: ci };
       }
     }
   }
+
+  // 第二轮：模糊匹配（startsWith / includes）
+  for (let pi = 0; pi < options.length; pi++) {
+    const prov = options[pi];
+    for (let ci = 0; ci < prov.cities.length; ci++) {
+      const city = prov.cities[ci];
+      const cityStripped = normalizeCity(city);
+      if (
+        cityStripped.startsWith(normalizedStripped) ||
+        normalizedStripped.startsWith(cityStripped) ||
+        cityStripped.includes(normalizedStripped) ||
+        normalizedStripped.includes(cityStripped)
+      ) {
+        return { provinceIndex: pi, cityIndex: ci };
+      }
+    }
+  }
+
   return { provinceIndex: 0, cityIndex: 0 };
 }
 

@@ -15,7 +15,7 @@ pageDataRoutes.post('/page_data/v1', async (c) => {
     input_placeholder: '问我任何问题...',
     drawer_title: '历史对话',
     new_chat_label: '新对话',
-    login_prompt_title: '请使用 Apple 登录',
+    login_prompt_title: '请先登录',
     login_prompt_desc: '登录后即可使用 AI 聊天、对话历史等功能。',
     login_prompt_btn: '去登录',
     time_just_now: '刚刚',

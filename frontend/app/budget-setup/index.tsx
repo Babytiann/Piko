@@ -19,7 +19,8 @@ import {
   DESTRUCTIVE,
 } from '@/common/consts/theme';
 import { setBudget } from '@/services/budget';
-import { get } from '@/common/lib/route-cache';
+import { get, clear } from '@/common/lib/route-cache';
+import { appEvents } from '@/common/lib/app-events';
 import type { HomeLabels, HomeSlashNodes } from '@/common/typings/home';
 
 interface HomeCachePayload {
@@ -49,6 +50,14 @@ export default function BudgetSetupScreen(): ReactNode {
     try {
       const res = await setBudget(num);
       if (res.success) {
+        // 清首页缓存，触发 Home 立即刷新
+        clear('/');
+        if (res.data) {
+          appEvents.emit('budget-updated', {
+            monthly_budget: res.data.monthly_budget,
+            weekly_budget: res.data.weekly_budget,
+          });
+        }
         router.back();
         return;
       }

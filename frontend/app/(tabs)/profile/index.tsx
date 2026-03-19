@@ -1,5 +1,5 @@
 import { useEffect, useState, type ComponentType, type ReactNode } from 'react';
-import { Alert, ScrollView } from 'react-native';
+import { Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
@@ -45,6 +45,7 @@ export default function ProfileScreen(): ReactNode {
     appSession?.user?.id,
   );
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isLoginPending, setIsLoginPending] = useState(false);
   const [GoogleSectionComponent, setGoogleSectionComponent] =
     useState<ComponentType<ProfileGoogleSectionProps> | null>(null);
 
@@ -55,6 +56,13 @@ export default function ProfileScreen(): ReactNode {
       );
     }
   }, []);
+
+  // 登录成功后保持 pending，等待 session 更新
+  useEffect(() => {
+    if (appSession?.user && isLoginPending) {
+      setIsLoginPending(false);
+    }
+  }, [appSession?.user, isLoginPending]);
 
   useEffect(() => {
     if (errorType !== PageErrorType.AUTH || !appSession?.user) return;
@@ -220,24 +228,54 @@ export default function ProfileScreen(): ReactNode {
         </XStack>
 
         <YStack px="$4" gap="$3" pt="$1">
-          <ProfileAppleSection
-            appUser={appUser}
-            labels={labels.user_section}
-            onPress={() => router.push('/account-settings')}
-          />
+          {isLoginPending ? (
+            <PikoCard>
+              <YStack
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingVertical: 24,
+                  gap: 12,
+                }}
+              >
+                <ActivityIndicator size="small" color={theme.primary.val} />
+                <Text fontSize="$3" color="$gray11">
+                  登录中，请稍候…
+                </Text>
+              </YStack>
+            </PikoCard>
+          ) : (
+            <>
+              {!hasAppSession ? (
+                <PikoCard padding="$4">
+                  <Text fontSize="$3" color="$gray11">
+                    {labels.user_section.sign_in_prompt}
+                  </Text>
+                </PikoCard>
+              ) : null}
 
-          {!hasAppSession && GoogleSectionComponent ? (
-            <GoogleSectionComponent
-              appUser={appUser}
-              labels={labels.user_section}
-            />
-          ) : null}
-          {!hasAppSession && isExpoGo ? (
-            <Text fontSize="$2" color="$gray10" px="$2">
-              Google 登录需使用开发构建调试：运行 npx expo run:ios 或
-              run:android
-            </Text>
-          ) : null}
+              <ProfileAppleSection
+                appUser={appUser}
+                labels={labels.user_section}
+                onPress={() => router.push('/account-settings')}
+                onLoginSuccess={() => setIsLoginPending(true)}
+              />
+
+              {!hasAppSession && GoogleSectionComponent ? (
+                <GoogleSectionComponent
+                  appUser={appUser}
+                  labels={labels.user_section}
+                  onLoginSuccess={() => setIsLoginPending(true)}
+                />
+              ) : null}
+              {!hasAppSession && isExpoGo ? (
+                <Text fontSize="$2" color="$gray10" px="$2">
+                  Google 登录需使用开发构建调试：运行 npx expo run:ios 或
+                  run:android
+                </Text>
+              ) : null}
+            </>
+          )}
 
           {showProfileError ? (
             <PageStatusView errorType={errorType} onRetry={handleRetry} />

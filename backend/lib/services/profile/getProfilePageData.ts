@@ -1,8 +1,10 @@
+import { eq } from 'drizzle-orm';
 import type {
   ProfilePageLabels,
   ProfilePageData,
   ProfileAppUser,
 } from '../../../types/profile.js';
+import { db, accounts } from '../../../db/index.js';
 import { getUserWithBinding } from '../user/index.js';
 
 const AVATAR_COLORS = [
@@ -25,7 +27,8 @@ const PROFILE_LABELS: ProfilePageLabels = {
   page_title: '个人主页',
   user_section: {
     apple_login_label: '通过 Apple 登录',
-    sign_in_prompt: '使用 Apple 账号登录后可使用 AI 聊天等功能。',
+    google_login_label: '使用 Google 登录',
+    sign_in_prompt: '请选择登录方式，登录后可使用 AI 聊天、预算管理等功能。',
     ios_only_hint: '请在 iOS 设备上使用 Apple 登录。',
     loading_label: '加载中…',
   },
@@ -82,7 +85,14 @@ export async function getProfilePageData(
   const userId = appUser?.id ?? null;
   if (!userId || !appUser) return buildUnboundPageData(null);
 
-  const dbUser = await getUserWithBinding(userId);
+  const [dbUser, accountRows] = await Promise.all([
+    getUserWithBinding(userId),
+    db
+      .select({ providerId: accounts.providerId })
+      .from(accounts)
+      .where(eq(accounts.userId, userId))
+      .limit(1),
+  ]);
   const binding = dbUser?.telegramBinding ?? null;
 
   const appUserWithNickname: ProfileAppUser = {
@@ -92,6 +102,7 @@ export async function getProfilePageData(
     nickname: dbUser?.nickname ?? null,
     avatar_url: dbUser?.avatarUrl ?? null,
     weather_city: dbUser?.weatherCity ?? null,
+    provider_id: accountRows[0]?.providerId ?? null,
   };
 
   if (!binding) return buildUnboundPageData(appUserWithNickname);

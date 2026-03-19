@@ -20,6 +20,7 @@ interface ProfileAppleSectionProps {
   labels: ProfilePageLabels['user_section'];
   onPress?: () => void;
   onAvatarUpdate?: (url: string) => void;
+  onLoginSuccess?: () => void;
 }
 
 const AVATAR_COLORS = [
@@ -46,6 +47,7 @@ export default function ProfileAppleSection({
   labels,
   onPress,
   onAvatarUpdate,
+  onLoginSuccess,
 }: ProfileAppleSectionProps): ReactNode {
   const theme = useTheme();
   const [isSigningIn, setIsSigningIn] = useState(false);
@@ -72,13 +74,18 @@ export default function ProfileAppleSection({
       });
       if (error) {
         console.error('[Apple Sign In]', error);
+        setIsSigningIn(false);
+      } else {
+        // 主动刷新 session，使 useSession() 立即感知到登录态，减少 loading 时间
+        await authClient.getSession();
+        onLoginSuccess?.();
       }
     } catch (err) {
       if ((err as { code?: string })?.code === 'ERR_REQUEST_CANCELED') {
+        setIsSigningIn(false);
         return;
       }
       console.error('[Apple Sign In]', err);
-    } finally {
       setIsSigningIn(false);
     }
   };
@@ -198,9 +205,6 @@ export default function ProfileAppleSection({
           </XStack>
         ) : (
           <>
-            <Text fontSize="$2" color="$gray12">
-              {labels.sign_in_prompt}
-            </Text>
             {Platform.OS === 'ios' ? (
               <AppleAuthentication.AppleAuthenticationButton
                 buttonType={

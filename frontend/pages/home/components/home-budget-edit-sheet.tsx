@@ -19,6 +19,8 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { setBudget } from '@/services/budget';
+import { clear } from '@/common/lib/route-cache';
+import { appEvents } from '@/common/lib/app-events';
 import { getThemeColors } from '@/common/consts/theme';
 import type { ColorScheme } from '@/common/consts/theme';
 import type { HomeLabels } from '@/common/typings/home';
@@ -71,6 +73,14 @@ export default function HomeBudgetEditSheet({
         void Haptics.notificationAsync(
           Haptics.NotificationFeedbackType.Success,
         );
+        // 清首页缓存，触发 Home 立即刷新
+        clear('/');
+        if (res.data) {
+          appEvents.emit('budget-updated', {
+            monthly_budget: res.data.monthly_budget,
+            weekly_budget: res.data.weekly_budget,
+          });
+        }
         onSaved();
       }
     } catch (err) {
