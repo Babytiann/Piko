@@ -55,7 +55,7 @@ export interface SseChunkEvent {
 
 export interface SseDoneEvent {
   type: 'done';
-  conversation_id?: string;
+  conversationId?: string;
 }
 
 export interface SseErrorEvent {
@@ -82,12 +82,12 @@ export interface SseToolEndEvent {
 /** 请求前端获取用户地理位置 */
 export interface SseRequestLocationEvent {
   type: 'request_location';
-  request_id: string;
+  requestId: string;
 }
 
 export interface SseConversationEvent {
   type: 'conversation';
-  conversation_id: string;
+  conversationId: string;
 }
 
 export type SseEvent =
@@ -105,44 +105,20 @@ export type MarkdownSegment =
   | { type: 'amap-navigation'; url: string; label: string }
   | { type: 'google-maps-navigation'; url: string; label: string };
 
-export enum LoginStatus {
-  LOGGED_OUT = 0,
-  LOGGED_IN = 1,
-}
-/** Page data for the AI chat page (from backend). */
-export interface AiPageData {
-  login_status?: LoginStatus;
-  header_title?: string;
-  empty_title?: string;
-  empty_subtitle?: string;
-  input_placeholder?: string;
-  drawer_title?: string;
-  new_chat_label?: string;
-  login_prompt_title?: string;
-  login_prompt_desc?: string;
-  login_prompt_btn?: string;
-  time_just_now?: string;
-  time_minutes_ago?: string;
-  time_hours_ago?: string;
-  time_days_ago?: string;
-  drawer_loading?: string;
-  drawer_empty?: string;
-  drawer_delete_title?: string;
-  drawer_delete_desc?: string;
-  drawer_delete_cancel?: string;
-  drawer_delete_confirm?: string;
-  drawer_message_count?: string;
-  tooltip_copy?: string;
-  bubble_grant_location?: string;
-  nav_amap_title?: string;
-  nav_google_title?: string;
-  nav_open_hint?: string;
+/** Copywriting / text content for the AI chat page (from backend). */
+export interface AiCopywriting {
+  headerTitle: string;
+  emptyTitle: string;
+  emptySubtitle: string;
+  inputPlaceholder: string;
+  drawerTitle: string;
+  newChatLabel: string;
 }
 
 /** 会话列表项 */
 export interface ConversationItem {
   id: string;
   title: string;
-  updated_at: string;
-  message_count: number;
+  updatedAt: string;
+  messageCount: number;
 }

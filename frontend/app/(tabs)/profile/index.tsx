@@ -1,70 +1,52 @@
-import { useEffect, useState, type ComponentType, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Alert, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
-import { Ionicons } from '@expo/vector-icons';
-import { YStack, XStack, Text, Spacer, useTheme } from 'tamagui';
+import { YStack, XStack, Text, Spacer } from 'tamagui';
 
 import { TAB_BAR_CONTENT_HEIGHT } from '@/common/consts';
 import PageLoading from '@/common/components/page-loading';
-import { PikoCard } from '@/common/components/piko-card';
 import PageStatusView, {
   PageErrorType,
 } from '@/common/components/page-status-view';
 import { useAuth } from '@/common/hooks';
 import { authClient } from '@/services/auth-client';
-import { DEFAULT_PROFILE_LABELS } from '@/pages/profile/consts/default-labels';
+
+import { DEFAULT_PROFILE_COPY } from '@/pages/profile/consts/default-copy';
 import { useProfileData } from '@/pages/profile/hooks/useProfileData';
 import ProfileAppleSection from '@/pages/profile/components/profile-apple-section';
-import type { ProfileGoogleSectionProps } from '@/pages/profile/components/profile-google-section';
 import ProfileTelegramSection from '@/pages/profile/components/profile-telegram-section';
 import ProfileSettingsSection from '@/pages/profile/components/profile-settings-section';
-
-const isExpoGo = Constants.appOwnership === 'expo';
-import ProfileListRow from '@/pages/profile/components/profile-list-row';
-
-type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
-
-interface MenuItem {
-  icon: IoniconsName;
-  title: string;
-  description: string;
-  route?: string;
-  action?: () => void;
-}
 
 export default function ProfileScreen(): ReactNode {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const theme = useTheme();
   const { data: appSession } = authClient.useSession();
   const { session, logout } = useAuth();
-  const { isPageLoading, errorType, data, handleRetry } = useProfileData(
-    session,
-    appSession?.user?.id,
-  );
+  const { isLoading, errorType, data, handleRetry } = useProfileData(session);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [GoogleSectionComponent, setGoogleSectionComponent] =
-    useState<ComponentType<ProfileGoogleSectionProps> | null>(null);
 
-  useEffect(() => {
-    if (!isExpoGo) {
-      import('@/pages/profile/components/profile-google-section').then((m) =>
-        setGoogleSectionComponent(() => m.default),
-      );
+  const copy = data?.copy ?? DEFAULT_PROFILE_COPY;
+
+  const handleAppLogout = async (): Promise<void> => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setIsLoggingOut(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     if (errorType !== PageErrorType.AUTH || !appSession?.user) return;
 
     Alert.alert(
-      labels.alert_auth_expired_title,
-      labels.alert_auth_expired_desc,
+      '登录已失效',
+      'Telegram 登录已失效，请重新绑定账号。',
       [
         {
-          text: labels.alert_auth_expired_ok,
+          text: '确定',
           onPress: async () => {
             await logout();
           },
@@ -74,57 +56,8 @@ export default function ProfileScreen(): ReactNode {
     );
   }, [errorType, appSession?.user, logout]);
 
-  const labels = data?.labels ?? DEFAULT_PROFILE_LABELS;
-  const appUser =
-    data?.app_user ??
-    (appSession?.user
-      ? {
-          id: appSession.user.id,
-          name: appSession.user.name ?? null,
-          email: appSession.user.email ?? null,
-        }
-      : null);
-
-  const hasAppSession = !!appUser;
-  const showProfileData = hasAppSession && data && !errorType;
-  const showProfileError =
-    hasAppSession && errorType && errorType !== PageErrorType.AUTH;
-
-  const telegramSectionData = showProfileData
-    ? data!.telegram_section
-    : hasAppSession
-      ? {
-          title: 'Telegram 账号',
-          is_logged_in: false,
-          bind_prompt: '',
-          bind_button_text: '',
-        }
-      : null;
-
-  const handleAppLogout = async (): Promise<void> => {
-    setIsLoggingOut(true);
-    try {
-      await authClient.signOut();
-      await logout();
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
-
-  const handleLogoutPress = (): void => {
-    Alert.alert(
-      labels.alert_logout_title,
-      labels.alert_logout_desc,
-      [
-        { text: labels.alert_logout_cancel, style: 'cancel' },
-        { text: labels.alert_logout_ok, onPress: () => void handleAppLogout() },
-      ],
-      { cancelable: true },
-    );
-  };
-
   const handleTelegramPress = (): void => {
-    const user = telegramSectionData?.is_logged_in
+    const user = telegramSectionData?.isLoggedIn
       ? telegramSectionData?.user
       : null;
     if (user) {
@@ -132,8 +65,8 @@ export default function ProfileScreen(): ReactNode {
         pathname: '/telegram_binding',
         params: {
           username: user.username || '—',
-          telegramUserId: user.telegram_user_id || '—',
-          boundAt: user.bound_at ?? '',
+          telegramUserId: user.telegramUserId || '—',
+          boundAt: user.boundAt ?? '',
         },
       });
     } else {
@@ -141,63 +74,25 @@ export default function ProfileScreen(): ReactNode {
     }
   };
 
-  if (isPageLoading && !data) {
-    return (
-      <YStack flex={1} bg="$background">
-        <PageLoading />
-      </YStack>
-    );
-  }
+  const hasAppSession = !!appSession?.user;
+  const showProfileData = hasAppSession && data && !errorType;
+  const showProfileError =
+    hasAppSession && errorType && errorType !== PageErrorType.AUTH;
 
-  if (errorType && errorType !== PageErrorType.AUTH) {
-    return (
-      <YStack flex={1} bg="$background">
-        <PageStatusView errorType={errorType} onRetry={handleRetry} />
-      </YStack>
-    );
-  }
-
-  const version = Constants.expoConfig?.version ?? '1.0.0';
-
-  const settingsItems: MenuItem[] = [
-    {
-      icon: 'person-outline',
-      title: '账号设置',
-      description: '昵称、登录方式、天气城市',
-      route: '/account-settings',
-    },
-    {
-      icon: 'notifications-outline',
-      title: '通知设置',
-      description: '管理推送和消息通知',
-      route: '/notification-settings',
-    },
-    {
-      icon: 'shield-checkmark-outline',
-      title: '隐私与安全',
-      description: '数据管理与账号安全',
-      route: '/privacy-security',
-    },
-  ];
-
-  const helpItems: MenuItem[] = [
-    {
-      icon: 'help-circle-outline',
-      title: '帮助中心',
-      description: '常见问题和使用指南',
-      route: '/help-center',
-    },
-    {
-      icon: 'mail-outline',
-      title: '联系我们',
-      description: '反馈问题或建议',
-      route: '/contact-us',
-    },
-  ];
+  const telegramSectionData = showProfileData
+    ? data!.telegramSection
+    : hasAppSession
+      ? {
+          title: 'Telegram 账号',
+          isLoggedIn: false,
+          bindPrompt: '',
+          bindButtonText: '',
+        }
+      : null;
 
   const contentPadding = {
     paddingTop: insets.top,
-    paddingBottom: insets.bottom + TAB_BAR_CONTENT_HEIGHT + 16,
+    paddingBottom: insets.bottom + TAB_BAR_CONTENT_HEIGHT,
   };
 
   return (
@@ -207,37 +102,20 @@ export default function ProfileScreen(): ReactNode {
         contentContainerStyle={contentPadding}
         showsVerticalScrollIndicator={false}
       >
-        <XStack px="$5" pt="$4" pb="$2" style={{ alignItems: 'center' }}>
+        <XStack px="$4" py="$3">
           <Text
-            fontSize={26}
-            fontWeight="800"
+            fontSize="$7"
+            fontWeight="700"
             color="$color"
             letterSpacing={-0.5}
           >
-            {labels.page_title}
+            {copy.pageTitle}
           </Text>
           <Spacer flex={1} />
         </XStack>
 
-        <YStack px="$4" gap="$3" pt="$1">
-          <ProfileAppleSection
-            appUser={appUser}
-            labels={labels.user_section}
-            onPress={() => router.push('/account-settings')}
-          />
-
-          {!hasAppSession && GoogleSectionComponent ? (
-            <GoogleSectionComponent
-              appUser={appUser}
-              labels={labels.user_section}
-            />
-          ) : null}
-          {!hasAppSession && isExpoGo ? (
-            <Text fontSize="$2" color="$gray10" px="$2">
-              Google 登录需使用开发构建调试：运行 npx expo run:ios 或
-              run:android
-            </Text>
-          ) : null}
+        <YStack px="$4" gap="$4">
+          <ProfileAppleSection copy={copy.userSection} />
 
           {showProfileError ? (
             <PageStatusView errorType={errorType} onRetry={handleRetry} />
@@ -245,109 +123,66 @@ export default function ProfileScreen(): ReactNode {
 
           {telegramSectionData ? (
             <ProfileTelegramSection
-              labels={labels.linked_account}
+              copy={copy.linkedAccount}
               data={telegramSectionData}
               onPress={handleTelegramPress}
             />
+          ) : hasAppSession && isLoading ? (
+            <PageLoading />
           ) : !hasAppSession ? (
-            <PikoCard>
-              <YStack gap="$3">
-                <Text fontSize="$4" fontWeight="600" color="$color">
-                  {labels.linked_account.title}
-                </Text>
-                <Text fontSize="$2" color="$gray12">
-                  {labels.linked_account.login_first_hint}
-                </Text>
-              </YStack>
-            </PikoCard>
+            <YStack bg="#FFFFFF" p="$4" gap="$3" style={{ borderRadius: 16 }}>
+              <Text fontSize="$4" fontWeight="600" color="$color">
+                {copy.linkedAccount.title}
+              </Text>
+              <Text fontSize="$2" color="$gray12">
+                {copy.linkedAccount.loginFirstHint}
+              </Text>
+            </YStack>
           ) : null}
 
-          {/* Settings */}
-          <PikoCard padding="$4">
-            <YStack gap="$0">
-              <Text fontSize="$2" fontWeight="600" color="$gray12" pb="$2">
-                设置
-              </Text>
-              {settingsItems.map((item, i) => (
-                <ProfileListRow
-                  key={item.title}
-                  icon={item.icon}
-                  title={item.title}
-                  description={item.description}
-                  isLast={i === settingsItems.length - 1}
-                  onPress={
-                    item.route
-                      ? () => router.push(item.route as never)
-                      : item.action
-                  }
-                />
-              ))}
-            </YStack>
-          </PikoCard>
-
-          {/* Help */}
-          <PikoCard padding="$4">
-            <YStack gap="$0">
-              <Text fontSize="$2" fontWeight="600" color="$gray12" pb="$2">
-                帮助与支持
-              </Text>
-              {helpItems.map((item, i) => (
-                <ProfileListRow
-                  key={item.title}
-                  icon={item.icon}
-                  title={item.title}
-                  description={item.description}
-                  isLast={i === helpItems.length - 1}
-                  onPress={
-                    item.route
-                      ? () => router.push(item.route as never)
-                      : item.action
-                  }
-                />
-              ))}
-            </YStack>
-          </PikoCard>
-
-          {/* About */}
-          <PikoCard padding="$4">
-            <XStack
-              style={{ alignItems: 'center', justifyContent: 'space-between' }}
-            >
-              <XStack gap="$3" style={{ alignItems: 'center' }}>
-                <Ionicons
-                  name="information-circle-outline"
-                  size={22}
-                  color={theme.muted.val}
-                />
-                <Text fontSize="$4" fontWeight="600" color="$color">
-                  关于 Piko
-                </Text>
-              </XStack>
-              <Text fontSize="$3" color="$gray11">
-                v{version}
-              </Text>
-            </XStack>
-          </PikoCard>
+          {hasAppSession && data ? (
+            <ProfileSettingsSection copy={copy} />
+          ) : null}
 
           {hasAppSession ? (
-            <XStack
-              py="$3"
-              bg="$gray4"
+            <YStack
+              py="$2"
+              bg="#FFFFFF"
               style={{
-                alignItems: 'center',
+                borderRadius: 16,
                 justifyContent: 'center',
-                borderRadius: 20,
-                borderCurve: 'continuous',
-                opacity: isLoggingOut ? 0.7 : 1,
+                alignItems: 'center',
               }}
-              pressStyle={{ opacity: 0.8 }}
-              onPress={isLoggingOut ? undefined : handleLogoutPress}
+              pressStyle={isLoggingOut ? undefined : { opacity: 0.8 }}
+              onPress={isLoggingOut ? undefined : () => void handleAppLogout()}
+              height={50}
+              opacity={isLoggingOut ? 0.7 : 1}
             >
-              <Text color="$destructive" fontWeight="600" fontSize="$4">
-                {isLoggingOut ? labels.logout_ingress : labels.logout_button}
-              </Text>
-            </XStack>
+              <XStack gap="$2" style={{ alignItems: 'center' }}>
+                <Text color="$red10" fontWeight="600" fontSize="$4">
+                  {isLoggingOut ? copy.logoutIngress : copy.logoutButton}
+                </Text>
+                {isLoggingOut ? null : (
+                  <Text color="$red10" fontSize="$4">
+                    →
+                  </Text>
+                )}
+              </XStack>
+            </YStack>
           ) : null}
+
+          <YStack py="$4" gap="$1" style={{ alignItems: 'center' }}>
+            <Text fontSize="$2" color="$gray12">
+              {copy.footer.versionLabel}{' '}
+              {Constants.expoConfig?.version ?? '1.0.0'}
+            </Text>
+            <Text fontSize="$2" color="$gray12">
+              {copy.footer.uidLabel}: {appSession?.user?.id ?? '—'}
+            </Text>
+            <Text fontSize="$2" color="$gray12">
+              {copy.footer.didLabel}: —
+            </Text>
+          </YStack>
         </YStack>
       </ScrollView>
     </YStack>

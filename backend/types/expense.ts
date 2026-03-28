@@ -42,15 +42,15 @@ export interface RecognizeResult {
   confidence: number;
 }
 
-/** POST /ai/recognize/v1 请求体 */
+/** POST /piko/ai/recognize/v1 请求体 */
 export interface RecognizeRequest {
   /** Base64 编码的图片数据 */
   image: string;
   /** 图片 MIME 类型 */
-  mime_type: string;
+  mimeType: string;
 }
 
-/** POST /ai/recognize/v1 响应体 */
+/** POST /piko/ai/recognize/v1 响应体 */
 export interface RecognizeResponse {
   /** 识别结果 */
   result: RecognizeResult;

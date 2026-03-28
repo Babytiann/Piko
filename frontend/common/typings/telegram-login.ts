@@ -23,13 +23,13 @@ export enum TelegramLoginStep {
 export interface TelegramAuthRequest {
   session_tag: SessionTag;
   /** sendCode / signIn */
-  phone_number?: string;
+  phoneNumber?: string;
   /** signIn */
-  phone_code?: string;
+  phoneCode?: string;
   /** signIn */
-  phone_code_hash?: string;
+  phoneCodeHash?: string;
   /** signIn — sendCode 阶段序列化的 session 字符串，用于恢复同一 auth key */
-  pending_session?: string;
+  pendingSession?: string;
   /** checkPassword */
   session?: string;
   /** checkPassword */
@@ -38,18 +38,18 @@ export interface TelegramAuthRequest {
 
 export interface TelegramUser {
   id: string;
-  first_name: string;
-  last_name: string;
+  firstName: string;
+  lastName: string;
   username: string;
   phone: string;
 }
 
 export interface SendCodeResult {
   success: boolean;
-  phone_code_hash: string;
+  phoneCodeHash: string;
   /** 序列化的 session 字符串，需透传给 signIn 以保证 auth key 一致 */
-  pending_session: string;
-  code_type: string;
+  pendingSession: string;
+  codeType: string;
   timeout: number | null;
 }
 
@@ -57,7 +57,7 @@ export interface SignInResult {
   success: boolean;
   session?: string;
   user?: TelegramUser;
-  require_2fa?: boolean;
+  require2FA?: boolean;
   error?: string;
 }
 
@@ -85,38 +85,38 @@ export interface CountryItem {
 export interface PhoneStepText {
   title: string;
   subtitle: string;
-  phone_placeholder: string;
-  send_code_button: string;
-  country_picker_header: string;
-  default_country: string;
+  phonePlaceholder: string;
+  sendCodeButton: string;
+  countryPickerHeader: string;
+  defaultCountry: string;
   countries: CountryItem[];
   errors: {
-    empty_phone: string;
-    send_code_fail: string;
+    emptyPhone: string;
+    sendCodeFail: string;
   };
 }
 
 export interface VerifyCodeStepText {
   title: string;
   subtitle: string;
-  code_sent_label: string;
-  code_placeholder: string;
-  verify_button: string;
-  back_link: string;
+  codeSentLabel: string;
+  codePlaceholder: string;
+  verifyButton: string;
+  backLink: string;
   errors: {
-    empty_code: string;
-    sign_in_fail: string;
+    emptyCode: string;
+    signInFail: string;
   };
 }
 
 export interface VerifyTwoFAStepText {
   title: string;
   subtitle: string;
-  password_placeholder: string;
-  confirm_button: string;
+  passwordPlaceholder: string;
+  confirmButton: string;
   errors: {
-    empty_password: string;
-    check_password_fail: string;
+    emptyPassword: string;
+    checkPasswordFail: string;
   };
 }
 

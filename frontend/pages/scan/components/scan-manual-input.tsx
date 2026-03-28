@@ -5,7 +5,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { View, XStack, YStack, Text, Input } from 'tamagui';
 
-import { MUTED } from '@/common/consts/theme';
 import type { ExpenseCategory, ExpenseRecord } from '../types';
 import { EXPENSE_CATEGORIES, CATEGORY_ICONS } from '../consts';
 
@@ -45,7 +44,7 @@ export default function ScanManualInput({ onSave, onBack }: Props): ReactNode {
         {/* 头部 */}
         <XStack px="$4" py="$3" style={{ alignItems: 'center' }}>
           <View pressStyle={{ opacity: 0.7 }} onPress={onBack} px="$2" py="$1">
-            <Ionicons name="arrow-back" size={24} color={MUTED} />
+            <Ionicons name="arrow-back" size={24} color="#999" />
           </View>
           <Text
             flex={1}
@@ -128,7 +127,7 @@ export default function ScanManualInput({ onSave, onBack }: Props): ReactNode {
                     key={cat}
                     px="$3"
                     py="$2"
-                    bg={isSelected ? '$primary' : '$gray3'}
+                    bg={isSelected ? '$blue9' : '$gray3'}
                     style={{ borderRadius: 10 }}
                     pressStyle={{ opacity: 0.8 }}
                     onPress={() => setCategory(cat)}
@@ -137,10 +136,10 @@ export default function ScanManualInput({ onSave, onBack }: Props): ReactNode {
                       <Ionicons
                         name={CATEGORY_ICONS[cat] as never}
                         size={14}
-                        color={isSelected ? '#FFFFFF' : MUTED}
+                        color={isSelected ? 'white' : '#999'}
                       />
                       <Text
-                        color={isSelected ? '$primaryForeground' : '$color'}
+                        color={isSelected ? 'white' : '$color'}
                         fontSize="$2"
                         fontWeight={isSelected ? '600' : '400'}
                       >
@@ -187,13 +186,13 @@ export default function ScanManualInput({ onSave, onBack }: Props): ReactNode {
           }}
         >
           <View
-            bg="$primary"
+            bg="$blue9"
             py="$3"
             style={{ borderRadius: 14, alignItems: 'center' }}
             pressStyle={{ opacity: 0.85 }}
             onPress={handleSave}
           >
-            <Text color="$primaryForeground" fontWeight="700" fontSize="$4">
+            <Text color="white" fontWeight="700" fontSize="$4">
               确认记账
             </Text>
           </View>

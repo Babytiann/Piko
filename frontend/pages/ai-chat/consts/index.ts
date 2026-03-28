@@ -7,9 +7,6 @@ export const MESSAGE_SCALE = 1.03;
 
 export const ANIM_DURATION = 200;
 
-export const DRAWER_OPEN_MS = 250;
-export const DRAWER_CLOSE_MS = 200;
-
 export const NEAR_BOTTOM_THRESHOLD = 80;
 export const SCROLL_DELAY_MS = 16;
 

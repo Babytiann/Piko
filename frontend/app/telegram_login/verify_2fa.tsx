@@ -55,7 +55,7 @@ export default function Verify2FAScreen(): ReactNode {
   const handleCheckPassword = async (): Promise<void> => {
     if (!text) return;
     if (!password.trim()) {
-      setError(text.errors.empty_password);
+      setError(text.errors.emptyPassword);
       return;
     }
     setLoading(true);
@@ -72,7 +72,7 @@ export default function Verify2FAScreen(): ReactNode {
         setError('该账户已被绑定');
       } else {
         setError(
-          err instanceof Error ? err.message : text.errors.check_password_fail,
+          err instanceof Error ? err.message : text.errors.checkPasswordFail,
         );
       }
     } finally {
@@ -95,8 +95,8 @@ export default function Verify2FAScreen(): ReactNode {
         onPasswordChange={setPassword}
         onCheckPassword={() => void handleCheckPassword()}
         loading={loading}
-        passwordPlaceholder={text.password_placeholder}
-        confirmButtonText={text.confirm_button}
+        passwordPlaceholder={text.passwordPlaceholder}
+        confirmButtonText={text.confirmButton}
       />
     </TgLoginFormLayout>
   );

@@ -5,11 +5,10 @@ import {
   streamAiChat,
   postLocationResponse,
   saveInterruptedMessage,
-  createConversation,
 } from '@/services/ai';
 import type { AiMessage, ToolCallInfo } from '../types';
 import { FLUSH_INTERVAL_MS } from '../consts';
-import useLocation from './useLocation';
+import { useLocation } from './useLocation';
 
 let nextId = 0;
 function genId(): string {
@@ -35,7 +34,7 @@ interface UseAiChatReturn {
 
 const INTERRUPTED_SUFFIX = '\n\n---\n*输出中断*';
 
-export default function useAiChat(): UseAiChatReturn {
+export function useAiChat(): UseAiChatReturn {
   const [messages, setMessages] = useState<AiMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -134,7 +133,6 @@ export default function useAiChat(): UseAiChatReturn {
   const startStream = (
     history: { role: 'user' | 'model'; content: string }[],
     aiMsgId: string,
-    requestConversationId?: string | null,
   ): void => {
     setIsStreaming(true);
     streamingMsgIdRef.current = aiMsgId;
@@ -154,12 +152,9 @@ export default function useAiChat(): UseAiChatReturn {
       );
     };
 
-    const resolvedConversationId =
-      requestConversationId ?? conversationId ?? 'new';
-
     cleanupRef.current = streamAiChat({
       messages: history,
-      conversationId: resolvedConversationId,
+      conversationId: conversationId ?? 'new',
       requestId: aiMsgId,
       onChunk(chunk) {
         if (!hasReceivedChunk) {
@@ -333,21 +328,7 @@ export default function useAiChat(): UseAiChatReturn {
       content: m.content,
     }));
 
-    if (conversationId) {
-      startStream(history, aiMsgId);
-      return;
-    }
-
-    void (async (): Promise<void> => {
-      try {
-        const { id } = await createConversation();
-        setConversationId(id);
-        startStream(history, aiMsgId, id);
-      } catch (err) {
-        console.error('[AI] create conversation error:', err);
-        startStream(history, aiMsgId, 'new');
-      }
-    })();
+    startStream(history, aiMsgId);
   };
 
   const clearMessages = (): void => {
